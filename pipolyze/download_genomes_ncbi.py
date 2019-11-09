@@ -3,16 +3,11 @@
 
 import os
 import click
-import subprocess
 from Bio import SearchIO
-
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
-
-def ncbi_acc_download(ids):
-    for genome_id in ids:
-        # TODO fix local path!
-        subprocess.run(['/home/liubov/.local/bin/ncbi-acc-download', '-F', 'fasta', genome_id])
+# from pipolyze.utilities import CONTEXT_SETTINGS   # TODO fix this!
+# from pipolyze.utilities import ncbi_acc_download   # TODO fix this!
+from utilities import CONTEXT_SETTINGS
+from utilities import ncbi_acc_download
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
