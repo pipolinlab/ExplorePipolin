@@ -19,7 +19,7 @@ def download_genomes_ncbi(blast_tab):
     genome sequences in the fasta format will be downloaded from NCBI (see ./genomes)
     """
     blast_result = SearchIO.read(blast_tab, 'blast-tab', comments=True)
-    ids = [i.id for i in blast_result]
+    ids = [i.id for i in blast_result]   # ids are all unique here
     ids.append(blast_result.id)
 
     # download the genomes
