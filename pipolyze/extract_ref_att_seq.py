@@ -14,7 +14,7 @@ from utilities import CONTEXT_SETTINGS
 def extract_ref_att_seq(reference):
     """
     This is a stupid script to generate ref_att.fa file, which will be used to roughly
-    extimate pipolin region boundaries. In future, it will be replaced by att profile.
+    estimate pipolin region boundaries. In future, it will be replaced by att profile.
     REFERENCE is a NZ_JNMI01000006.1.fa file.
     """
     ref_seq = SeqIO.read(reference, 'fasta')

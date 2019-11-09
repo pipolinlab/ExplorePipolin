@@ -19,16 +19,15 @@ def download_genomes_ncbi(blast_tab):
     genome sequences in the fasta format will be downloaded from NCBI (see ./genomes)
     """
     blast_result = SearchIO.read(blast_tab, 'blast-tab', comments=True)
-    ids_list = [i.id for i in blast_result]
-    ids_list.append(blast_result.id)
-    ids_set = set(ids_list)
+    ids = [i.id for i in blast_result]
+    ids.append(blast_result.id)
 
     # download the genomes
     os.chdir(os.path.dirname(blast_tab))
     if not os.path.exists('genomes'):
         os.mkdir('genomes')
     os.chdir('./genomes')
-    ncbi_acc_download(ids_set)
+    ncbi_acc_download(ids)
 
 
 if __name__ == '__main__':
