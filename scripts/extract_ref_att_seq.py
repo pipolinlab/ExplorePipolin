@@ -5,8 +5,7 @@ import os
 import click
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-# from pipolyze.utilities import CONTEXT_SETTINGS   # TODO fix this!
-from utilities import CONTEXT_SETTINGS
+from scripts.utilities import CONTEXT_SETTINGS
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

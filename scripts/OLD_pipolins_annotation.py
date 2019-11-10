@@ -22,13 +22,13 @@ import subprocess
 #     return entries
 
 
-def get_seq_from_fasta(f_file):
-    with open(f_file) as inf:
-        seq = ''
-        for line in inf:
-            if line[0] != '>':
-                seq += line.strip()
-    return seq
+# def get_seq_from_fasta(f_file):
+#     with open(f_file) as inf:
+#         seq = ''
+#         for line in inf:
+#             if line[0] != '>':
+#                 seq += line.strip()
+#     return seq
 
 
 # # create a namedtuple object to store info
@@ -93,7 +93,7 @@ def get_seq_from_fasta(f_file):
 
 
 # copy the contig with reference pipolin as a genome
-shutil.copyfile('./NZ_JNMI01000006.1.fa', './genomes/NZ_JNMI01000006.1.fa')
+# shutil.copyfile('./NZ_JNMI01000006.1.fa', './genomes/NZ_JNMI01000006.1.fa')
 # # add reference pipolin as well
 # polB_genomes.append(ref_pipolin)
 # # store the data as a csv file
@@ -104,20 +104,20 @@ shutil.copyfile('./NZ_JNMI01000006.1.fa', './genomes/NZ_JNMI01000006.1.fa')
 #         print(','.join(pip), file=ouf, )
 
 
-# Create pipolin regions for annotation
-os.mkdir('pipolin_regions')
-for genome in polB_genomes:
-    genome_seq = get_seq_from_fasta(f'./genomes/{genome.id}.fa')
-
-    with open(f'./pipolin_regions/{genome.id}_selected.fa', 'w') as ouf:
-        print(f'>{genome.id} selected region {int(genome.attR_e) - int(genome.attL_s) + 100}', file=ouf)
-        print(f'{genome_seq[int(genome.attL_s) - 51:int(genome.attR_e) + 49]}', file=ouf)
-
+# # Create pipolin regions for annotation
+# os.mkdir('pipolin_regions')
+# for genome in polB_genomes:
+#     genome_seq = get_seq_from_fasta(f'./genomes/{genome.id}.fa')
+#
+#     with open(f'./pipolin_regions/{genome.id}_selected.fa', 'w') as ouf:
+#         print(f'>{genome.id} selected region {int(genome.attR_e) - int(genome.attL_s) + 100}', file=ouf)
+#         print(f'{genome_seq[int(genome.attL_s) - 51:int(genome.attR_e) + 49]}', file=ouf)
+#
 # annotate pipolins with prokka
-os.mkdir('./prokka_annotations')
-for i_g, genome in enumerate(polB_genomes):
-    print(i_g)
-    subprocess.run(['/home/liubov/repos/prokka/bin/prokka', '--outdir', './prokka_annotations',
-                    '--prefix', f'{genome.id}', '--rfam', '--rawproduct', '--cdsrnaolap', '--cpus', '4',
-                    '--locustag', f'{genome.id}', f'./pipolin_regions/{genome.id}_selected.fa'])
-
+# os.mkdir('./prokka_annotations')
+# for i_g, genome in enumerate(polB_genomes):
+#     print(i_g)
+#     subprocess.run(['/home/liubov/repos/prokka/bin/prokka', '--outdir', './prokka_annotations',
+#                     '--prefix', f'{genome.id}', '--rfam', '--rawproduct', '--cdsrnaolap', '--cpus', '4',
+#                     '--locustag', f'{genome.id}', f'./pipolin_regions/{genome.id}_selected.fa'])
+#

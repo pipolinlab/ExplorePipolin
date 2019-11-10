@@ -4,9 +4,9 @@
 import os
 import click
 from collections import namedtuple
-from utilities import CONTEXT_SETTINGS   # TODO fix this!
-from utilities import get_hit_positions_by_id   # TODO fix this!
-from utilities import blast_genomes_against_seq   # TODO fix this!
+from scripts.utilities import CONTEXT_SETTINGS   # TODO fix this!
+from scripts.utilities import get_hit_positions_by_id   # TODO fix this!
+from scripts.utilities import blast_genomes_against_seq   # TODO fix this!
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
