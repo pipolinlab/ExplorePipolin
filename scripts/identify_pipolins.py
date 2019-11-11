@@ -4,9 +4,10 @@
 import os
 import click
 from collections import namedtuple
-from scripts.utilities import CONTEXT_SETTINGS   # TODO fix this!
-from scripts.utilities import get_hit_positions_by_id   # TODO fix this!
-from scripts.utilities import blast_genomes_against_seq   # TODO fix this!
+from utilities import CONTEXT_SETTINGS
+from utilities import get_hit_positions_by_id
+from utilities import blast_genomes_against_seq
+from utilities import save_as_csv
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -47,11 +48,7 @@ def identify_pipolins(blast_tab, ref_att, genomes_dir):
 
     # store the data as a csv file
     os.chdir(os.path.dirname(ref_att))
-    with open('pipolins.csv', 'w') as ouf:
-        print(','.join(Pipolin._fields), file=ouf)
-        for i_p, _ in enumerate(pipolins):
-            words = ['None' if i is None else str(i) for i in pipolins[i]]
-            print(','.join(words), file=ouf)
+    save_as_csv(Pipolin, pipolins)
 
 
 if __name__ == '__main__':
