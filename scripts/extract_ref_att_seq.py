@@ -5,7 +5,7 @@ import os
 import click
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-from scripts.utilities import CONTEXT_SETTINGS
+from utilities import CONTEXT_SETTINGS
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

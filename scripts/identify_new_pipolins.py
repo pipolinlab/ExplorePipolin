@@ -47,20 +47,24 @@ def identify_new_pipolins(ref_polb, ref_att, contigs_dir):
 
         polbs_regions = []
         for node in polbs_nodes_ordered:
-            polbs_regions.extend(polbs[node])
+            polbs_regions.extend(list((node, polbs[node][i]) for i in range(len(polbs[node]))))
         atts_regions = []
         for node in atts_nodes_ordered:
-            atts_regions.extend(atts[node])
+            atts_regions.extend(list((node, atts[node][i]) for i in range(len(atts[node]))))
 
-        # TODO: nodes are left empty!!!
-        pipolins[i_p] = pipolins[i_p]._replace(polB1_s=polbs_regions[0][0], polB1_e=polbs_regions[0][1],
-                                               att1_s=atts_regions[0][0], att1_e=atts_regions[0][1])
+        pipolins[i_p] = pipolins[i_p]._replace(polB1_s=polbs_regions[0][1][0], polB1_e=polbs_regions[0][1][1],
+                                               polB1_node=polbs_regions[0][0],
+                                               att1_s=atts_regions[0][1][0], att1_e=atts_regions[0][1][1],
+                                               att1_node=atts_regions[0][0])
         if len(polbs_regions) == 2:
-            pipolins[i_p] = pipolins[i_p]._replace(polB2_s=polbs_regions[1][0], polB2_e=polbs_regions[1][1])
+            pipolins[i_p] = pipolins[i_p]._replace(polB2_s=polbs_regions[1][1][0], polB2_e=polbs_regions[1][1][1],
+                                                   polB2_node=polbs_regions[1][0])
         if len(atts_regions) > 1:
-            pipolins[i_p] = pipolins[i_p]._replace(att2_s=atts_regions[1][0], att2_e=atts_regions[1][1])
+            pipolins[i_p] = pipolins[i_p]._replace(att2_s=atts_regions[1][1][0], att2_e=atts_regions[1][1][1],
+                                                   att2_node=atts_regions[1][0])
         if len(atts_regions) > 2:
-            pipolins[i_p] = pipolins[i_p]._replace(att2_s=atts_regions[2][0], att2_e=atts_regions[2][1])
+            pipolins[i_p] = pipolins[i_p]._replace(att3_s=atts_regions[2][1][0], att3_e=atts_regions[2][1][1],
+                                                   att3_node=atts_regions[2][0])
 
     # store the data as a csv file
     save_as_csv(Pipolin, pipolins)

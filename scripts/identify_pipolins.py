@@ -33,7 +33,7 @@ def identify_pipolins(blast_tab, ref_att, genomes_dir):
 
     pipolins.append(Pipolin(id='NZ_JNMI01000006.1', polB1_s=80192, polB1_e=82792))
 
-    blast_genomes_against_seq(genomes_dir, ref_att)
+    blast_genomes_against_seq(genomes_dir, ref_att, 'att_blast')
     for i_p, pipolin in enumerate(pipolins):
         atts = get_hit_positions_by_id(f'./att_blast/{pipolin.id}_hits.txt')[pipolin.id]
         # check that pi-polB is within the atts
