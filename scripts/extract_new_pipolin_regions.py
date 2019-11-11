@@ -30,6 +30,7 @@ def extract_pipolin_regions(csv_file, contigs_dir):
 
     for _, row in pipolins.iterrows():
         # TODO: the assumption will be: it cannot be less than 50000 bp between pi-polB and atts
+        # For example, make a combinations of two to compare all the nodes and identify those that are identical
         records = []
         if row['polB1_node'] != row['att1_node']:
             records.append(SeqRecord(seq=contig_seqs[row['polB1_node']].seq,
