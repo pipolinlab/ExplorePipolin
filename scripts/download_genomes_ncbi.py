@@ -4,8 +4,8 @@
 import os
 import click
 from Bio import SearchIO
-from scripts.utilities import CONTEXT_SETTINGS
-from scripts.utilities import ncbi_acc_download
+from utilities import CONTEXT_SETTINGS
+from utilities import ncbi_acc_download
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
