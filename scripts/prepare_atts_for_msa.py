@@ -65,7 +65,7 @@ def prepare_atts_for_msa(ncbi_csv, genomes_dir, new_csv, contigs_dir, out_dir):
         if att.node:
             contig_seq = SeqIO.to_dict(SeqIO.parse(os.path.join(contigs_dir, f'{att.id}.fa'), 'fasta'))[att.node]
             record = SeqRecord(seq=contig_seq.seq[int(att.att_s) - 10:int(att.att_e) + 10],
-                               id=f'{att.id} {att.node}', description='')   # TODO: add node to the name!
+                               id=f'{att.id}', description=f'{att.node}')
         else:
             genome_seq = SeqIO.read(os.path.join(genomes_dir, f'{att.id}.fa'), 'fasta')
             record = SeqRecord(seq=genome_seq.seq[int(att.att_s) - 10:int(att.att_e) + 10],
@@ -78,6 +78,7 @@ def prepare_atts_for_msa(ncbi_csv, genomes_dir, new_csv, contigs_dir, out_dir):
 
     # TODO: after extracting att sequences they need to be sorted somehow as attL and attR
 
+    # TODO: use Bio.Align.PairwiseAligner
 
 
 if __name__ == '__main__':
