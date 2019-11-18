@@ -11,7 +11,7 @@ from utilities import CONTEXT_SETTINGS
 @click.argument('annot-dir', type=click.Path(exists=True))
 def get_all_pipolB_seqs(annot_dir):
     """
-    TODO
+    TODO: add a parameter to specify which sequences you need (amino acid or nucleotide)
     """
     os.chdir(os.path.dirname(annot_dir))
     faa_files = [file for file in os.listdir(annot_dir) if file.endswith('.faa')]
