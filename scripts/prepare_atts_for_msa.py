@@ -5,8 +5,10 @@ import os
 import click
 import pandas
 from collections import namedtuple
-from Bio.SeqRecord import SeqRecord
+from Bio import Seq
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from Bio.Align import PairwiseAligner
 from utilities import CONTEXT_SETTINGS
 from utilities import save_as_csv
 
@@ -75,10 +77,7 @@ def prepare_atts_for_msa(ncbi_csv, genomes_dir, new_csv, contigs_dir, out_dir):
     save_as_csv(AttRegions, all_att_regions, os.path.join(out_dir, 'atts.csv'))
     with open(os.path.join(out_dir, 'att_sequences.fa'), 'w') as ouf:
         SeqIO.write(att_records, ouf, 'fasta')
-
-    # TODO: after extracting att sequences they need to be sorted somehow as attL and attR
-
-    # TODO: use Bio.Align.PairwiseAligner
+    # TODO: Do all the att sequences reliable?
 
 
 if __name__ == '__main__':
