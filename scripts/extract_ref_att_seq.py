@@ -10,7 +10,8 @@ from utilities import CONTEXT_SETTINGS
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('reference', type=click.Path(exists=True))
-def extract_ref_att_seq(reference):
+@click.argument('out-dir', type=click.Path(exists=True))
+def extract_ref_att_seq(reference, out_dir):
     """
     This is a stupid script to generate ref_att.fa file, which will be used to roughly
     estimate pipolin region boundaries. In future, it will be replaced by att profile.
@@ -19,8 +20,7 @@ def extract_ref_att_seq(reference):
     ref_seq = SeqIO.read(reference, 'fasta')
     att_record = SeqRecord(seq=ref_seq.seq[64241: 64373],
                            id='att-site', description='')
-    os.chdir(os.path.dirname(reference))
-    with open('ref_att.fa', 'w') as ouf:
+    with open(os.path.join(out_dir, 'ref_att.fa'), 'w') as ouf:
         SeqIO.write(att_record, ouf,'fasta')
 
 

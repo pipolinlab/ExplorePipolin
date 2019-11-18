@@ -26,7 +26,7 @@ def get_all_pipolB_seqs(annot_dir, out_dir, ext):
         if seq.description == f'{seq.id} Primer-independent DNA polymerase PolB':
             pipolBs.append(seq)
 
-    with open(f'{os.path.join(out_dir, f"pipolBs.{ext}")}', 'w') as ouf:
+    with open(os.path.join(out_dir, f'pipolBs.{ext}'), 'w') as ouf:
         SeqIO.write(pipolBs, ouf, 'fasta')
 
 

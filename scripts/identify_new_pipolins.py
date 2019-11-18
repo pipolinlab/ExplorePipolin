@@ -14,7 +14,8 @@ from utilities import save_as_csv
 @click.argument('ref-polb', type=click.Path(exists=True))
 @click.argument('ref-att', type=click.Path(exists=True))
 @click.argument('contigs-dir', type=click.Path(exists=True))
-def identify_new_pipolins(ref_polb, ref_att, contigs_dir):
+@click.argument('out-dir', type=click.Path(exists=True))
+def identify_new_pipolins(ref_polb, ref_att, contigs_dir, out_dir):
     """
     TODO
     """
@@ -67,7 +68,7 @@ def identify_new_pipolins(ref_polb, ref_att, contigs_dir):
                                                    att3_node=atts_regions[2][0])
 
     # store the data as a csv file
-    save_as_csv(Pipolin, pipolins)
+    save_as_csv(Pipolin, pipolins, out_dir)
 
 
 if __name__ == '__main__':
