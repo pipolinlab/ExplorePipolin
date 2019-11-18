@@ -5,10 +5,8 @@ import os
 import click
 import pandas
 from collections import namedtuple
-from Bio import Seq
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-from Bio.Align import PairwiseAligner
 from utilities import CONTEXT_SETTINGS
 from utilities import save_as_csv
 
