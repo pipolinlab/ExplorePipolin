@@ -13,8 +13,8 @@ from utilities import save_as_csv
 @click.argument('blast-tab', type=click.Path(exists=True))
 @click.argument('ref-att', type=click.Path(exists=True))
 @click.argument('genomes-dir', type=click.Path(exists=True))
-@click.argument('out-dir', type=click.Path(exists=True))
-def identify_pipolins(blast_tab, ref_att, genomes_dir, out_dir):
+@click.argument('out-file', type=click.Path(exists=True))
+def identify_pipolins(blast_tab, ref_att, genomes_dir, out_file):
     """
     The script takes a BLAST_TAB tabular file to extract imprecise coordinates of pi-polB for
     each genome. Then it runs blast with each genome in GENOMES_DIR against ref_att.fa to
@@ -47,7 +47,7 @@ def identify_pipolins(blast_tab, ref_att, genomes_dir, out_dir):
                     pipolins[i_p] = pipolins[i_p]._replace(att3_s=atts[2][0], att3_e=atts[2][1])
 
     # store the data as a csv file
-    save_as_csv(Pipolin, pipolins, out_dir)
+    save_as_csv(Pipolin, pipolins, out_file)
 
 
 if __name__ == '__main__':

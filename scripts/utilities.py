@@ -35,8 +35,8 @@ def get_hit_positions_by_id(blast_tab):
     return hit_positions_by_id
 
 
-def save_as_csv(Pipolin, pipolins, out_dir):
-    with open(os.path.join(out_dir, 'pipolins.csv'), 'w') as ouf:
+def save_as_csv(Pipolin, pipolins, out_file):
+    with open(out_file, 'w') as ouf:
         print(','.join(Pipolin._fields), file=ouf)
         for i_p, _ in enumerate(pipolins):
             words = ['None' if i is None else str(i) for i in pipolins[i_p]]

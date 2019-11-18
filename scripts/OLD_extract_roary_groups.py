@@ -1,3 +1,5 @@
+# TODO: rewrite the script and rerun the analysis!!!
+
 import os
 from Bio import SeqIO
 
