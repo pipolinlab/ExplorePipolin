@@ -23,7 +23,7 @@ def extract_roary_groups(roary_dir, prokka_dir, out_dir, ext):
         for line in inf:
             group = line.strip().replace('\t', ',').split(sep=',')
             group = [i.replace('"', '') for i in group]  # remove quotation marks from items
-            roary_groups[group[0]] = [group[i] for i in range(14, len(group)-1) if len(group[i]) > 0]
+            roary_groups[group[0]] = [group[i] for i in range(14, len(group)) if len(group[i]) > 0]
 
     files = []
     for file in os.listdir(prokka_dir):
