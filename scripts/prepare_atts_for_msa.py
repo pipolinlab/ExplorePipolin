@@ -8,7 +8,6 @@ from collections import namedtuple
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from utilities import CONTEXT_SETTINGS
-from utilities import save_as_csv
 
 
 FIELDS = ('id', 'node', 'att_s', 'att_e')
@@ -60,7 +59,7 @@ def prepare_atts_for_msa(ncbi_csv, genomes_dir, new_csv, contigs_dir, out_dir):
     print(f'> Maximum att length is {max(lengths)}')
     print(f'> Minimum att length is {min(lengths)}')
 
-    att_records = []
+    att_records = {}
     for att in all_att_regions:
         if att.node:
             contig_seq = SeqIO.to_dict(SeqIO.parse(os.path.join(contigs_dir, f'{att.id}.fa'), 'fasta'))[att.node]
@@ -70,12 +69,18 @@ def prepare_atts_for_msa(ncbi_csv, genomes_dir, new_csv, contigs_dir, out_dir):
             genome_seq = SeqIO.read(os.path.join(genomes_dir, f'{att.id}.fa'), 'fasta')
             record = SeqRecord(seq=genome_seq.seq[int(att.att_s) - 10:int(att.att_e) + 10],
                                id=att.id, description='')
-        att_records.append(record)
+        # make all the ids unique
+        count = 1
+        while True:
+            if f'{att.id}_{count}' not in att_records:
+                record.id = f'{att.id}_{count}'
+                att_records[f'{att.id}_{count}'] = record
+                break
+            else:
+                count += 1
 
-    save_as_csv(AttRegions, all_att_regions, os.path.join(out_dir, 'atts.csv'))
     with open(os.path.join(out_dir, 'att_sequences.fa'), 'w') as ouf:
-        SeqIO.write(att_records, ouf, 'fasta')
-    # TODO: Do all the att sequences reliable?
+        SeqIO.write([att_records[i] for i in att_records], ouf, 'fasta')
 
 
 if __name__ == '__main__':
