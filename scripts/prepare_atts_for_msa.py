@@ -62,13 +62,12 @@ def prepare_atts_for_msa(ncbi_csv, genomes_dir, new_csv, contigs_dir, out_dir):
     att_records = {}
     for att in all_att_regions:
         if att.node:
-            contig_seq = SeqIO.to_dict(SeqIO.parse(os.path.join(contigs_dir, f'{att.id}.fa'), 'fasta'))[att.node]
-            record = SeqRecord(seq=contig_seq.seq[int(att.att_s) - 10:int(att.att_e) + 10],
-                               id=f'{att.id}', description=f'{att.node}')
+            seq = SeqIO.to_dict(SeqIO.parse(os.path.join(contigs_dir, f'{att.id}.fa'), 'fasta'))[att.node]
         else:
-            genome_seq = SeqIO.read(os.path.join(genomes_dir, f'{att.id}.fa'), 'fasta')
-            record = SeqRecord(seq=genome_seq.seq[int(att.att_s) - 10:int(att.att_e) + 10],
-                               id=att.id, description='')
+            seq = SeqIO.read(os.path.join(genomes_dir, f'{att.id}.fa'), 'fasta')
+
+        record = SeqRecord(seq=seq.seq[int(att.att_s) - 50:int(att.att_e) + 50],   # change here!
+                           id=att.id, description='')
         # make all the ids unique
         count = 1
         while True:
