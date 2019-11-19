@@ -47,6 +47,7 @@ def prepare_atts_for_msa(ncbi_csv, genomes_dir, new_csv, contigs_dir, out_dir):
     TODO
     """
     ncbi_pipolins = pandas.read_csv(ncbi_csv, na_values='None')
+    # TODO: try to add all atts, not only surrounding pi-polB !
     ncbi_att_regions = get_att_regions(ncbi_pipolins)
     print(f'Number of atts from NCBI_CSV file is {len(ncbi_att_regions)}')
 
