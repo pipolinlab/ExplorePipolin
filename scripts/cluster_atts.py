@@ -5,6 +5,7 @@ import os
 import click
 from Bio import AlignIO
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
 from Bio.Phylo.TreeConstruction import DistanceCalculator
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
@@ -40,10 +41,12 @@ def cluster_msa(msa, sequences, out_dir):
     seqs = SeqIO.to_dict(SeqIO.parse(sequences, 'fasta'))
     seqs1 = [seqs[name] for name in terminals1]
     seqs2 = [seqs[name] for name in terminals2]
-    with open(os.path.join(out_dir, 'att_type1.fa'), 'w') as ouf:
+    seqs2_rev = [
+        SeqRecord(seq=i.seq.reverse_complement(), id=i.id, name=i.name, description=i.description) for i in seqs2
+    ]
+    unified_seqs = seqs1 + seqs2_rev
+    with open(os.path.join(out_dir, 'att_sequences.unified.fa'), 'w') as ouf:
         SeqIO.write(seqs1, ouf, 'fasta')
-    with open(os.path.join(out_dir, 'att_type2.fa'), 'w') as ouf:
-        SeqIO.write(seqs2, ouf, 'fasta')
 
 
 if __name__ == '__main__':
