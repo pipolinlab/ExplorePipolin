@@ -30,4 +30,5 @@ Atts:
  saved as Pearson FASTA file.
  5. Modified with Jalview: deleted not conserved regions 
  from both ends.
+ 6. ...
  
