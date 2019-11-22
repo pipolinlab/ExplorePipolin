@@ -5,10 +5,21 @@ from Bio import SearchIO
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
-def ncbi_acc_download(ids):
-    for genome_id in ids:
-        # TODO fix local path!
-        subprocess.run(['/home/liubov/.local/bin/ncbi-acc-download', '-F', 'fasta', genome_id])
+def check_dir(out_dir):
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+    else:
+        try:
+            len(os.listdir(out_dir)) == 0
+        except RuntimeError:
+            print('The specified output directory is not empty!\nExiting!')
+
+
+def ncbi_acc_download(acc_ids):
+    for acc_id in acc_ids:
+        print(f'Downloading {acc_id}...')
+        # TODO: fix local path!
+        subprocess.run(['/home/liubov/.local/bin/ncbi-acc-download', '-F', 'fasta', acc_id])
 
 
 def blast_genomes_against_seq(genomes_dir, seq, output_dir):
