@@ -1,14 +1,16 @@
 # ExplorePipolin
 
+To extract the subsequence from a genome 
+(for example, ATT region):
+ * `get_subsequence.py`
+
 NCBI strains analysis:
  * `download_genomes_ncbi.py`
- * `extract_ref_att_seq.py`
  * `identify_pipolins.py`
  * `extract_pipolin_regions.py`
  * `annotate_pipolins.py`
  
 New strains analysis:
- * `extract_ref_att_seq.py`
  * `identify_new_pipolins.py`
  * `extract_new_pipolin_regions.py`
  * `annotate_pipolins.py`

@@ -12,7 +12,7 @@ def check_dir(out_dir):
         try:
             len(os.listdir(out_dir)) == 0
         except RuntimeError:
-            print('The specified output directory is not empty!\nExiting!')
+            print('The specified output directory is not empty!')
 
 
 def ncbi_acc_download(acc_ids):
