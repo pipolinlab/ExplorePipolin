@@ -13,10 +13,11 @@ from utilities import CONTEXT_SETTINGS
 @click.argument('start', type=click.INT)
 @click.argument('end', type=click.INT)
 @click.option('--rev', is_flag=True, help='Is the subsequence on the minus strand?')
+# TODO: delete --rev, check instead if the start is greater than the end, then reverse-complement
 @click.option('--contig-name', help='If IN_FASTA is not a complete genome, but rather several contigs,'
                                     ' specify the contig name.')
 @click.argument('out-fasta')
-def extract_ref_att_seq(in_fasta, start, end, rev, contig_name, out_fasta):
+def get_subsequence(in_fasta, start, end, rev, contig_name, out_fasta):
     """
     This script creates an OUT_FASTA file with the subsequence that you wish to extract
     from IN_FASTA file (a genome).
@@ -33,4 +34,4 @@ def extract_ref_att_seq(in_fasta, start, end, rev, contig_name, out_fasta):
 
 
 if __name__ == '__main__':
-    extract_ref_att_seq()
+    get_subsequence()
