@@ -14,11 +14,6 @@ Pipolin = namedtuple('Pipolin', fields, defaults=(None, [], []))
 def check_dir(out_dir):
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
-    else:
-        try:
-            len(os.listdir(out_dir)) == 0
-        except RuntimeError:
-            print('The specified output directory is not empty!')
 
 
 def ncbi_acc_download(acc_ids):
