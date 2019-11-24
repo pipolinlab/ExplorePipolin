@@ -5,10 +5,10 @@ from Bio import SearchIO
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-FEATURE = namedtuple('Feature', ('start', 'end', 'node'))
-FIELDS = ('strain_id', 'polymerases', 'atts')
+Feature = namedtuple('Feature', ('start', 'end', 'node'))
+fields = ('strain_id', 'polymerases', 'atts')
 # create a namedtuple object to store the info
-PIPOLIN = namedtuple('Pipolin', FIELDS, defaults=(None, [], []))
+Pipolin = namedtuple('Pipolin', fields, defaults=(None, [], []))
 
 
 def check_dir(out_dir):

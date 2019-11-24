@@ -8,26 +8,26 @@ from utilities import CONTEXT_SETTINGS
 from utilities import blast_genomes_against_seq
 from utilities import check_dir
 from utilities import read_blasttab
-from utilities import FEATURE, PIPOLIN
+from utilities import Feature, Pipolin
 
 
 def create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path):
     pipolins = []
 
     for genome in os.listdir(genomes_dir):
-        pipolins.append(PIPOLIN(strain_id=genome[:-3]))
+        pipolins.append(Pipolin(strain_id=genome[:-3]))
     for i_p, pipolin in enumerate(pipolins):
         polbs = read_blasttab(os.path.join(polbs_blast_path, f'{pipolin.strain_id}_fmt7.txt'))
         atts = read_blasttab(os.path.join(atts_blast_path, f'{pipolin.strain_id}_fmt7.txt'))
 
         for entry in polbs:
             for hit in entry:
-                polb = FEATURE(start=hit.hit_start, end=hit.hit_end, node=entry.id)
+                polb = Feature(start=hit.hit_start, end=hit.hit_end, node=entry.id)
                 pipolins[i_p].polymerases.append(polb)
 
         for entry in atts:
             for hit in entry:
-                att = FEATURE(start=hit.hit_start, end=hit.hit_end, node=entry.id)
+                att = Feature(start=hit.hit_start, end=hit.hit_end, node=entry.id)
                 pipolins[i_p].atts.append(att)
 
     return pipolins
@@ -48,9 +48,8 @@ def identify_pipolins_roughly(ref_polb, ref_att, genomes_dir, out_dir):
     check_dir(out_dir)
     polbs_blast_path = os.path.join(out_dir, 'polb_blast')
     atts_blast_path = os.path.join(out_dir, 'att_blast')
-    blast_genomes_against_seq(genomes_dir, ref_polb, polbs_blast_path)
-    blast_genomes_against_seq(genomes_dir, ref_att, atts_blast_path)
-
+    # blast_genomes_against_seq(genomes_dir, ref_polb, polbs_blast_path)
+    # blast_genomes_against_seq(genomes_dir, ref_att, atts_blast_path)
 
     pipolins = create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path)
     # put pipolins in the shelve
