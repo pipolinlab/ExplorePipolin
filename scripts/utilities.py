@@ -1,8 +1,14 @@
 import os
 import subprocess
+from collections import namedtuple
 from Bio import SearchIO
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+FEATURE = namedtuple('Feature', ('start', 'end', 'node'))
+FIELDS = ('strain_id', 'polymerases', 'atts')
+# create a namedtuple object to store the info
+PIPOLIN = namedtuple('Pipolin', FIELDS, defaults=(None, [], []))
 
 
 def check_dir(out_dir):
@@ -38,6 +44,7 @@ def read_blasttab(blast_tab):
 
 
 def save_as_csv(Pipolin, pipolins, out_file):
+    # TODO: rewrite this!
     with open(out_file, 'w') as ouf:
         print(','.join(Pipolin._fields), file=ouf)
         for i_p, _ in enumerate(pipolins):

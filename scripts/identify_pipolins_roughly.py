@@ -1,33 +1,36 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 
-import click
 import os
+import click
+import shelve
 from utilities import CONTEXT_SETTINGS
 from utilities import blast_genomes_against_seq
 from utilities import check_dir
 from utilities import read_blasttab
+from utilities import FEATURE, PIPOLIN
 
 
-class Feature:
-    def __init__(self, start, end, node):
-        self.start = start
-        self.end = end
-        self.node = node
+def create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path):
+    pipolins = []
 
+    for genome in os.listdir(genomes_dir):
+        pipolins.append(PIPOLIN(strain_id=genome[:-3]))
+    for i_p, pipolin in enumerate(pipolins):
+        polbs = read_blasttab(os.path.join(polbs_blast_path, f'{pipolin.strain_id}_fmt7.txt'))
+        atts = read_blasttab(os.path.join(atts_blast_path, f'{pipolin.strain_id}_fmt7.txt'))
 
-class Pipolin:
-    def __init__(self, strain_id):
-        self.strain_id = strain_id
+        for entry in polbs:
+            for hit in entry:
+                polb = FEATURE(start=hit.hit_start, end=hit.hit_end, node=entry.id)
+                pipolins[i_p].polymerases.append(polb)
 
-    atts = []
-    polbs = []
+        for entry in atts:
+            for hit in entry:
+                att = FEATURE(start=hit.hit_start, end=hit.hit_end, node=entry.id)
+                pipolins[i_p].atts.append(att)
 
-    def add_att(self, att):
-        self.atts.append(att)
-
-    def add_polb(self, polb):
-        self.polbs.append(polb)
+    return pipolins
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -41,28 +44,20 @@ def identify_pipolins_roughly(ref_polb, ref_att, genomes_dir, out_dir):
     If there are several contigs in the genome, each contig should have unique name.
     If OUT_DIR exists, it should be empty.
     """
+
     check_dir(out_dir)
     polbs_blast_path = os.path.join(out_dir, 'polb_blast')
     atts_blast_path = os.path.join(out_dir, 'att_blast')
     blast_genomes_against_seq(genomes_dir, ref_polb, polbs_blast_path)
     blast_genomes_against_seq(genomes_dir, ref_att, atts_blast_path)
 
-    pipolins = {}
-    for file in os.listdir(genomes_dir):
-        pipolins[file[:-3]] = Pipolin(file[:-3])
 
-    for pipolin in pipolins:
-        polbs = read_blasttab(os.path.join(polbs_blast_path, f'{pipolin}_fmt7.txt'))
-        atts = read_blasttab(os.path.join(atts_blast_path, f'{pipolin}_fmt7.txt'))
-
-        for entry in polbs:
-            for hit in entry:
-                pipolins[pipolin].add_polb(Feature(hit.hit_start, hit.hit_end, entry.id))
-
-        for entry in atts:
-            for hit in entry:
-                pipolins[pipolin].add_att(Feature(hit.hit_start, hit.hit_end, entry.id))
-        print(pipolins[pipolin])
+    pipolins = create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path)
+    # put pipolins in the shelve
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    shelve_db = shelve.open(os.path.join(os.path.dirname(script_dir), 'data', 'shelve'))
+    shelve_db['pipolins'] = pipolins
+    shelve_db.close()
 
 
 if __name__ == '__main__':
