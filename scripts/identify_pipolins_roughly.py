@@ -53,8 +53,7 @@ def identify_pipolins_roughly(ref_polb, ref_att, genomes_dir, out_dir):
 
     pipolins = create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path)
     # put pipolins in the shelve
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    shelve_db = shelve.open(os.path.join(os.path.dirname(script_dir), 'data', 'shelve'))
+    shelve_db = shelve.open(os.path.join(out_dir, 'shelve'))
     shelve_db['pipolins'] = pipolins
     shelve_db.close()
 
