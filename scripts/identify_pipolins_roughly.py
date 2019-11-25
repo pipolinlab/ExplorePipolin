@@ -44,7 +44,6 @@ def identify_pipolins_roughly(ref_polb, ref_att, genomes_dir, out_dir):
     If there are several contigs in the genome, each contig should have unique name.
     If OUT_DIR exists, it should be empty.
     """
-
     check_dir(out_dir)
     polbs_blast_path = os.path.join(out_dir, 'polb_blast')
     atts_blast_path = os.path.join(out_dir, 'att_blast')

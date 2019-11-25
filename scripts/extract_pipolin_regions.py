@@ -37,10 +37,11 @@ def extract_pipolin_regions(shelve_file, genomes_dir, out_dir):
                                 id=pipolin.strain_id, description='')
         else:
             # TODO: restrict contig length if it is too long!
-            contings = pipolin.get_contigs()
-            records = [genomes[pipolin.strain_id][contig] for contig in contings]
-        with open(os.path.join(out_dir, f'{pipolin.strain_id}-pipolin.fa'), 'w') as ouf:
-            SeqIO.write(records, ouf, 'fasta')
+            contings_bounds = pipolin.get_contigs_with_bounds()
+            print(contings_bounds)
+        #     records = [genomes[pipolin.strain_id][contig] for contig in contings]
+        # with open(os.path.join(out_dir, f'{pipolin.strain_id}-pipolin.fa'), 'w') as ouf:
+        #     SeqIO.write(records, ouf, 'fasta')
 
 
 if __name__ == '__main__':

@@ -1,4 +1,6 @@
 import os
+from typing import Sequence
+from itertools import groupby
 import subprocess
 from Bio import SearchIO
 
@@ -7,9 +9,9 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 class Feature:
     def __init__(self, start, end, node):
-        self.start = start
-        self.end = end
-        self.node = node
+        self.start: int = start
+        self.end: int = end
+        self.node: str = node
 
     def normalize(self):
         if self.start > self.end:
@@ -20,29 +22,104 @@ class Feature:
 
 class Pipolin:
     def __init__(self, strain_id):
-        self.strain_id = strain_id
-        self.polymerases = []
-        self.atts = []
+        self.strain_id: str = strain_id
+        self.polymerases: Sequence[Feature] = []
+        self.atts: Sequence[Feature] = []
 
     def get_pipolin_bounds(self):
         if not self.is_complete_genome():
             raise AssertionError('Should be complete!')
+
         polymerases = sorted((i.normalize() for i in self.polymerases), key=lambda p: p.start)
         atts = sorted((i.normalize() for i in self.atts), key=lambda p: p.start)
 
         if not self._is_polymerase_inside(atts, polymerases):
             raise AssertionError('The polymerases are not within att bounds!')
 
-        return atts[0].start, atts[-1].end
+        if polymerases[-1].end < atts[1].end:
+            return atts[0].start, atts[1].end
+        else:
+            if len(atts) > 3:
+                raise AssertionError('There are more than 3 atts!')
+            return atts[1].start, atts[2].end
 
-    def _is_polymerase_inside(self, atts, polymerases):
-        return atts[0].start < polymerases[0].start and polymerases[0].end < atts[-1].end
+    @staticmethod
+    def _is_polymerase_inside(atts, polymerases):
+        return atts[0].start < polymerases[0].start and polymerases[-1].end < atts[-1].end
 
-    def get_contigs(self):
-        # TODO: restrict contig length if it is too long!
-        contigs = set(i.node for i in self.polymerases)
-        contigs.update(i.node for i in self.atts)
-        return contigs
+    @staticmethod
+    def _dict_by_node_normalized(features):
+        return {node: sorted(list(ps), key=lambda p: p.start) for node, ps
+                in groupby((i.normalize() for i in features), key=lambda x: x.node)}
+
+    @classmethod
+    def _add_dangling_atts(cls, atts, things_to_return):
+        for node, features in atts.items():
+            if node not in things_to_return:
+                things_to_return[node] = cls._get_dangling_att(features, node)
+
+    @classmethod
+    def _get_dangling_att(cls, features, node):
+        pos_left = features[0].start
+        left = pos_left if pos_left > 0 else 0
+        pos_right = features[-1].end
+        right = pos_right if pos_right < cls._get_contig_length(node) else -1
+        return left, right
+
+    @staticmethod
+    def _get_pipolin_two_atts(atts, polymerases):
+        if Pipolin._is_polymerase_inside(atts, polymerases):
+            return atts[0].start, atts[1].end
+        else:
+            raise AssertionError('The polymerases are not within att bounds!')
+
+    @staticmethod
+    def _get_contig_length(node):
+        return int(node.split(sep='_')[3])
+
+    @staticmethod
+    def _get_pipolin_single_att(att: Feature, polymerases):
+        if att.end < polymerases[0].start:
+            left = att.start
+            pos_right = polymerases[-1].end + 50000
+            right = pos_right if pos_right < Pipolin._get_contig_length(att.node) else -1
+        else:
+            pos_left = polymerases[0].start - 50000
+            left = pos_left if pos_left > 0 else 0
+            right = att.end
+        return left, right
+
+    def get_contigs_with_bounds(self):
+        if self.is_complete_genome():
+            raise AssertionError('This method is for incomplete genomes, but got a complete one!')
+
+        polymerases = self._dict_by_node_normalized(self.polymerases)
+        atts = self._dict_by_node_normalized(self.atts)
+
+        things_to_return = {}
+        for node, features in polymerases.items():
+            self.add_pipolin_for_node(atts, features, node, things_to_return)
+
+        return things_to_return
+
+    def add_pipolin_for_node(self, atts, features, node, things_to_return):
+        if node in atts:
+            if len(atts[node]) == 2:
+                things_to_return[node] = self._get_pipolin_two_atts(atts[node], features)
+            elif len(atts[node]) == 1:
+                things_to_return[node] = self._get_pipolin_single_att(atts[node][0], features)
+            else:
+                raise AssertionError('More than two atts on one contig!')
+        else:
+            things_to_return[node] = self._get_dangling_pol(features, node)
+            self._add_dangling_atts(atts, things_to_return)
+
+    def _get_dangling_pol(self, features, node):
+        pos_left = features[0].start - 50000
+        left = pos_left if pos_left > 0 else 0
+        pos_right = features[-1].end + 50000
+        right = pos_right if pos_right < self._get_contig_length(node) else -1
+        return left, right
 
     def is_complete_genome(self):
         return self.strain_id == self.polymerases[0].node

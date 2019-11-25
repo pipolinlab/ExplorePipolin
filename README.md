@@ -10,9 +10,7 @@ To extract the subsequence from a genome:
 the whole analysis:
  * `download_genomes_ncbi.py`
  * `identify_pipolins_roughly.py` 
- (using reference `att.fa` sequence)
- * TODO: `identify_pipolins.py`
- (using ATTs, predicted by HMMER)
+ (using reference `att.fa` and `pi-polB.fa` sequences)
  * `extract_pipolin_regions.py`
  * `annotate_pipolins.py`
  * ... 
