@@ -1,23 +1,21 @@
 # ExplorePipolin
 
-To extract the subsequence from a genome 
-(for example, ATT region):
+To extract the subsequence from a genome:
  * `get_subsequence.py`
  
  `$ get_subsequence.py genomes/NZ_JNMI01000006.1.fa 80191 82792 pi-polB.fa`
  
  `$ get_subsequence.py genomes/NZ_JNMI01000006.1.fa 64241 64373 att.fa`
 
-NCBI strains analysis:
+the whole analysis:
  * `download_genomes_ncbi.py`
- * `identify_pipolins.py`
+ * `identify_pipolins_roughly.py` 
+ (using reference `att.fa` sequence)
+ * TODO: `identify_pipolins.py`
+ (using ATTs, predicted by HMMER)
  * `extract_pipolin_regions.py`
  * `annotate_pipolins.py`
- 
-New strains analysis:
- * `identify_new_pipolins.py`
- * `extract_new_pipolin_regions.py`
- * `annotate_pipolins.py`
+ * ... 
 
 To get the sequences from roary groups:
  * `extract_roary_groups.py`
@@ -37,5 +35,5 @@ ATTs:
  5. Modified with Jalview: deleted not conserved regions 
  from both ends.
  6. Created HMM profile with `hmmbuild` and `hmmpress`.
- 7. `predict_atts_with_nhmmer.py`
+ 7. `predict_atts_with_hmmer.py`
  

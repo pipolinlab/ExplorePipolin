@@ -9,8 +9,9 @@ from utilities import CONTEXT_SETTINGS
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('pipolins-dir', type=click.Path(exists=True))
-@click.argument('out-dir', type=click.Path(exists=True))
-def annotate_pipolins(pipolins_dir, out_dir):
+@click.argument('proteins', type=click.Path(exists=True))
+@click.argument('out-dir')
+def annotate_pipolins(pipolins_dir, proteins, out_dir):
     """
     TODO
     """
@@ -19,8 +20,9 @@ def annotate_pipolins(pipolins_dir, out_dir):
         print(i_p)
         genome_id = pipolin.split(sep="-")[0]
         subprocess.run(['/home/liubov/repos/prokka/bin/prokka', '--outdir', out_dir,
-                    '--prefix', f'{genome_id}', '--rawproduct', '--cdsrnaolap', '--cpus', '4',   # '--rfam'
-                    '--locustag', f'{genome_id}', os.path.join(pipolins_dir, f'{genome_id}-pipolin.fa')])
+                    '--prefix', f'{genome_id}', '--rawproduct', '--cdsrnaolap', '--cpus', '4',
+                    '--rfam', '--proteins', proteins, '--force',
+                    '--locustag', f'{genome_id}', os.path.join(pipolins_dir, pipolin)])
 
 
 if __name__ == '__main__':

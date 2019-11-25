@@ -39,6 +39,7 @@ class Pipolin:
         return atts[0].start < polymerases[0].start and polymerases[0].end < atts[-1].end
 
     def get_contigs(self):
+        # TODO: restrict contig length if it is too long!
         contigs = set(i.node for i in self.polymerases)
         contigs.update(i.node for i in self.atts)
         return contigs
