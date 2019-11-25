@@ -1,14 +1,50 @@
 import os
 import subprocess
-from collections import namedtuple
 from Bio import SearchIO
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-Feature = namedtuple('Feature', ('start', 'end', 'node'))
-fields = ('strain_id', 'polymerases', 'atts')
-# create a namedtuple object to store the info
-Pipolin = namedtuple('Pipolin', fields, defaults=(None, [], []))
+
+class Feature:
+    def __init__(self, start, end, node):
+        self.start = start
+        self.end = end
+        self.node = node
+
+    def normalize(self):
+        if self.start > self.end:
+            return Feature(self.end, self.start, self.node)
+        else:
+            return self
+
+
+class Pipolin:
+    def __init__(self, strain_id):
+        self.strain_id = strain_id
+        self.polymerases = []
+        self.atts = []
+
+    def get_pipolin_bounds(self):
+        if not self.is_complete_genome():
+            raise AssertionError('Should be complete!')
+        polymerases = sorted((i.normalize() for i in self.polymerases), key=lambda p: p.start)
+        atts = sorted((i.normalize() for i in self.atts), key=lambda p: p.start)
+
+        if not self._is_polymerase_inside(atts, polymerases):
+            raise AssertionError('The polymerases are not within att bounds!')
+
+        return atts[0].start, atts[-1].end
+
+    def _is_polymerase_inside(self, atts, polymerases):
+        return atts[0].start < polymerases[0].start and polymerases[0].end < atts[-1].end
+
+    def get_contigs(self):
+        contigs = set(i.node for i in self.polymerases)
+        contigs.update(i.node for i in self.atts)
+        return contigs
+
+    def is_complete_genome(self):
+        return self.strain_id == self.polymerases[0].node
 
 
 def check_dir(out_dir):

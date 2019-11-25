@@ -3,37 +3,44 @@
 
 import os
 import click
-import pandas
-from Bio.SeqRecord import SeqRecord
+import shelve
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 from utilities import CONTEXT_SETTINGS
+from utilities import Feature, Pipolin
+from utilities import check_dir
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('csv-file', type=click.Path(exists=True))
+@click.argument('shelve-file', type=click.Path(exists=True))
 @click.argument('genomes-dir', type=click.Path(exists=True))
-@click.argument('out-dir', type=click.Path(exists=True))
-def extract_pipolin_regions(csv_file, genomes_dir, out_dir):
+@click.argument('out-dir')
+def extract_pipolin_regions(shelve_file, genomes_dir, out_dir):
     """
-    This script reads the information about atts from the CSV_FILE
-    and creates fasta files with pipolin regions
+    This script retrieves the information about pipolins from SHELVE_FILE
+    and creates FASTA files with pipolin regions for their further annotation.
     """
-    pipolins = pandas.read_csv(csv_file, na_values='None')
+    shelve_db = shelve.open(os.path.splitext(shelve_file)[0])
+    pipolins = shelve_db['pipolins']
+    shelve_db.close()
 
-    genome_seqs = {}
+    # TODO: the code below is a mess, simplify it!
+    genomes = {}
     for file in os.listdir(genomes_dir):
-        genome_seqs.update(SeqIO.to_dict(SeqIO.parse(os.path.join(genomes_dir, file), 'fasta')))
+        genomes[file[:-3]] = SeqIO.to_dict(SeqIO.parse(os.path.join(genomes_dir, file), 'fasta'))
 
-    for _, row in pipolins.iterrows():
-        if not pandas.isna(row['att3_e']):
-            start, end = [int(i) for i in [row['att1_s'], row['att3_e']]]
+    check_dir(out_dir)
+    for pipolin in pipolins:
+        if pipolin.is_complete_genome():
+            bounds = pipolin.get_pipolin_bounds()
+            records = SeqRecord(seq=genomes[pipolin.strain_id][pipolin.strain_id].seq[bounds[0]:bounds[1]],
+                                id=pipolin.strain_id, description='')
         else:
-            start, end = [int(i) for i in [row['att1_s'], row['att2_e']]]
-
-        with open(os.path.join(out_dir, f'{row["id"]}-pipolin.fa'), 'w') as ouf:
-            record = SeqRecord(seq=genome_seqs[row['id']].seq[start - 50:end + 50],
-                               id=row['id'], description='')
-            SeqIO.write(record, ouf, 'fasta')
+            contings = pipolin.get_contigs()
+            records = [genomes[pipolin.strain_id][contig] for contig in contings]
+        print(records)
+        with open(os.path.join(out_dir, f'{pipolin.strain_id}-pipolin.fa'), 'w') as ouf:
+            SeqIO.write(records, ouf, 'fasta')
 
 
 if __name__ == '__main__':
