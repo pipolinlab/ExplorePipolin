@@ -38,7 +38,9 @@ def extract_pipolin_regions(shelve_file, genomes_dir, out_dir):
             records = []
             for node, bounds in contings_bounds.items():
                 sequence = genomes[pipolin.strain_id][node].seq[bounds[0]:bounds[1]]
-                records.append(SeqRecord(seq=sequence, id=node, description=f'{len(sequence)}'))
+                # TODO: fix LOCUS name, too long for contigs!!! (see include_atts_into_annotation.py)
+                new_node_name = f'{node.split(sep="_")[0]}_{node.split(sep="_")[1]}'   # TODO: use node instead
+                records.append(SeqRecord(seq=sequence, id=new_node_name, description=f'{len(sequence)}'))
 
         with open(os.path.join(out_dir, f'{pipolin.strain_id}-pipolin.fa'), 'w') as ouf:
             SeqIO.write(records, ouf, 'fasta')

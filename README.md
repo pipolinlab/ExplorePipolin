@@ -13,7 +13,9 @@ the whole analysis:
  (using reference `att.fa` and `pi-polB.fa` sequences)
  * `extract_pipolin_regions.py`
  * `annotate_pipolins.py`
- * ... 
+ * `create_shelve_with_new_atts.py` 
+ (parse HMMER output for atts)
+ * ...
 
 To get the sequences from roary groups:
  * `extract_roary_groups.py`
