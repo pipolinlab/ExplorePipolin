@@ -3,13 +3,12 @@
 
 import os
 import click
-import shelve
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from utilities import CONTEXT_SETTINGS
 from utilities import Feature, Pipolin
 from utilities import check_dir
-
+from utilities import read_pipolins_from_shelve
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('shelve-file', type=click.Path(exists=True))
@@ -19,10 +18,9 @@ def extract_pipolin_regions(shelve_file, genomes_dir, out_dir):
     """
     This script retrieves the information about pipolins from SHELVE_FILE
     and creates FASTA files with pipolin regions for their further annotation.
+    ~23 min and 1116 files for 93 genomes.
     """
-    shelve_db = shelve.open(os.path.splitext(shelve_file)[0])
-    pipolins = shelve_db['pipolins']
-    shelve_db.close()
+    pipolins = read_pipolins_from_shelve(shelve_file)
 
     # TODO: the code below is a mess, simplify it!
     genomes = {}

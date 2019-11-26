@@ -22,6 +22,7 @@ def create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path):
 
         for entry in polbs:
             for hit in entry:
+                print(hit.hit_frame)
                 polb = Feature(start=hit.hit_start, end=hit.hit_end, node=entry.id)
                 pipolins[i_p].polymerases.append(polb)
 
@@ -47,8 +48,8 @@ def identify_pipolins_roughly(ref_polb, ref_att, genomes_dir, out_dir):
     check_dir(out_dir)
     polbs_blast_path = os.path.join(out_dir, 'polb_blast')
     atts_blast_path = os.path.join(out_dir, 'att_blast')
-    blast_genomes_against_seq(genomes_dir, ref_polb, polbs_blast_path)
-    blast_genomes_against_seq(genomes_dir, ref_att, atts_blast_path)
+    # blast_genomes_against_seq(genomes_dir, ref_polb, polbs_blast_path)
+    # blast_genomes_against_seq(genomes_dir, ref_att, atts_blast_path)
 
     pipolins = create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path)
     # put pipolins in the shelve

@@ -1,5 +1,6 @@
 import os
-from typing import Sequence
+import shelve
+from typing import Sequence, MutableSequence
 from itertools import groupby
 import subprocess
 from Bio import SearchIO
@@ -14,6 +15,7 @@ class Feature:
         self.node: str = node
 
     def normalize(self):
+        # TODO: doesn't work as there is no info about direction! Do not use 'blast-tab'!
         if self.start > self.end:
             return Feature(self.end, self.start, self.node)
         else:
@@ -23,8 +25,8 @@ class Feature:
 class Pipolin:
     def __init__(self, strain_id):
         self.strain_id: str = strain_id
-        self.polymerases: Sequence[Feature] = []
-        self.atts: Sequence[Feature] = []
+        self.polymerases: MutableSequence[Feature] = []
+        self.atts: MutableSequence[Feature] = []
 
     def get_pipolin_bounds(self):
         if not self.is_complete_genome():
@@ -146,6 +148,13 @@ def blast_genomes_against_seq(genomes_dir, seq, output_dir):
 
 def read_blasttab(blast_tab):
     return SearchIO.read(blast_tab, 'blast-tab', comments=True)
+
+
+def read_pipolins_from_shelve(shelve_file):
+    shelve_db = shelve.open(os.path.splitext(shelve_file)[0])
+    pipolins = shelve_db['pipolins']
+    shelve_db.close()
+    return pipolins
 
 
 def save_as_csv(Pipolin, pipolins, out_file):
