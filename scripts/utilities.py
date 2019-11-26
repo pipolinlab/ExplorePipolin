@@ -150,6 +150,12 @@ def read_blasttab(blast_tab):
     return SearchIO.read(blast_tab, 'blast-tab', comments=True)
 
 
+def save_pipolins_to_shelve(out_file, pipolins):
+    shelve_db = shelve.open(os.path.splitext(out_file)[0])
+    shelve_db['pipolins'] = pipolins
+    shelve_db.close()
+
+
 def read_pipolins_from_shelve(shelve_file):
     shelve_db = shelve.open(os.path.splitext(shelve_file)[0])
     pipolins = shelve_db['pipolins']

@@ -25,10 +25,10 @@ ATTs:
  The output format -- Pearson FASTA, otherwise some
  sequence names will be truncated.
  It looked like there were two different types of ATTs.
- 3. Clustered the ATTs using the obtained MSA: `cluster_atts.py`.
+ 3. TODO: DELETE. Clustered the ATTs using the obtained MSA: `cluster_atts.py`.
  Reverse-complement the sequences in one of the clusters and 
  save as a new FASTA file.
- 4. Built a new MSA with "unified" ATTs (MAFFT), 
+ 4. TODO: DELETE. Built a new MSA with "unified" ATTs (MAFFT), 
  saved as Pearson FASTA file.
  5. Modified with Jalview: deleted not conserved regions 
  from both ends.

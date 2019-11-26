@@ -3,12 +3,12 @@
 
 import os
 import click
-import shelve
 from utilities import CONTEXT_SETTINGS
 from utilities import blast_genomes_against_seq
 from utilities import check_dir
 from utilities import read_blasttab
 from utilities import Feature, Pipolin
+from utilities import save_pipolins_to_shelve
 
 
 def create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path):
@@ -48,14 +48,12 @@ def identify_pipolins_roughly(ref_polb, ref_att, genomes_dir, out_dir):
     check_dir(out_dir)
     polbs_blast_path = os.path.join(out_dir, 'polb_blast')
     atts_blast_path = os.path.join(out_dir, 'att_blast')
-    # blast_genomes_against_seq(genomes_dir, ref_polb, polbs_blast_path)
-    # blast_genomes_against_seq(genomes_dir, ref_att, atts_blast_path)
+    blast_genomes_against_seq(genomes_dir, ref_polb, polbs_blast_path)
+    blast_genomes_against_seq(genomes_dir, ref_att, atts_blast_path)
 
     pipolins = create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path)
-    # put pipolins in the shelve
-    shelve_db = shelve.open(os.path.join(out_dir, 'shelve'))
-    shelve_db['pipolins'] = pipolins
-    shelve_db.close()
+    out_file = os.path.join(out_dir, 'shelve.db')
+    save_pipolins_to_shelve(out_file, pipolins)
 
 
 if __name__ == '__main__':
