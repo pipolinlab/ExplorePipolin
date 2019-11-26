@@ -15,7 +15,8 @@ the whole analysis:
  * `annotate_pipolins.py`
  * `create_shelve_with_new_atts.py` 
  (parse HMMER output for atts)
- * ...
+ * `include_atts_into_annotation.py` 
+ TODO: So far, the script includes atts only into GB files. 
 
 To get the sequences from roary groups:
  * `extract_roary_groups.py`
