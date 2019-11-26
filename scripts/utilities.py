@@ -56,19 +56,19 @@ class Pipolin:
     def _add_dangling_atts(cls, atts, things_to_return):
         for node, features in atts.items():
             if node not in things_to_return:
-                things_to_return[node] = cls._get_dangling_att(features, node)
+                things_to_return[node] = cls._get_dangling_feature(features, node)
 
     @classmethod
-    def _get_dangling_att(cls, features, node):
-        pos_left = features[0].start
+    def _get_dangling_feature(cls, features, node):
+        pos_left = features[0].start - 50000
         left = pos_left if pos_left > 0 else 0
-        pos_right = features[-1].end
+        pos_right = features[-1].end + 50000
         right = pos_right if pos_right < cls._get_contig_length(node) else -1
         return left, right
 
-    @staticmethod
-    def _get_pipolin_two_atts(atts, polymerases):
-        if Pipolin._is_polymerase_inside(atts, polymerases):
+    @classmethod
+    def _get_pipolin_two_atts(cls, atts, polymerases):
+        if cls._is_polymerase_inside(atts, polymerases):
             return atts[0].start, atts[1].end
         else:
             raise AssertionError('The polymerases are not within att bounds!')
@@ -77,12 +77,12 @@ class Pipolin:
     def _get_contig_length(node):
         return int(node.split(sep='_')[3])
 
-    @staticmethod
-    def _get_pipolin_single_att(att: Feature, polymerases):
+    @classmethod
+    def _get_pipolin_single_att(cls, att: Feature, polymerases):
         if att.end < polymerases[0].start:
             left = att.start
             pos_right = polymerases[-1].end + 50000
-            right = pos_right if pos_right < Pipolin._get_contig_length(att.node) else -1
+            right = pos_right if pos_right < cls._get_contig_length(att.node) else -1
         else:
             pos_left = polymerases[0].start - 50000
             left = pos_left if pos_left > 0 else 0
@@ -108,18 +108,12 @@ class Pipolin:
                 things_to_return[node] = self._get_pipolin_two_atts(atts[node], features)
             elif len(atts[node]) == 1:
                 things_to_return[node] = self._get_pipolin_single_att(atts[node][0], features)
+                self._add_dangling_atts(atts, things_to_return)
             else:
                 raise AssertionError('More than two atts on one contig!')
         else:
-            things_to_return[node] = self._get_dangling_pol(features, node)
+            things_to_return[node] = self._get_dangling_feature(features, node)
             self._add_dangling_atts(atts, things_to_return)
-
-    def _get_dangling_pol(self, features, node):
-        pos_left = features[0].start - 50000
-        left = pos_left if pos_left > 0 else 0
-        pos_right = features[-1].end + 50000
-        right = pos_right if pos_right < self._get_contig_length(node) else -1
-        return left, right
 
     def is_complete_genome(self):
         return self.strain_id == self.polymerases[0].node
