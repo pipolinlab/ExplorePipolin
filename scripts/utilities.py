@@ -37,11 +37,11 @@ class Pipolin:
             raise AssertionError('The polymerases are not within att bounds!')
 
         if polymerases[-1].end < atts[1].end:
-            return atts[0].start, atts[1].end
+            return atts[0].start - 50, atts[1].end + 50
         else:
             if len(atts) > 3:
                 raise AssertionError('There are more than 3 atts!')
-            return atts[1].start, atts[2].end
+            return atts[1].start - 50, atts[2].end + 50
 
     @staticmethod
     def _is_polymerase_inside(atts, polymerases):
@@ -69,7 +69,7 @@ class Pipolin:
     @classmethod
     def _get_pipolin_two_atts(cls, atts, polymerases):
         if cls._is_polymerase_inside(atts, polymerases):
-            return atts[0].start, atts[1].end
+            return atts[0].start - 50, atts[1].end + 50
         else:
             raise AssertionError('The polymerases are not within att bounds!')
 
@@ -80,16 +80,18 @@ class Pipolin:
     @classmethod
     def _get_pipolin_single_att(cls, att: Feature, polymerases):
         if att.end < polymerases[0].start:
-            left = att.start
+            left = att.start - 50
             pos_right = polymerases[-1].end + 50000
             right = pos_right if pos_right < cls._get_contig_length(att.node) else -1
         else:
             pos_left = polymerases[0].start - 50000
             left = pos_left if pos_left > 0 else 0
-            right = att.end
+            right = att.end + 50
         return left, right
 
     def get_contigs_with_bounds(self):
+        # TODO: check boarders when +/-50 nt !
+        # TODO: check indexes carefully: 0-based and 1-based !!!
         if self.is_complete_genome():
             raise AssertionError('This method is for incomplete genomes, but got a complete one!')
 

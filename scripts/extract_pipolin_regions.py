@@ -33,15 +33,17 @@ def extract_pipolin_regions(shelve_file, genomes_dir, out_dir):
     for pipolin in pipolins:
         if pipolin.is_complete_genome():
             bounds = pipolin.get_pipolin_bounds()
-            records = SeqRecord(seq=genomes[pipolin.strain_id][pipolin.strain_id].seq[bounds[0] - 50:bounds[1] + 50],
-                                id=pipolin.strain_id, description='')
+            sequence = genomes[pipolin.strain_id][pipolin.strain_id].seq[bounds[0]:bounds[1]]
+            records = SeqRecord(seq=sequence, id=pipolin.strain_id, description=f'{len(sequence)}')
         else:
-            # TODO: restrict contig length if it is too long!
             contings_bounds = pipolin.get_contigs_with_bounds()
-            print(contings_bounds)
-        #     records = [genomes[pipolin.strain_id][contig] for contig in contings]
-        # with open(os.path.join(out_dir, f'{pipolin.strain_id}-pipolin.fa'), 'w') as ouf:
-        #     SeqIO.write(records, ouf, 'fasta')
+            records = []
+            for node, bounds in contings_bounds.items():
+                sequence = genomes[pipolin.strain_id][node].seq[bounds[0]:bounds[1]]
+                records.append(SeqRecord(seq=sequence, id=node, description=f'{len(sequence)}'))
+
+        with open(os.path.join(out_dir, f'{pipolin.strain_id}-pipolin.fa'), 'w') as ouf:
+            SeqIO.write(records, ouf, 'fasta')
 
 
 if __name__ == '__main__':
