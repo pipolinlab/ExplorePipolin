@@ -7,7 +7,7 @@ To extract the subsequence from a genome:
  
  `$ get_subsequence.py genomes/NZ_JNMI01000006.1.fa 64241 64373 att.fa`
 
-the whole analysis:
+The whole analysis:
  * `download_genomes_ncbi.py`
  * `identify_pipolins_roughly.py` 
  (using reference `att.fa` and `pi-polB.fa` sequences)

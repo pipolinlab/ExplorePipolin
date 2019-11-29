@@ -10,6 +10,7 @@ from utilities import Feature, Pipolin
 from utilities import check_dir
 from utilities import read_pipolins_from_shelve
 
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('shelve-file', type=click.Path(exists=True))
 @click.argument('genomes-dir', type=click.Path(exists=True))

@@ -1,5 +1,4 @@
 import csv
-import itertools
 import os
 import shelve
 from typing import Sequence, MutableSequence, Mapping
@@ -137,19 +136,8 @@ def ncbi_acc_download(acc_ids):
         subprocess.run(['/home/liubov/.local/bin/ncbi-acc-download', '-F', 'fasta', acc_id])
 
 
-def blast_genomes_against_seq(genomes_dir, seq, output_dir):
-    check_dir(output_dir)
-    genomes = os.listdir(genomes_dir)
-
-    for genome in genomes:
-        with open(os.path.join(output_dir, f'{genome[:-3]}_fmt7.txt'), 'w') as ouf:
-            subprocess.run(['blastn', '-query', seq,
-                            '-subject', f'{os.path.join(genomes_dir, genome)}',
-                            '-outfmt', '7'], stdout=ouf)
-
-
-def read_blasttab(blast_tab):
-    return SearchIO.read(blast_tab, 'blast-tab', comments=True)
+# def read_blasttab(blast_tab):
+#     return SearchIO.read(blast_tab, 'blast-tab', comments=True)
 
 
 def save_pipolins_to_shelve(out_file, pipolins):
@@ -165,13 +153,13 @@ def read_pipolins_from_shelve(shelve_file):
     return pipolins
 
 
-def save_as_csv(Pipolin, pipolins, out_file):
-    # TODO: rewrite this!
-    with open(out_file, 'w') as ouf:
-        print(','.join(Pipolin._fields), file=ouf)
-        for i_p, _ in enumerate(pipolins):
-            words = ['None' if i is None else str(i) for i in pipolins[i_p]]
-            print(','.join(words), file=ouf)
+# def save_as_csv(Pipolin, pipolins, out_file):
+#     # TODO: rewrite this!
+#     with open(out_file, 'w') as ouf:
+#         print(','.join(Pipolin._fields), file=ouf)
+#         for i_p, _ in enumerate(pipolins):
+#             words = ['None' if i is None else str(i) for i in pipolins[i_p]]
+#             print(','.join(words), file=ouf)
 
 
 def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:

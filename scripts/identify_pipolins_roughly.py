@@ -3,12 +3,33 @@
 
 import os
 import click
+import subprocess
+from Bio import SearchIO
 from utilities import CONTEXT_SETTINGS
-from utilities import blast_genomes_against_seq
 from utilities import check_dir
-from utilities import read_blasttab
 from utilities import Feature, Pipolin
 from utilities import save_pipolins_to_shelve
+
+
+def blast_genomes_against_seq(genomes_dir, seq, output_dir):
+    check_dir(output_dir)
+    genomes = os.listdir(genomes_dir)
+
+    for genome in genomes:
+        with open(os.path.join(output_dir, f'{genome[:-3]}_fmt5.txt'), 'w') as ouf:
+            subprocess.run(['blastn', '-query', seq,
+                            '-subject', f'{os.path.join(genomes_dir, genome)}',
+                            '-outfmt', '5'], stdout=ouf)
+
+
+def read_blastxml(blast_xml):
+    return SearchIO.read(blast_xml, 'blast-xml')
+
+
+def feature_from_blasthit(hit, id):
+    start = hit.hit_start if hit.hit_frame == 1 else hit.hit_end
+    end = hit.hit_end if hit.hit_frame == 1 else hit.hit_start
+    return Feature(start=start, end=end, node=id)
 
 
 def create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path):
@@ -17,19 +38,18 @@ def create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path):
     for genome in os.listdir(genomes_dir):
         pipolins.append(Pipolin(strain_id=genome[:-3]))
     for i_p, pipolin in enumerate(pipolins):
-        polbs = read_blasttab(os.path.join(polbs_blast_path, f'{pipolin.strain_id}_fmt7.txt'))
-        atts = read_blasttab(os.path.join(atts_blast_path, f'{pipolin.strain_id}_fmt7.txt'))
+        polbs = read_blastxml(os.path.join(polbs_blast_path, f'{pipolin.strain_id}_fmt5.txt'))
+        atts = read_blastxml(os.path.join(atts_blast_path, f'{pipolin.strain_id}_fmt5.txt'))
 
         for entry in polbs:
             for hit in entry:
-                print(hit.hit_frame)
-                polb = Feature(start=hit.hit_start, end=hit.hit_end, node=entry.id)
-                pipolins[i_p].polymerases.append(polb)
+                polb_feature = feature_from_blasthit(hit, entry.id)
+                pipolins[i_p].polymerases.append(polb_feature)
 
         for entry in atts:
             for hit in entry:
-                att = Feature(start=hit.hit_start, end=hit.hit_end, node=entry.id)
-                pipolins[i_p].atts.append(att)
+                att_feature = feature_from_blasthit(hit, entry.id)
+                pipolins[i_p].atts.append(att_feature)
 
     return pipolins
 
