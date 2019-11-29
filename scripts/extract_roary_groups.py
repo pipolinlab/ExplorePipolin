@@ -4,7 +4,7 @@
 import os
 import click
 from Bio import SeqIO
-from utilities import CONTEXT_SETTINGS
+from utilities import CONTEXT_SETTINGS, get_roary_groups
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -12,7 +12,7 @@ from utilities import CONTEXT_SETTINGS
 @click.argument('prokka-dir', type=click.Path(exists=True))
 @click.argument('out-dir', type=click.Path(exists=True))
 @click.option('--ext',type=click.Choice(['faa', 'ffn']), required=True,
-              help='Put "faa" if you need amino acid sequences and "ffn" if you need nucleotide sequences')
+             help='Put "faa" if you need amino acid sequences and "ffn" if you need nucleotide sequences')
 def extract_roary_groups(roary_dir, prokka_dir, out_dir, ext):
     """
     TODO

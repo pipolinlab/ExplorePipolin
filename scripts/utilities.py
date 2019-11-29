@@ -1,6 +1,8 @@
+import csv
+import itertools
 import os
 import shelve
-from typing import Sequence, MutableSequence
+from typing import Sequence, MutableSequence, Mapping
 from itertools import groupby
 import subprocess
 from Bio import SearchIO
@@ -170,3 +172,15 @@ def save_as_csv(Pipolin, pipolins, out_file):
         for i_p, _ in enumerate(pipolins):
             words = ['None' if i is None else str(i) for i in pipolins[i_p]]
             print(','.join(words), file=ouf)
+
+
+def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
+    roary_groups = {}
+    with open(os.path.join(roary_dir, 'gene_presence_absence.csv')) as csv_file:
+        reader = csv.reader(csv_file, delimiter=',')
+        header = next(reader)
+        for entry in reader:
+            group_name = entry[0]
+            genes = {genome: genes.split('\t') if genes else [] for genome, genes in zip(header[14:],entry[14:])}
+            roary_groups[group_name] = genes
+    return roary_groups
