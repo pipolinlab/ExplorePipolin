@@ -22,7 +22,6 @@ def extract_pipolin_regions(shelve_file, genomes_dir, out_dir, long):
     """
     This script retrieves the information about pipolins from SHELVE_FILE
     and creates FASTA files with pipolin regions for their further annotation.
-    ~23 min and 1116 files for 93 genomes.
     """
     pipolins = read_pipolins_from_shelve(shelve_file)
 
@@ -37,13 +36,14 @@ def extract_pipolin_regions(shelve_file, genomes_dir, out_dir, long):
             sequence = genomes[pipolin.strain_id][pipolin.strain_id].seq[bounds[0]:bounds[1]]
             records = SeqRecord(seq=sequence, id=pipolin.strain_id, description=f'{len(sequence)}')
         else:
-            contings_bounds = pipolin.get_contigs_with_bounds(long)
+            length_by_contig = {}
+            for contig in genomes[pipolin.strain_id].values():
+                length_by_contig[contig.id] = len(contig.seq)
+            contigs_bounds = pipolin.get_contigs_with_bounds(length_by_contig, long)
             records = []
-            for node, bounds in contings_bounds.items():
+            for node, bounds in contigs_bounds.items():
                 sequence = genomes[pipolin.strain_id][node].seq[bounds[0]:bounds[1]]
-                # TODO: fix LOCUS name, too long for contigs!!! (see include_atts_into_annotation.py)
-                new_node_name = f'{node.split(sep="_")[0]}_{node.split(sep="_")[1]}'   # TODO: use node instead
-                records.append(SeqRecord(seq=sequence, id=new_node_name, description=f'{len(sequence)}'))
+                records.append(SeqRecord(seq=sequence, id=node, description=f'{len(sequence)}'))
 
         with open(os.path.join(out_dir, f'{pipolin.strain_id}-pipolin.fa'), 'w') as ouf:
             SeqIO.write(records, ouf, 'fasta')

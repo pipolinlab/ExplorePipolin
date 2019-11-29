@@ -14,6 +14,7 @@ from utilities import CONTEXT_SETTINGS
 def annotate_pipolins(pipolins_dir, proteins, out_dir):
     """
     TODO
+    ~23 min and 1116 files for 93 genomes.
     """
     pipolins = os.listdir(pipolins_dir)
     for i_p, pipolin in enumerate(pipolins):
