@@ -15,7 +15,10 @@ from utilities import read_pipolins_from_shelve
 @click.argument('shelve-file', type=click.Path(exists=True))
 @click.argument('genomes-dir', type=click.Path(exists=True))
 @click.argument('out-dir')
-def extract_pipolin_regions(shelve_file, genomes_dir, out_dir):
+@click.option('--long', is_flag=True, help='If long, pipolin regions are identified by leftmost and rightmost '
+                                           'atts. If it is not specified, the closest atts to pi-polB will determine '
+                                           'the pipolin bounds.')
+def extract_pipolin_regions(shelve_file, genomes_dir, out_dir, long):
     """
     This script retrieves the information about pipolins from SHELVE_FILE
     and creates FASTA files with pipolin regions for their further annotation.
@@ -23,7 +26,6 @@ def extract_pipolin_regions(shelve_file, genomes_dir, out_dir):
     """
     pipolins = read_pipolins_from_shelve(shelve_file)
 
-    # TODO: the code below is a mess, simplify it!
     genomes = {}
     for file in os.listdir(genomes_dir):
         genomes[file[:-3]] = SeqIO.to_dict(SeqIO.parse(os.path.join(genomes_dir, file), 'fasta'))
@@ -31,11 +33,11 @@ def extract_pipolin_regions(shelve_file, genomes_dir, out_dir):
     check_dir(out_dir)
     for pipolin in pipolins:
         if pipolin.is_complete_genome():
-            bounds = pipolin.get_pipolin_bounds()
+            bounds = pipolin.get_pipolin_bounds(long)
             sequence = genomes[pipolin.strain_id][pipolin.strain_id].seq[bounds[0]:bounds[1]]
             records = SeqRecord(seq=sequence, id=pipolin.strain_id, description=f'{len(sequence)}')
         else:
-            contings_bounds = pipolin.get_contigs_with_bounds()
+            contings_bounds = pipolin.get_contigs_with_bounds(long)
             records = []
             for node, bounds in contings_bounds.items():
                 sequence = genomes[pipolin.strain_id][node].seq[bounds[0]:bounds[1]]

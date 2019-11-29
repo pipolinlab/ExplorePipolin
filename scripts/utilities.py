@@ -29,7 +29,7 @@ class Pipolin:
         self.polymerases: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
 
-    def get_pipolin_bounds(self):
+    def get_pipolin_bounds(self, long):
         if not self.is_complete_genome():
             raise AssertionError('Should be complete!')
 
@@ -39,12 +39,19 @@ class Pipolin:
         if not self._is_polymerase_inside(atts, polymerases):
             raise AssertionError('The polymerases are not within att bounds!')
 
-        if polymerases[-1].end < atts[1].end:
-            return atts[0].start - 50, atts[1].end + 50
+        if len(atts) > 3:
+            raise AssertionError('There are more than 3 atts!')
+
+        if long:
+            if len(atts) == 3:
+                return atts[0].start - 50, atts[2].end + 50
+            else:
+                return atts[0].start - 50, atts[1].end + 50
         else:
-            if len(atts) > 3:
-                raise AssertionError('There are more than 3 atts!')
-            return atts[1].start - 50, atts[2].end + 50
+            if polymerases[-1].end < atts[1].end:
+                return atts[0].start - 50, atts[1].end + 50
+            else:
+                return atts[1].start - 50, atts[2].end + 50
 
     @staticmethod
     def _is_polymerase_inside(atts, polymerases):
@@ -70,9 +77,12 @@ class Pipolin:
         return left, right
 
     @classmethod
-    def _get_pipolin_two_atts(cls, atts, polymerases):
+    def _get_pipolin_two_atts(cls, atts, polymerases, long):
         if cls._is_polymerase_inside(atts, polymerases):
-            return atts[0].start - 50, atts[1].end + 50
+            if long:
+                return atts[0].start - 50, atts[2].end + 50
+            else:
+                return atts[0].start - 50, atts[1].end + 50
         else:
             raise AssertionError('The polymerases are not within att bounds!')
 
@@ -92,30 +102,31 @@ class Pipolin:
             right = att.end + 50
         return left, right
 
-    def get_contigs_with_bounds(self):
+    def get_contigs_with_bounds(self, long):
         # TODO: check boarders when +/-50 nt !
         # TODO: check indexes carefully: 0-based and 1-based !!!
-        if self.is_complete_genome():
-            raise AssertionError('This method is for incomplete genomes, but got a complete one!')
-
         polymerases = self._dict_by_node_normalized(self.polymerases)
         atts = self._dict_by_node_normalized(self.atts)
 
         things_to_return = {}
         for node, features in polymerases.items():
-            self.add_pipolin_for_node(atts, features, node, things_to_return)
+            self.add_pipolin_for_node(atts, features, node, things_to_return, long)
 
         return things_to_return
 
-    def add_pipolin_for_node(self, atts, features, node, things_to_return):
+    def add_pipolin_for_node(self, atts, features, node, things_to_return, long):
         if node in atts:
-            if len(atts[node]) == 2:
-                things_to_return[node] = self._get_pipolin_two_atts(atts[node], features)
-            elif len(atts[node]) == 1:
-                things_to_return[node] = self._get_pipolin_single_att(atts[node][0], features)
-                self._add_dangling_atts(atts, things_to_return)
+            if long:
+                if len(atts[node]) == 3:
+                    things_to_return[node] = self._get_pipolin_two_atts(atts[node], features, long)
             else:
-                raise AssertionError('More than two atts on one contig!')
+                if len(atts[node]) == 2:
+                    things_to_return[node] = self._get_pipolin_two_atts(atts[node], features, long=False)
+                elif len(atts[node]) == 1:
+                    things_to_return[node] = self._get_pipolin_single_att(atts[node][0], features)
+                    self._add_dangling_atts(atts, things_to_return)
+                else:
+                    raise AssertionError('More than two atts on one contig!')
         else:
             things_to_return[node] = self._get_dangling_feature(features, node)
             self._add_dangling_atts(atts, things_to_return)
