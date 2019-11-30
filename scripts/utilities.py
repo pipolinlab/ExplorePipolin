@@ -147,9 +147,13 @@ def ncbi_acc_download(acc_ids):
 #     return SearchIO.read(blast_tab, 'blast-tab', comments=True)
 
 
-def save_pipolins_to_shelve(out_file, pipolins):
+def read_blastxml(blast_xml):
+    return SearchIO.read(blast_xml, 'blast-xml')
+
+
+def save_to_shelve(out_file, object_to_save, name):
     shelve_db = shelve.open(os.path.splitext(out_file)[0])
-    shelve_db['pipolins'] = pipolins
+    shelve_db[name] = object_to_save
     shelve_db.close()
 
 

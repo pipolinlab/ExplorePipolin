@@ -8,7 +8,8 @@ from Bio import SearchIO
 from utilities import CONTEXT_SETTINGS
 from utilities import check_dir
 from utilities import Feature, Pipolin
-from utilities import save_pipolins_to_shelve
+from utilities import save_to_shelve
+from utilities import read_blastxml
 
 
 def blast_genomes_against_seq(genomes_dir, seq, output_dir):
@@ -20,10 +21,6 @@ def blast_genomes_against_seq(genomes_dir, seq, output_dir):
             subprocess.run(['blastn', '-query', seq,
                             '-subject', f'{os.path.join(genomes_dir, genome)}',
                             '-outfmt', '5'], stdout=ouf)
-
-
-def read_blastxml(blast_xml):
-    return SearchIO.read(blast_xml, 'blast-xml')
 
 
 def feature_from_blasthit(hit, id):
@@ -73,7 +70,7 @@ def identify_pipolins_roughly(ref_polb, ref_att, genomes_dir, out_dir):
 
     pipolins = create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path)
     out_file = os.path.join(out_dir, 'shelve.db')
-    save_pipolins_to_shelve(out_file, pipolins)
+    save_to_shelve(out_file, pipolins, 'pipolins')
 
 
 if __name__ == '__main__':

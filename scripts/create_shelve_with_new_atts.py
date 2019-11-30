@@ -6,7 +6,7 @@ import click
 from utilities import CONTEXT_SETTINGS
 from utilities import Feature, Pipolin
 from utilities import read_pipolins_from_shelve
-from utilities import save_pipolins_to_shelve
+from utilities import save_to_shelve
 
 
 def parse_hmmer_tbl(file):
@@ -37,7 +37,7 @@ def create_shelve_with_new_atts(old_shelve_file, att_hmm_dir, out_file):
         for name, bounds in zip(hit_names, hit_bounds):
             pipolin.atts.append(Feature(bounds[0], bounds[1], name))
 
-    save_pipolins_to_shelve(out_file, pipolins)
+    save_to_shelve(out_file, pipolins, 'pipolins')
 
 
 if __name__ == '__main__':
