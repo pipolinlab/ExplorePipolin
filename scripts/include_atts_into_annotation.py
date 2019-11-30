@@ -14,6 +14,27 @@ from utilities import read_from_shelve
 from utilities import check_dir
 
 
+def read_genbank_records(annot_dir):
+    genbank_records: Mapping[str, Mapping[str, SeqIO.SeqRecord]] = {}
+    for file in os.listdir(annot_dir):
+        if file.endswith('.gbk'):
+            record = SeqIO.to_dict(SeqIO.parse(os.path.join(annot_dir, file), format='genbank'))
+            genbank_records[os.path.splitext(file)[0]] = record
+    return genbank_records
+
+
+def read_gff_records(annot_dir):
+    gff_records: Mapping[str, Mapping[str, SeqIO.SeqRecord]] = {}
+    for file in os.listdir(annot_dir):
+        if file.endswith('.gff'):
+            with open(os.path.join(annot_dir, file)) as inf:
+                records = {}
+                for entry in GFF.parse(inf):
+                    records[entry.id] = entry
+                gff_records[os.path.splitext(file)[0]] = records
+    return gff_records
+
+
 def get_bounds_with_strand(att_feature):
     if att_feature.start < att_feature.end:
         return (att_feature.start, att_feature.end), +1
@@ -21,7 +42,7 @@ def get_bounds_with_strand(att_feature):
         return (att_feature.end, att_feature.start), -1
 
 
-def create_att_feature(att, pipolin, format):
+def create_att_feature(att, pipolin, records_format):
     bounds, strand = get_bounds_with_strand(att)
     random_number = randrange(10000, 99999)
     gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{pipolin.strain_id}_{random_number}'],
@@ -31,67 +52,60 @@ def create_att_feature(att, pipolin, format):
                       'product': ['att repeat'], 'source': ['HMM:custom'], 'phase': ['0']}
     att_feature = SeqFeature(type='repeat_region',
                              location=FeatureLocation(bounds[0], bounds[1], strand=strand),
-                             qualifiers=gb_qualifiers if format == 'gb' else gff_qualifiers)
+                             qualifiers=gb_qualifiers if records_format == 'genbank' else gff_qualifiers)
     return att_feature
 
 
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('shelve-file', type=click.Path(exists=True))
-@click.argument('annot-dir', type=click.Path(exists=True))
-@click.argument('new-annot-dir')
-def include_atts_into_annotation(shelve_file, annot_dir, new_annot_dir):
-    """
-    TODO
-    """
-    pipolins = read_from_shelve(shelve_file, 'pipolins')
-
-    genbank_records: Mapping[str, Mapping[str, SeqIO.SeqRecord]] = {}
-    for file in os.listdir(annot_dir):
-        if file.endswith('.gbk'):
-            # TODO: fixed LOCUS name (see extract_pipolin_regions.py)
-            record = SeqIO.to_dict(SeqIO.parse(os.path.join(annot_dir, file), format='genbank'))
-            genbank_records[os.path.splitext(file)[0]] = record
-
-    gff_records: Mapping[str, Mapping[str, SeqIO.SeqRecord]] = {}
-    for file in os.listdir(annot_dir):
-        if file.endswith('.gff'):
-            with open(os.path.join(annot_dir, file)) as inf:
-                records = {}
-                for entry in GFF.parse(inf):
-                    records[entry.id] = entry
-                gff_records[os.path.splitext(file)[0]] = records
-
+def add_atts(records, records_format, pipolins):
     for pipolin in pipolins:
         if pipolin.is_complete_genome():
-            gb_record = genbank_records[pipolin.strain_id][pipolin.strain_id]
-            gff_record = gff_records[pipolin.strain_id][pipolin.strain_id]
+            record = records[pipolin.strain_id][pipolin.strain_id]
             for att in pipolin.atts:
-                att_gb_feature = create_att_feature(att, pipolin, 'gb')
-                gb_record.features.append(att_gb_feature)
-                att_gff_feature = create_att_feature(att, pipolin, 'gff')
-                gff_record.features.append(att_gff_feature)
+                att_feature = create_att_feature(att, pipolin, records_format)
+                record.features.append(att_feature)
         else:
             for att in pipolin.atts:
-                node = f'{att.node.split("_")[0]}_{att.node.split("_")[1]}'
-                gb_record = genbank_records[pipolin.strain_id][node]
-                gff_record = gff_records[pipolin.strain_id][node]
-                att_gb_feature = create_att_feature(att, pipolin, 'gb')
-                gb_record.features.append(att_gb_feature)
-                att_gff_feature = create_att_feature(att, pipolin, 'gff')
-                gff_record.features.append(att_gff_feature)
+                record = records[pipolin.strain_id][att.node]
+                att_feature = create_att_feature(att, pipolin, records_format)
+                record.features.append(att_feature)
 
-    check_dir(new_annot_dir)
+
+def write_genbank_records(genbank_records, new_annot_dir):
     for key, value in genbank_records.items():
         records = [record for record in value.values()]
         with open(os.path.join(new_annot_dir, f'{key}.gbk'), 'w') as ouf:
             SeqIO.write(records, ouf, 'genbank')
 
+
+def write_gff_records(gff_records, new_annot_dir):
     for key, value in gff_records.items():
         records = [record for record in value.values()]
         with open(os.path.join(new_annot_dir, f'{key}.gff'), 'w') as ouf:
             GFF.write(records, ouf)
             print('##FASTA', file=ouf)
             SeqIO.write(records, ouf, format='fasta')
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument('shelve-file', type=click.Path(exists=True))
+@click.option('--object-name', required=True)
+@click.argument('orig-annot-dir', type=click.Path(exists=True))
+@click.argument('new-annot-dir', type=click.Path())
+def include_atts_into_annotation(shelve_file, object_name, orig_annot_dir, new_annot_dir):
+    """
+    Adds att regions to the annotations (*.gbk and *.gff files)
+    """
+    pipolins = read_from_shelve(shelve_file, object_name)
+
+    genbank_records = read_genbank_records(orig_annot_dir)
+    gff_records = read_gff_records(orig_annot_dir)
+
+    add_atts(genbank_records, 'genbank', pipolins)
+    add_atts(gff_records, 'gff', pipolins)
+
+    check_dir(new_annot_dir)
+    write_genbank_records(genbank_records, new_annot_dir)
+    write_gff_records(gff_records, new_annot_dir)
 
 
 if __name__ == '__main__':
