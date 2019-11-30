@@ -115,14 +115,13 @@ class Pipolin:
             if long:
                 if len(atts[node]) == 3:
                     things_to_return[node] = self._get_pipolin_two_atts(atts[node], features, long)
+            if len(atts[node]) == 2:
+                things_to_return[node] = self._get_pipolin_two_atts(atts[node], features, long=False)
+            elif len(atts[node]) == 1:
+                things_to_return[node] = self._get_pipolin_single_att(atts[node][0], features, length_by_contig)
+                self._add_dangling_atts(atts, things_to_return, length_by_contig)
             else:
-                if len(atts[node]) == 2:
-                    things_to_return[node] = self._get_pipolin_two_atts(atts[node], features, long=False)
-                elif len(atts[node]) == 1:
-                    things_to_return[node] = self._get_pipolin_single_att(atts[node][0], features, length_by_contig)
-                    self._add_dangling_atts(atts, things_to_return, length_by_contig)
-                else:
-                    raise AssertionError('More than two atts on one contig!')
+                raise AssertionError('More than two atts on one contig!')
         else:
             things_to_return[node] = self._get_dangling_feature(features, node, length_by_contig)
             self._add_dangling_atts(atts, things_to_return, length_by_contig)
