@@ -7,7 +7,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from utilities import CONTEXT_SETTINGS
 from utilities import Feature, Pipolin
-from utilities import read_pipolins_from_shelve
+from utilities import read_from_shelve
 
 
 def return_att_seq(att, ref_seq):
@@ -29,7 +29,7 @@ def prepare_atts_for_msa(shelve_file, genomes_dir, out_file):
     The scripts extracts the information about atts from the SHELVE_FILE and generates
     a FASTA file with att sequences.
     """
-    pipolins = read_pipolins_from_shelve(shelve_file)
+    pipolins = read_from_shelve(shelve_file, 'pipolins')
 
     # TODO: the code below is a mess, simplify it!
     genomes = {}

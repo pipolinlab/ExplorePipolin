@@ -4,7 +4,7 @@
 import click
 import os
 from utilities import CONTEXT_SETTINGS
-from utilities import read_pipolins_from_shelve
+from utilities import read_from_shelve
 from utilities import read_blastxml
 from utilities import save_to_shelve
 
@@ -16,7 +16,7 @@ def analyse_pipolin_orientation(shelve_file, att_blast_dir):
     """
     TODO
     """
-    pipolins = read_pipolins_from_shelve(shelve_file)
+    pipolins = read_from_shelve(shelve_file, 'pipolins')
 
     orientations = {}
 

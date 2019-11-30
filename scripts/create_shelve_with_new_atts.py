@@ -5,7 +5,7 @@ import os
 import click
 from utilities import CONTEXT_SETTINGS
 from utilities import Feature, Pipolin
-from utilities import read_pipolins_from_shelve
+from utilities import read_from_shelve
 from utilities import save_to_shelve
 
 
@@ -29,7 +29,7 @@ def create_shelve_with_new_atts(old_shelve_file, att_hmm_dir, out_file):
     """
     Creates a new shelve file with pipolins, containing new att bounds defined by HMMER.
     """
-    pipolins = read_pipolins_from_shelve(old_shelve_file)
+    pipolins = read_from_shelve(old_shelve_file, 'pipolins')
 
     for pipolin in pipolins:
         pipolin.atts = []

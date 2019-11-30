@@ -10,7 +10,7 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 from BCBio import GFF
 from utilities import CONTEXT_SETTINGS
 from utilities import Feature, Pipolin
-from utilities import read_pipolins_from_shelve
+from utilities import read_from_shelve
 from utilities import check_dir
 
 
@@ -43,7 +43,7 @@ def include_atts_into_annotation(shelve_file, annot_dir, new_annot_dir):
     """
     TODO
     """
-    pipolins = read_pipolins_from_shelve(shelve_file)
+    pipolins = read_from_shelve(shelve_file, 'pipolins')
 
     genbank_records: Mapping[str, Mapping[str, SeqIO.SeqRecord]] = {}
     for file in os.listdir(annot_dir):

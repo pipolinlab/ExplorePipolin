@@ -151,17 +151,17 @@ def read_blastxml(blast_xml):
     return SearchIO.read(blast_xml, 'blast-xml')
 
 
-def save_to_shelve(out_file, object_to_save, name):
+def save_to_shelve(out_file, object_to_save, key_name):
     shelve_db = shelve.open(os.path.splitext(out_file)[0])
-    shelve_db[name] = object_to_save
+    shelve_db[key_name] = object_to_save
     shelve_db.close()
 
 
-def read_pipolins_from_shelve(shelve_file):
+def read_from_shelve(shelve_file, key_name):
     shelve_db = shelve.open(os.path.splitext(shelve_file)[0])
-    pipolins = shelve_db['pipolins']
+    shelve_object = shelve_db[key_name]
     shelve_db.close()
-    return pipolins
+    return shelve_object
 
 
 # def save_as_csv(Pipolin, pipolins, out_file):
