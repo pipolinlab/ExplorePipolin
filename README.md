@@ -9,13 +9,16 @@ To extract the subsequence from a genome:
 
 The whole analysis:
  * `download_genomes_ncbi.py`
- * `identify_pipolins_roughly.py` 
- (using reference `att.fa` and `pi-polB.fa` sequences)
- * `extract_pipolin_regions.py` It is possible to extract
-regions, determined by the leftmost and rightmost atts 
-(`--long` option, one more att might appear in the middle 
-of the region).
+ * `identify_pipolins_roughly.py` using reference 
+ `att.fa` and `pi-polB.fa` sequences
+ (saves "pipolins" object into shelve.db)
+ * `analyse_pipolin_orientation` (saves "orientations" 
+ object into shelve.db) 
+ * `extract_pipolin_regions.py` It is possible to 
+ extract regions, determined by the leftmost and 
+ rightmost atts (`--long` option).
  * `annotate_pipolins.py`
+ * Here the steps to predict ATTs (see below)
  * `create_shelve_with_new_atts.py` 
  (parse HMMER output for atts)
  * `include_atts_into_annotation.py` 
@@ -25,20 +28,19 @@ of the region).
 To get the sequences from roary groups:
  * `extract_roary_groups.py`
  
-ATTs:
+Prediction of ATTs:
  1. Prepared ATT sequences with `prepare_atts_for_msa.py`
- 2. Built a MSA with att sequences using 
- [MAFFT](https://www.ebi.ac.uk/Tools/msa/mafft/). 
- The output format -- Pearson FASTA, otherwise some
- sequence names will be truncated.
- It looked like there were two different types of ATTs.
- 3. TODO: DELETE. Clustered the ATTs using the obtained MSA: `cluster_atts.py`.
- Reverse-complement the sequences in one of the clusters and 
- save as a new FASTA file.
- 4. TODO: DELETE. Built a new MSA with "unified" ATTs (MAFFT), 
- saved as Pearson FASTA file.
- 5. Modified with Jalview: deleted not conserved regions 
- from both ends.
- 6. Created HMM profile with `hmmbuild` and `hmmpress`.
- 7. `predict_atts_with_hmmer.py`
+ ```
+The total number of atts is 198
+> Maximum att length is 132
+> Minimum att length is 121
+```
+ 2. Built a MSA with att sequences using MAFFT, MUSCLE
+ and T-Coffee (https://www.ebi.ac.uk/Tools/msa). 
+ The output format -- Pearson FASTA, otherwise long
+ sequence names might be truncated.
+ 3. Compared the alignments. Modified them, using 
+ Jalview: deleted not conserved regions from both ends.
+ 4. Created HMM profile with `hmmbuild` and `hmmpress`.
+ 5. `predict_atts_with_hmmer.py`
  

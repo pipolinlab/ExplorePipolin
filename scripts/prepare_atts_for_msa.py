@@ -11,9 +11,7 @@ from utilities import read_from_shelve
 
 
 def return_att_seq(att, ref_seq):
-    # TODO: doesn't work, as there is no info about direction!
     if att.start < att.end:
-        print(att.start, att.end)
         subseq = ref_seq[att.start - 20:att.end + 20]
     else:
         subseq = ref_seq[att.end - 20:att.start + 20].reverse_complement()
@@ -31,14 +29,13 @@ def prepare_atts_for_msa(shelve_file, genomes_dir, out_file):
     """
     pipolins = read_from_shelve(shelve_file, 'pipolins')
 
-    # TODO: the code below is a mess, simplify it!
     genomes = {}
     for file in os.listdir(genomes_dir):
         genomes[file[:-3]] = SeqIO.to_dict(SeqIO.parse(os.path.join(genomes_dir, file), 'fasta'))
 
     att_records = []
     for pipolin in pipolins:
-        atts = [att for att in pipolin.atts]
+        atts = pipolin.atts
         if pipolin.is_complete_genome():
             ref_seq = genomes[pipolin.strain_id][pipolin.strain_id].seq
             att_records.extend(SeqRecord(seq=return_att_seq(att, ref_seq),
