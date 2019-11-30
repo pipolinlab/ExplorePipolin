@@ -9,18 +9,9 @@ from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from BCBio import GFF
 from utilities import CONTEXT_SETTINGS
-from utilities import Feature, Pipolin
 from utilities import read_from_shelve
+from utilities import read_genbank_records, write_genbank_records
 from utilities import check_dir
-
-
-def read_genbank_records(annot_dir):
-    genbank_records: Mapping[str, Mapping[str, SeqIO.SeqRecord]] = {}
-    for file in os.listdir(annot_dir):
-        if file.endswith('.gbk'):
-            record = SeqIO.to_dict(SeqIO.parse(os.path.join(annot_dir, file), format='genbank'))
-            genbank_records[os.path.splitext(file)[0]] = record
-    return genbank_records
 
 
 def read_gff_records(annot_dir):
@@ -70,13 +61,6 @@ def add_atts(records, records_format, pipolins):
                 record.features.append(att_feature)
 
 
-def write_genbank_records(genbank_records, new_annot_dir):
-    for key, value in genbank_records.items():
-        records = [record for record in value.values()]
-        with open(os.path.join(new_annot_dir, f'{key}.gbk'), 'w') as ouf:
-            SeqIO.write(records, ouf, 'genbank')
-
-
 def write_gff_records(gff_records, new_annot_dir):
     for key, value in gff_records.items():
         records = [record for record in value.values()]
@@ -97,14 +81,14 @@ def include_atts_into_annotation(shelve_file, object_name, orig_annot_dir, new_a
     """
     pipolins = read_from_shelve(shelve_file, object_name)
 
-    genbank_records = read_genbank_records(orig_annot_dir)
+    gb_records = read_genbank_records(orig_annot_dir)
     gff_records = read_gff_records(orig_annot_dir)
 
-    add_atts(genbank_records, 'genbank', pipolins)
+    add_atts(gb_records, 'genbank', pipolins)
     add_atts(gff_records, 'gff', pipolins)
 
     check_dir(new_annot_dir)
-    write_genbank_records(genbank_records, new_annot_dir)
+    write_genbank_records(gb_records, new_annot_dir)
     write_gff_records(gff_records, new_annot_dir)
 
 

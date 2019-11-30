@@ -24,9 +24,6 @@ The whole analysis:
  * `include_atts_into_annotation.py` 
  TODO: So far, the script includes atts only into GB 
  and GFF files. 
-
-To get the sequences from roary groups:
- * `extract_roary_groups.py`
  
 Prediction of ATTs:
  1. Prepared ATT sequences with `prepare_atts_for_msa.py`
@@ -43,4 +40,6 @@ The total number of atts is 198
  Jalview: deleted not conserved regions from both ends.
  4. Created HMM profile with `hmmbuild` and `hmmpress`.
  5. `predict_atts_with_hmmer.py`
- 
+
+To get the sequences from roary groups:
+ * `extract_roary_groups.py`

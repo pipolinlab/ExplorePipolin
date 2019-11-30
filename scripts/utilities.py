@@ -4,7 +4,7 @@ import shelve
 from typing import Sequence, MutableSequence, Mapping
 from itertools import groupby
 import subprocess
-from Bio import SearchIO
+from Bio import SearchIO, SeqIO
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -193,3 +193,22 @@ def blast_seqs_against_seq(dir_with_seqs, seq, output_dir):
             subprocess.run(['blastn', '-query', seq,
                             '-subject', f'{os.path.join(dir_with_seqs, genome)}',
                             '-outfmt', '5'], stdout=ouf)
+
+
+GenBankRecords = Mapping[str, Mapping[str, SeqIO.SeqRecord]]
+
+
+def read_genbank_records(annot_dir) -> GenBankRecords:
+    genbank_records: GenBankRecords = {}
+    for file in os.listdir(annot_dir):
+        if file.endswith('.gbk'):
+            record = SeqIO.to_dict(SeqIO.parse(os.path.join(annot_dir, file), format='genbank'))
+            genbank_records[os.path.splitext(file)[0]] = record
+    return genbank_records
+
+
+def write_genbank_records(genbank_records, new_annot_dir):
+    for key, value in genbank_records.items():
+        records = [record for record in value.values()]
+        with open(os.path.join(new_annot_dir, f'{key}.gbk'), 'w') as ouf:
+            SeqIO.write(records, ouf, 'genbank')
