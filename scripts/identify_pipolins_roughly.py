@@ -3,24 +3,12 @@
 
 import os
 import click
-import subprocess
-from Bio import SearchIO
 from utilities import CONTEXT_SETTINGS
+from utilities import blast_seqs_against_seq
 from utilities import check_dir
 from utilities import Feature, Pipolin
 from utilities import save_to_shelve
 from utilities import read_blastxml
-
-
-def blast_genomes_against_seq(genomes_dir, seq, output_dir):
-    check_dir(output_dir)
-    genomes = os.listdir(genomes_dir)
-
-    for genome in genomes:
-        with open(os.path.join(output_dir, f'{genome[:-3]}_fmt5.txt'), 'w') as ouf:
-            subprocess.run(['blastn', '-query', seq,
-                            '-subject', f'{os.path.join(genomes_dir, genome)}',
-                            '-outfmt', '5'], stdout=ouf)
 
 
 def feature_from_blasthit(hit, id):
@@ -65,8 +53,8 @@ def identify_pipolins_roughly(ref_polb, ref_att, genomes_dir, out_dir):
     check_dir(out_dir)
     polbs_blast_path = os.path.join(out_dir, 'polb_blast')
     atts_blast_path = os.path.join(out_dir, 'att_blast')
-    blast_genomes_against_seq(genomes_dir, ref_polb, polbs_blast_path)
-    blast_genomes_against_seq(genomes_dir, ref_att, atts_blast_path)
+    blast_seqs_against_seq(genomes_dir, ref_polb, polbs_blast_path)
+    blast_seqs_against_seq(genomes_dir, ref_att, atts_blast_path)
 
     pipolins = create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path)
     out_file = os.path.join(out_dir, 'shelve.db')

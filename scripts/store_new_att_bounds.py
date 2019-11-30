@@ -22,14 +22,15 @@ def parse_hmmer_tbl(file):
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('old-shelve-file', type=click.Path(exists=True))
+@click.argument('shelve-file', type=click.Path(exists=True))
 @click.argument('att-hmm-dir', type=click.Path(exists=True))
-@click.argument('out-file')
-def create_shelve_with_new_atts(old_shelve_file, att_hmm_dir, out_file):
+@click.option('--object-name', required=True)
+def create_shelve_with_new_atts(shelve_file, object_name, att_hmm_dir):
     """
-    Creates a new shelve file with pipolins, containing new att bounds defined by HMMER.
+    Creates a new shelve object ("short-pipolins" or "long-pipolins") with att bounds, defined by HMMER.
     """
-    pipolins = read_from_shelve(old_shelve_file, 'pipolins')
+    # TODO: This is not a proper way to store new att positions, because pi-polB positions are not updated!
+    pipolins = read_from_shelve(shelve_file, 'pipolins')
 
     for pipolin in pipolins:
         pipolin.atts = []
@@ -37,7 +38,7 @@ def create_shelve_with_new_atts(old_shelve_file, att_hmm_dir, out_file):
         for name, bounds in zip(hit_names, hit_bounds):
             pipolin.atts.append(Feature(bounds[0], bounds[1], name))
 
-    save_to_shelve(out_file, pipolins, 'pipolins')
+    save_to_shelve(shelve_file, pipolins, object_name)
 
 
 if __name__ == '__main__':

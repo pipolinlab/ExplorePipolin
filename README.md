@@ -19,7 +19,7 @@ The whole analysis:
  rightmost atts (`--long` option).
  * `annotate_pipolins.py`
  * Here the steps to predict ATTs (see below)
- * `create_shelve_with_new_atts.py` 
+ * `store_new_att_bounds.py` 
  (parse HMMER output for atts)
  * `include_atts_into_annotation.py` 
  TODO: So far, the script includes atts only into GB 

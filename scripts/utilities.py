@@ -182,3 +182,14 @@ def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
             genes = {genome: genes.split('\t') if genes else [] for genome, genes in zip(header[14:],entry[14:])}
             roary_groups[group_name] = genes
     return roary_groups
+
+
+def blast_seqs_against_seq(dir_with_seqs, seq, output_dir):
+    check_dir(output_dir)
+    genomes = os.listdir(dir_with_seqs)
+
+    for genome in genomes:
+        with open(os.path.join(output_dir, f'{genome[:-3]}_fmt5.txt'), 'w') as ouf:
+            subprocess.run(['blastn', '-query', seq,
+                            '-subject', f'{os.path.join(dir_with_seqs, genome)}',
+                            '-outfmt', '5'], stdout=ouf)
