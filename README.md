@@ -9,6 +9,8 @@ To extract the subsequence from a genome:
 
 The whole analysis:
  * `download_genomes_ncbi.py`
+ * For Saskia's strains: `edit_contig_names.sh <in-dir>` --
+ to shorten the long contig names
  * `identify_pipolins_roughly.py` using reference 
  `att.fa` and `pi-polB.fa` sequences
  (saves "pipolins" object into shelve.db)
