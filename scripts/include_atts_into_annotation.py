@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 
+# Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
+
 import os
 from typing import Mapping
 import click
@@ -37,13 +39,14 @@ def create_att_feature(att, pipolin, records_format):
     bounds, strand = get_bounds_with_strand(att)
     random_number = randrange(10000, 99999)
     gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{pipolin.strain_id}_{random_number}'],
-                     'note': ['att repeat'], 'product': ['att repeat']}
-    gff_qualifiers = {'ID': [f'{pipolin.strain_id}_{random_number}'],
-                      'inference': ['HMM:custom'], 'locus_tag': [f'{pipolin.strain_id}_{random_number}'],
-                      'product': ['att repeat'], 'source': ['HMM:custom'], 'phase': ['0']}
+                     'rpt_family': ['Att'], 'rpt_type': ['direct']}
+    gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
+                      'ID': [f'{pipolin.strain_id}_{random_number}'], 'inference': ['HMM:custom'],
+                      'locus_tag': [f'{pipolin.strain_id}_{random_number}'],
+                      'rpt_family': ['Att'], 'rpt_type': ['direct']}
     att_feature = SeqFeature(type='repeat_region',
                              location=FeatureLocation(bounds[0], bounds[1], strand=strand),
-                             qualifiers=gb_qualifiers if records_format == 'genbank' else gff_qualifiers)
+                             qualifiers=gb_qualifiers if records_format == 'gb' else gff_qualifiers)
     return att_feature
 
 
@@ -84,7 +87,7 @@ def include_atts_into_annotation(shelve_file, object_name, orig_annot_dir, new_a
     gb_records = read_genbank_records(orig_annot_dir)
     gff_records = read_gff_records(orig_annot_dir)
 
-    add_atts(gb_records, 'genbank', pipolins)
+    add_atts(gb_records, 'gb', pipolins)
     add_atts(gff_records, 'gff', pipolins)
 
     check_dir(new_annot_dir)

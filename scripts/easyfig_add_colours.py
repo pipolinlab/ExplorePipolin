@@ -14,7 +14,7 @@ magenta = '255 0 255'   # metallohydrolase
 purple = '178 58 238'   # excisionase
 cyan = '0 255 255'   # Uracil-DNA glycosylase
 green = '0 255 0'   # tRNA-Leu
-blue = '0 0 255'   # att repeat
+blue = '0 0 255'   # repeat_region
 floral_white = '255 250 240'   # others
 
 products_to_colours = {'Primer-independent DNA polymerase PolB': red,
@@ -23,7 +23,8 @@ products_to_colours = {'Primer-independent DNA polymerase PolB': red,
                        'Type I restriction modification enzyme': yellow,
                        'Type I restriction modification system methyltransferase (hsdM)': yellow,
                        'metallohydrolase': magenta, 'excisionase': purple,
-                       'Uracil-DNA glycosylase': cyan, 'tRNA-Leu': green, 'att repeat': blue}
+                       'Uracil-DNA glycosylase': cyan, 'tRNA-Leu': green,
+                       'repeat_region': blue, 'other': floral_white}
 
 
 def colour_feature(qualifiers):
@@ -32,14 +33,17 @@ def colour_feature(qualifiers):
             if product in products_to_colours:
                 qualifiers['colour'] = [products_to_colours[product]]
             else:
-                qualifiers['colour'] = [floral_white]
+                qualifiers['colour'] = [products_to_colours['other']]
 
 
 def add_colours(gb_records: GenBankRecords):
     for record_set in gb_records.values():
         for record in record_set.values():
             for feature in record.features:
-                colour_feature(feature.qualifiers)
+                if feature.type in products_to_colours:
+                    feature.qualifiers['colour'] = products_to_colours[feature.type]
+                else:
+                    colour_feature(feature.qualifiers)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
