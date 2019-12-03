@@ -15,24 +15,24 @@ purple = '178 58 238'   # excisionase
 cyan = '0 255 255'   # Uracil-DNA glycosylase
 green = '0 255 0'   # tRNA-Leu
 blue = '0 0 255'   # att repeat
-light_grey = '170 170 170'   # others
+floral_white = '255 250 240'   # others
 
-products_to_colour = {'Primer-independent DNA polymerase PolB': red,
-                      'Tyrosine recombinase XerC': brick_red,
-                      'Type I site-specific deoxyribonuclease (hsdR)': yellow,
-                      'Type I restriction modification enzyme': yellow,
-                      'Type I restriction modification system methyltransferase (hsdM)': yellow,
-                      'metallohydrolase': magenta, 'excisionase': purple,
-                      'Uracil-DNA glycosylase': cyan, 'tRNA-Leu': green, 'att repeat': blue}
+products_to_colours = {'Primer-independent DNA polymerase PolB': red,
+                       'Tyrosine recombinase XerC': brick_red,
+                       'Type I site-specific deoxyribonuclease (hsdR)': yellow,
+                       'Type I restriction modification enzyme': yellow,
+                       'Type I restriction modification system methyltransferase (hsdM)': yellow,
+                       'metallohydrolase': magenta, 'excisionase': purple,
+                       'Uracil-DNA glycosylase': cyan, 'tRNA-Leu': green, 'att repeat': blue}
 
 
 def colour_feature(qualifiers):
     if 'product' in qualifiers:
         for product in qualifiers['product']:
-            if product in products_to_colour:
-                qualifiers['colour'] = [products_to_colour[product]]
+            if product in products_to_colours:
+                qualifiers['colour'] = [products_to_colours[product]]
             else:
-                qualifiers['colour'] = [light_grey]
+                qualifiers['colour'] = [floral_white]
 
 
 def add_colours(gb_records: GenBankRecords):
@@ -46,7 +46,7 @@ def add_colours(gb_records: GenBankRecords):
 @click.argument('in-dir', type=click.Path(exists=True))
 def easyfig_add_colours(in_dir):
     """
-    IN_DIR contains *.gbk file to modify.
+    IN_DIR contains *.gbk files to modify.
     """
     gb_records = read_genbank_records(in_dir)
     add_colours(gb_records)
