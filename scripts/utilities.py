@@ -1,7 +1,7 @@
 import csv
 import os
 import shelve
-from typing import Sequence, MutableSequence, Mapping
+from typing import Sequence, MutableSequence, Mapping, MutableMapping
 from itertools import groupby
 import subprocess
 from Bio import SearchIO, SeqIO
@@ -88,6 +88,10 @@ class Pipolin:
 
     @classmethod
     def _get_pipolin_single_att(cls, att: Feature, polymerases, length_by_contig):
+        # TODO: there is an error in my assumptions!
+        # When there is an att and a polymerase on one contig, I cannot just cut the sequence
+        # from the outer side of att +/-50, as there can be an additional upstream att, but
+        # on a separate contig.
         if att.end < polymerases[0].start:
             left = att.start - 50
             pos_right = polymerases[-1].end + 50000
@@ -195,7 +199,7 @@ def blast_seqs_against_seq(dir_with_seqs, seq, output_dir):
                             '-outfmt', '5'], stdout=ouf)
 
 
-GenBankRecords = Mapping[str, Mapping[str, SeqIO.SeqRecord]]
+GenBankRecords = MutableMapping[str, MutableMapping[str, SeqIO.SeqRecord]]
 
 
 def read_genbank_records(annot_dir) -> GenBankRecords:

@@ -50,18 +50,28 @@ def create_att_feature(att, pipolin, records_format):
     return att_feature
 
 
+def add_new_gb_feature(new_feature, record):
+    new_feature_index = 0
+    for i_f, feature in enumerate(record.features):
+        if new_feature.location.start < feature.location.start:
+            new_feature_index = i_f
+            break
+
+    record.features.insert(new_feature_index, new_feature)
+
+
 def add_atts(records, records_format, pipolins):
     for pipolin in pipolins:
         if pipolin.is_complete_genome():
             record = records[pipolin.strain_id][pipolin.strain_id]
             for att in pipolin.atts:
                 att_feature = create_att_feature(att, pipolin, records_format)
-                record.features.append(att_feature)
+                add_new_gb_feature(att_feature, record)
         else:
             for att in pipolin.atts:
                 record = records[pipolin.strain_id][att.node]
                 att_feature = create_att_feature(att, pipolin, records_format)
-                record.features.append(att_feature)
+                add_new_gb_feature(att_feature, record)
 
 
 def write_gff_records(gff_records, new_annot_dir):
