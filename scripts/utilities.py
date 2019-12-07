@@ -193,7 +193,7 @@ def blast_seqs_against_seq(dir_with_seqs, seq, output_dir):
     genomes = os.listdir(dir_with_seqs)
 
     for genome in genomes:
-        with open(os.path.join(output_dir, f'{genome[:-3]}_fmt5.txt'), 'w') as ouf:
+        with open(os.path.join(output_dir, f'{genome[:-3]}-fmt5.txt'), 'w') as ouf:
             subprocess.run(['blastn', '-query', seq,
                             '-subject', f'{os.path.join(dir_with_seqs, genome)}',
                             '-outfmt', '5'], stdout=ouf)

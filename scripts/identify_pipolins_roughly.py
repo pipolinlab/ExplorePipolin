@@ -23,8 +23,8 @@ def create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path):
     for genome in os.listdir(genomes_dir):
         pipolins.append(Pipolin(strain_id=genome[:-3]))
     for i_p, pipolin in enumerate(pipolins):
-        polbs = read_blastxml(os.path.join(polbs_blast_path, f'{pipolin.strain_id}_fmt5.txt'))
-        atts = read_blastxml(os.path.join(atts_blast_path, f'{pipolin.strain_id}_fmt5.txt'))
+        polbs = read_blastxml(os.path.join(polbs_blast_path, f'{pipolin.strain_id}-fmt5.txt'))
+        atts = read_blastxml(os.path.join(atts_blast_path, f'{pipolin.strain_id}-fmt5.txt'))
 
         for entry in polbs:
             for hit in entry:
@@ -42,9 +42,10 @@ def create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path):
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('ref-polb', type=click.Path(exists=True))
 @click.argument('ref-att', type=click.Path(exists=True))
+@click.argument('ref-trna', type=click.Path(exists=True))
 @click.argument('genomes-dir', type=click.Path(exists=True))
 @click.argument('out-dir')
-def identify_pipolins_roughly(ref_polb, ref_att, genomes_dir, out_dir):
+def identify_pipolins_roughly(ref_polb, ref_att, ref_trna, genomes_dir, out_dir):
     """
     GENOMES_DIR contains each genome in a separate FASTA file (strain_id.fa).
     If there are several contigs in the genome, each contig should have unique name.
@@ -53,8 +54,10 @@ def identify_pipolins_roughly(ref_polb, ref_att, genomes_dir, out_dir):
     check_dir(out_dir)
     polbs_blast_path = os.path.join(out_dir, 'polb_blast')
     atts_blast_path = os.path.join(out_dir, 'att_blast')
+    trna_blast_path = os.path.join(out_dir, 'trna_blast')
     blast_seqs_against_seq(genomes_dir, ref_polb, polbs_blast_path)
     blast_seqs_against_seq(genomes_dir, ref_att, atts_blast_path)
+    blast_seqs_against_seq(genomes_dir, ref_trna, trna_blast_path)
 
     pipolins = create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path)
     out_file = os.path.join(out_dir, 'shelve.db')

@@ -4,33 +4,46 @@
 import click
 import os
 from utilities import CONTEXT_SETTINGS
-from utilities import read_from_shelve
 from utilities import read_blastxml
 from utilities import save_to_shelve
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('shelve-file', type=click.Path(exists=True))
 @click.argument('att-blast-dir', type=click.Path(exists=True))
-def analyse_pipolin_orientation(shelve_file, att_blast_dir):
+@click.argument('trna-blast-dir', type=click.Path(exists=True))
+@click.argument('shelve-file', type=click.Path(exists=True))
+def analyse_pipolin_orientation(att_blast_dir, trna_blast_dir, shelve_file):
     """
     TODO
     """
-    pipolins = read_from_shelve(shelve_file, 'pipolins')
-
     orientations = {}
 
-    for i_p, pipolin in enumerate(pipolins):
-        atts = read_blastxml(os.path.join(att_blast_dir, f'{pipolin.strain_id}_fmt5.txt'))
-        for entry in atts:
-            atts_info = []
-            for hit in entry:
-                atts_info.append([hit.hit_frame, hit.evalue])
+    strains = [file.split(sep='-')[0] for file in os.listdir(att_blast_dir)]
+    for strain in strains:
+        orientations[strain] = {}
 
-            if len(atts_info) > 1:
-                orientations[pipolin.strain_id] = {entry.id: atts_info[0][0]}   # 1 or -1
+    for strain in strains:
+        atts = read_blastxml(os.path.join(att_blast_dir, f'{strain}-fmt5.txt'))
+        trnas = read_blastxml(os.path.join(trna_blast_dir, f'{strain}-fmt5.txt'))
+
+        for entry in trnas:
+            for hit in entry:
+                if abs(hit.hit_start - hit.hit_end) >= 85:
+                    trna_frame = hit.hit_frame
+                    orientations[strain][entry.id] = -trna_frame
+
+        for entry in atts:
+            att_frames = []
+            for hit in entry:
+                att_frames.append(hit.hit_frame)
+
+            if len(set(att_frames)) != 1:
+                raise AssertionError('ATTs are expected to be located in the same frame, as they are direct repeats!')
+            if entry.id in orientations[strain]:
+                if att_frames[0] != orientations[strain][entry.id]:
+                    raise AssertionError('ATT and tRNA should be on the different strands!')
             else:
-                orientations[pipolin.strain_id] = {entry.id: 1}   # we don't know, leave as is
+                orientations[strain][entry.id] = att_frames[0]   # 1 or -1
 
     save_to_shelve(shelve_file, orientations, 'orientations')
 
