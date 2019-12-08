@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
-from collections import defaultdict
-from typing import Any
 
 import click
 from Bio.Seq import Seq
@@ -14,27 +12,35 @@ from utilities import GenBankRecords
 from utilities import check_dir
 
 
-def get_unchangeable_contig(record_set):
-    """
-    If there are a polB and an att, as well as there is only polB on the contig,
-    the whole contig should be included into the assembly.
-    """
-    unchangeable_contig = set()
+def get_atts_from_record(record):
+    atts = []
+    for i_f, feature in enumerate(record.features):
+        if feature.type == 'repeat_region':
+            atts.append((feature.location.start, feature.location.end, i_f))
+    return atts
 
+
+def get_polbs_from_record(record):
+    polbs = []
+    for i_f, feature in enumerate(record.features):
+        if 'gene' in feature.qualifiers:
+            if feature.qualifiers['gene'] == ['pi-polB']:
+                polbs.append((feature.location.start, feature.location.end, i_f))
+    return polbs
+
+
+def get_unchangeable_contigs(record_set):
+    """
+    If there are a polB and an att, the whole contig is included into the assembly.
+    """
+    unchangeable_contigs = []
     for record_id, record in record_set.items():
-        atts_polbs = []
-        for feature in record.features:
-            if feature.type == 'repeat_region':
-                atts_polbs.append('att')
-            if 'gene' in feature.qualifiers:
-                if feature.qualifiers['gene'] == ['pi-polB']:
-                    atts_polbs.append('polB')
-        if 'att' in atts_polbs and 'polB' in atts_polbs:
-            unchangeable_contig.add(record_id)
-        elif 'polB' in atts_polbs:
-            unchangeable_contig.add(record_id)
+        atts = get_atts_from_record(record)
+        polbs = get_polbs_from_record(record)
 
-    return unchangeable_contig
+        if len(atts) != 0 and len(polbs) != 0:
+            unchangeable_contigs.append(record_id)
+    return unchangeable_contigs
 
 
 def create_assembly_gap_record(record):
@@ -53,55 +59,71 @@ def create_assembly_gap_record(record):
 
 
 def add_assembly_gap_to_unchangeable(record):
+    assembly_gap_record = create_assembly_gap_record(record)
+    atts = get_atts_from_record(record)
+    polbs = get_polbs_from_record(record)
 
-    att_index = []
-    polB_index = []
-    for i_f, feature in enumerate(record.features):
-        if feature.type == 'repeat_region':
-            att_index.append(i_f)
-        if 'gene' in feature.qualifiers:
-            if feature.qualifiers['gene'] == ['pi-polB']:
-                polB_index.append(i_f)
-
-    if len(att_index) > 1:
-        raise AssertionError('Only one att near the pi-polB is expected!')
-    if len(polB_index) > 1:
-        raise AssertionError('Only one pi-polB per record is expected!')
-
-    if len(att_index) != 0:
-        assembly_gap_record = create_assembly_gap_record(record)
-        modified_record = assembly_gap_record + record if att_index[0] > polB_index[0] \
-            else record + assembly_gap_record
-    # TODO: continue from here next time!
+    modified_record = assembly_gap_record + record if atts[0][2] > polbs[0][2] else record + assembly_gap_record
     return modified_record
 
 
-def create_single_record(record_set):
-    unchangeable_contig = get_unchangeable_contig(record_set)
-    if len(unchangeable_contig) > 1:
-        raise AssertionError('Only a single pipolin region per genome is expected, but got more!')
-    elif len(unchangeable_contig) == 0:
-        raise AssertionError('At least one unchangeable contig is expected, but got 0!')
-    unchangeable_contig = unchangeable_contig.pop()
-    record_set[unchangeable_contig] = add_assembly_gap_to_unchangeable(record_set[unchangeable_contig])
-    print(record_set[unchangeable_contig])
+def get_att_only_contigs(record_set):
+    att_only_contigs = []
+    for record_id, record in record_set.items():
+        atts = get_atts_from_record(record)
+        polbs = get_polbs_from_record(record)
 
+        if len(polbs) == 0 and len(atts) != 0:
+            att_only_contigs.append(record_id)
+
+    return att_only_contigs
+
+
+def get_assembly_gap_position(unchangeable_record):
+    for i_f, feature in enumerate(unchangeable_record.features):
+        if feature.type == 'assembly_gap':
+            return i_f
+
+
+def glue_unchangeable_and_att(unchangeable_record, att_record):
+    gap_position = get_assembly_gap_position(unchangeable_record)
+    print(gap_position)
+    glued_record = att_record + unchangeable_record if gap_position == 0 else unchangeable_record + att_record
+    return glued_record
+
+
+def create_single_record(record_set, pipolin_features):
+    unchangeable_contigs = get_unchangeable_contigs(record_set)
+    print(f'The unchangeable contigs: {unchangeable_contigs}!')
+    for contig in unchangeable_contigs:
+        record_set[contig] = add_assembly_gap_to_unchangeable(record_set[contig])
+
+    if len(unchangeable_contigs) == 1:
+        att_only_contigs = get_att_only_contigs(record_set)
+        if len(att_only_contigs) == 1:
+            single_record = glue_unchangeable_and_att(record_set[unchangeable_contigs[0]],
+                                                     record_set[att_only_contigs[0]])
+        else:
+            # TODO: traverse the features to infer the order
+    elif len(unchangeable_contigs) == 0:
+        # TODO: not trivial here...
 
     # return single_record
 
 
-def assemble_gapped_pipolins(gb_records: GenBankRecords):
+def assemble_gapped_pipolins(gb_records: GenBankRecords, pipolin_features):
     for strain_id, record_set in gb_records.items():
         if len(record_set) > 1:
-            gb_records[strain_id] = create_single_record(record_set)
+            print(f'Assembling pipolin region for {strain_id}...')
+            gb_records[strain_id] = create_single_record(record_set, pipolin_features)
 
 
 def get_unique_pipolin_features(gb_records: GenBankRecords):
     """
-    Create a set of the unique pipolin features (excluding the hypothetical proteins)
+    Create a set of the unique pipolin features (excluding hypothetical proteins)
     grouped by a feature type. Only ungapped pipolins will be traversed for features.
     """
-    pipolin_features = {'repeat_region': set(), 'tRNA': set(), 'CDS': set()}
+    pipolin_features = {'tRNA': set(), 'CDS': set()}
     for record_set in gb_records.values():
         if len(record_set) == 1:
             for record in record_set.values():
@@ -127,7 +149,7 @@ def main(in_dir, out_dir):
     """
     gb_records = read_genbank_records(in_dir)
     pipolin_features = get_unique_pipolin_features(gb_records)
-    assemble_gapped_pipolins(gb_records)
+    assemble_gapped_pipolins(gb_records, pipolin_features)
     
     check_dir(out_dir)
     write_genbank_records(gb_records, out_dir)
