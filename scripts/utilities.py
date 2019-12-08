@@ -4,6 +4,8 @@ import shelve
 from typing import Sequence, MutableSequence, Mapping, MutableMapping
 from itertools import groupby
 import subprocess
+
+from BCBio import GFF
 from Bio import SearchIO, SeqIO
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -216,3 +218,12 @@ def write_genbank_records(genbank_records, new_annot_dir):
         records = [record for record in value.values()]
         with open(os.path.join(new_annot_dir, f'{key}.gbk'), 'w') as ouf:
             SeqIO.write(records, ouf, 'genbank')
+
+
+def write_gff_records(gff_records, new_annot_dir):
+    for key, value in gff_records.items():
+        records = [record for record in value.values()]
+        with open(os.path.join(new_annot_dir, f'{key}.gff'), 'w') as ouf:
+            GFF.write(records, ouf)
+            print('##FASTA', file=ouf)
+            SeqIO.write(records, ouf, format='fasta')

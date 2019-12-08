@@ -16,6 +16,7 @@ cyan = '0 255 255'   # Uracil-DNA glycosylase
 green = '0 255 0'   # tRNA-Leu
 blue = '0 0 255'   # repeat_region
 floral_white = '255 250 240'   # others
+black = '0 0 0'   # assembly_gap
 
 products_to_colours = {'Primer-independent DNA polymerase PolB': red,
                        'Tyrosine recombinase XerC': brick_red,
@@ -24,7 +25,8 @@ products_to_colours = {'Primer-independent DNA polymerase PolB': red,
                        'Type I restriction modification system methyltransferase (hsdM)': yellow,
                        'metallohydrolase': magenta, 'excisionase': purple,
                        'Uracil-DNA glycosylase': cyan, 'tRNA-Leu': green,
-                       'repeat_region': blue, 'other': floral_white}
+                       'repeat_region': blue, 'assembly_gap': black,
+                       'other': floral_white}
 
 
 def colour_feature(qualifiers):

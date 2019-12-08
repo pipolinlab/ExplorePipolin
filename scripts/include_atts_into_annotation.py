@@ -13,6 +13,7 @@ from BCBio import GFF
 from utilities import CONTEXT_SETTINGS
 from utilities import read_from_shelve
 from utilities import read_genbank_records, write_genbank_records
+from utilities import write_gff_records
 from utilities import check_dir
 
 
@@ -51,12 +52,14 @@ def create_att_feature(att, pipolin, records_format):
 
 
 def add_new_gb_feature(new_feature, record):
-    new_feature_index = 0
+    new_feature_index = None
     for i_f, feature in enumerate(record.features):
         if new_feature.location.start < feature.location.start:
             new_feature_index = i_f
             break
 
+    if new_feature_index is None:
+        new_feature_index = len(record.features)
     record.features.insert(new_feature_index, new_feature)
 
 
@@ -72,15 +75,6 @@ def add_atts(records, records_format, pipolins):
                 record = records[pipolin.strain_id][att.node]
                 att_feature = create_att_feature(att, pipolin, records_format)
                 add_new_gb_feature(att_feature, record)
-
-
-def write_gff_records(gff_records, new_annot_dir):
-    for key, value in gff_records.items():
-        records = [record for record in value.values()]
-        with open(os.path.join(new_annot_dir, f'{key}.gff'), 'w') as ouf:
-            GFF.write(records, ouf)
-            print('##FASTA', file=ouf)
-            SeqIO.write(records, ouf, format='fasta')
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
