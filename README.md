@@ -7,6 +7,8 @@ To extract the subsequence from a genome:
  
  `$ get_subsequence.py genomes/NZ_JNMI01000006.1.fa 64241 64373 attL.fa`
 
+ `$ get_subsequence.py genome/NZ_JNMI010000006.1.fa 90094 90008 tRNA.fa`
+
 The whole analysis:
  * `download_genomes_ncbi.py`
  * For Saskia's strains: `edit_contig_names.sh <in-dir>` --
