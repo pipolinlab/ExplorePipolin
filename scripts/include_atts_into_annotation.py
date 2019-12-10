@@ -85,6 +85,7 @@ def add_atts(records, records_format, pipolins):
 def include_atts_into_annotation(shelve_file, object_name, orig_annot_dir, new_annot_dir):
     """
     Adds att regions to the annotations (*.gbk and *.gff files)
+    TODO: add also *.faa and *.ffn files!
     """
     pipolins = read_from_shelve(shelve_file, object_name)
 

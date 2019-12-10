@@ -4,13 +4,14 @@
 import os
 import click
 from Bio import SeqIO
-from utilities import CONTEXT_SETTINGS, get_roary_groups
+from utilities import CONTEXT_SETTINGS
+from utilities import check_dir
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('roary-dir', type=click.Path(exists=True))
 @click.argument('prokka-dir', type=click.Path(exists=True))
-@click.argument('out-dir', type=click.Path(exists=True))
+@click.argument('out-dir', type=click.Path())
 @click.option('--ext',type=click.Choice(['faa', 'ffn']), required=True,
              help='Put "faa" if you need amino acid sequences and "ffn" if you need nucleotide sequences')
 def extract_roary_groups(roary_dir, prokka_dir, out_dir, ext):
@@ -34,6 +35,7 @@ def extract_roary_groups(roary_dir, prokka_dir, out_dir, ext):
     for file in files:
         records.update(SeqIO.to_dict(SeqIO.parse(file, 'fasta')))
 
+    check_dir(out_dir)
     for group_id, genes in roary_groups.items():
         seqs = [records[gene] for gene in genes if gene in records]
         with open(os.path.join(out_dir, f'{group_id}.{ext}'), 'w') as ouf:
