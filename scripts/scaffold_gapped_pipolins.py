@@ -12,6 +12,10 @@ from utilities import write_gff_records
 from utilities import GenBankRecords
 from utilities import check_dir
 
+# Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
+# https://github.com/biopython/biopython/issues/1755
+
+
 def get_atts_from_record(record):
     atts = []
     for i_f, feature in enumerate(record.features):
@@ -44,7 +48,10 @@ def get_unchangeable_contigs(record_set):
 
 
 def create_assembly_gap_record(record):
-    # TODO: add source feature !!!
+    source_feature = SeqFeature(type='source', location=FeatureLocation(1, 100, strand=+1),
+                                qualifiers={'mol_type': record.features[0].qualifiers['mol_type'],
+                                            'organism': record.features[0].qualifiers['organism'],
+                                            'strain': record.features[0].qualifiers['strain']})
     assembly_gap_seq = Seq('N' * 100, alphabet=IUPACAmbiguousDNA())
     assembly_gap_qualifiers = {'estimated_length': ['unknown'],
                                'gap_type': ['within_scaffolds'],
@@ -53,7 +60,7 @@ def create_assembly_gap_record(record):
                                       location=FeatureLocation(1, 100, strand=+1),
                                       qualifiers=assembly_gap_qualifiers)
     assembly_gap_record = SeqRecord(seq=assembly_gap_seq, id=record.id, name=record.name,
-                                    description=record.description, features=[assembly_gap_feature],
+                                    description=record.description, features=[source_feature, assembly_gap_feature],
                                     annotations=record.annotations)
 
     return assembly_gap_record
@@ -100,7 +107,7 @@ def get_assembly_gap_position(unchangeable_record):
 
 def glue_unchangeable_and_att(unchangeable_record, att_record) -> SeqRecord:
     gap_position = get_assembly_gap_position(unchangeable_record)
-    if gap_position == 0:
+    if gap_position == 1:
         att_record = cut_att_contig(att_record, 'left')
         glued_record = att_record + unchangeable_record
     else:
@@ -135,9 +142,16 @@ def get_trna_contig(record_set, att_only_contigs):
 def cut_att_contig(att_record, direction):
     atts = get_atts_from_record(att_record)
     if direction == 'right':
-        return att_record[:atts[-1][1] + 50]
+        new_att_record = att_record[:atts[0][1] + 50]
     else:
-        return att_record[atts[0][0] - 50:]
+        new_att_record = att_record[atts[0][0] - 50:]
+    source_feature = SeqFeature(type='source', location=FeatureLocation(1, len(new_att_record), strand=+1),
+                                qualifiers={'mol_type': att_record.features[0].qualifiers['mol_type'],
+                                            'organism': att_record.features[0].qualifiers['organism'],
+                                            'strain': att_record.features[0].qualifiers['strain']})
+    new_att_record.features.insert(0, source_feature)
+
+    return new_att_record
 
 
 def finish_all_separate_contigs(record_set, pipolin_features) -> SeqRecord:
@@ -198,22 +212,20 @@ def finish_one_unchangeable_contig(record_set, unchangeable_contigs) -> SeqRecor
     att_only_contigs = get_att_only_contigs(record_set)
 
     if len(att_only_contigs) == 1:
-        print('The single record was assembled!!!')
+        print('The single record was assembled!!!\n')
         return glue_unchangeable_and_att(record_set[unchangeable_contigs[0]], record_set[att_only_contigs[0]])
 
     else:
         gap_position = get_assembly_gap_position(record_set[unchangeable_contigs[0]])
-        direction = 'left' if gap_position == 0 else 'right'
+        direction = 'left' if gap_position == 1 else 'right'
         if direction == 'right':
             trna_contig = get_trna_contig(record_set, att_only_contigs)
             if trna_contig is None:
                 raise NotImplementedError
             else:
-                print(att_only_contigs)
                 att_only_contigs.remove(trna_contig)
-                print(att_only_contigs)
                 if len(att_only_contigs) == 1:
-                    print('The single record was assembled!!!')
+                    print('The single record was assembled!!!\n')
                     att_record = cut_att_contig(record_set[att_only_contigs[0]], 'right')
                     return record_set[unchangeable_contigs[0]] + att_record
                 else:
@@ -266,9 +278,10 @@ def get_unique_pipolin_features(gb_records: GenBankRecords):
 @click.argument('out-dir', type=click.Path())
 def main(in_dir, out_dir):
     """
-    The script takes IN_DIR with *.gbk files (generated after annotation and including atts),
+    The script takes IN_DIR with *.gbk files (generated after annotation and with included atts),
     detects not assembled pipolins and tries to order the contigs into one sequence,
     filling in gaps with NNs and adding the /assembly_gap feature to the *.gbk files.
+    NOTE: WORKS ONLY FOR SHORT PIPOLINS !!!
     """
     gb_records = read_genbank_records(in_dir)
     pipolin_features = get_unique_pipolin_features(gb_records)

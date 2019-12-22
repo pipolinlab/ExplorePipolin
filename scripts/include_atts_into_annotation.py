@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 
-# Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
-
 import os
 from typing import Mapping
 import click
