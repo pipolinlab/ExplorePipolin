@@ -16,7 +16,8 @@ cyan = '0 255 255'   # Uracil-DNA glycosylase
 green = '0 255 0'   # tRNA-Leu
 blue = '0 0 255'   # repeat_region
 floral_white = '255 250 240'   # others
-black = '0 0 0'   # assembly_gap
+black = '0 0 0'   # pipolin_structure
+pink = '255 200 200'   # paired-ends
 
 products_to_colours = {'Primer-independent DNA polymerase PolB': red,
                        'Tyrosine recombinase XerC': brick_red,
@@ -25,8 +26,8 @@ products_to_colours = {'Primer-independent DNA polymerase PolB': red,
                        'Type I restriction modification system methyltransferase (hsdM)': yellow,
                        'metallohydrolase': magenta, 'excisionase': purple,
                        'Uracil-DNA glycosylase': cyan, 'tRNA-Leu': green,
-                       'repeat_region': blue, 'assembly_gap': black,
-                       'other': floral_white}
+                       'repeat_region': blue, 'pipolin_structure': black,
+                       'paired-ends': pink, 'other': floral_white}
 
 
 def colour_feature(qualifiers):
@@ -34,6 +35,12 @@ def colour_feature(qualifiers):
         for product in qualifiers['product']:
             if product in products_to_colours:
                 qualifiers['colour'] = [products_to_colours[product]]
+            else:
+                qualifiers['colour'] = [products_to_colours['other']]
+    if 'linkage_evidence' in qualifiers:
+        for evidence in qualifiers['linkage_evidence']:
+            if evidence in products_to_colours:
+                qualifiers['colour'] = [products_to_colours[evidence]]
             else:
                 qualifiers['colour'] = [products_to_colours['other']]
 

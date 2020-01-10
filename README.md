@@ -28,7 +28,9 @@ The whole analysis:
  (parse HMMER output for atts)
  * `include_atts_into_annotation.py` 
  TODO: So far, the script includes atts only into GB 
- and GFF files. 
+ and GFF files.
+ * `scaffold_gapped_pipolins.py`
+ * `easyfig_add_colours.py`
  
 Prediction of ATTs:
  1. Prepared ATT sequences with `prepare_atts_for_msa.py`
