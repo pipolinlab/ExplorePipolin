@@ -155,7 +155,7 @@ def cut_att_contig(att_record, direction):
     return new_att_record
 
 
-def finish_all_separate_contigs(record_set, pipolin_features) -> SeqRecord:
+def finish_all_separate_contigs(record_set) -> SeqRecord:
     polb_contigs = get_polb_only_contigs(record_set)
     modify_polb_only_record(polb_contigs, record_set)
 
@@ -191,7 +191,7 @@ def modify_polb_only_record(polb_contigs, record_set):
         record_set[polb_contigs[0]] = assembly_gap + record_set[polb_contigs[0]] + assembly_gap
 
 
-def create_single_record(record_set, pipolin_features) -> SeqRecord:
+def create_single_record(record_set) -> SeqRecord:
     unchangeable_contigs = get_unchangeable_contigs(record_set)
     print(f'The unchangeable contigs: {unchangeable_contigs}!')
     for contig in unchangeable_contigs:
@@ -201,7 +201,7 @@ def create_single_record(record_set, pipolin_features) -> SeqRecord:
         return finish_one_unchangeable_contig(record_set, unchangeable_contigs)
 
     elif len(unchangeable_contigs) == 0:
-        return finish_all_separate_contigs(record_set, pipolin_features)
+        return finish_all_separate_contigs(record_set)
     else:
         raise AssertionError('Only a single pipolin region is expected per genome!')
 
@@ -233,12 +233,12 @@ def finish_one_unchangeable_contig(record_set, unchangeable_contigs) -> SeqRecor
                 raise NotImplementedError
 
 
-def assemble_gapped_pipolins(gb_records: GenBankRecords, pipolin_features):
+def assemble_gapped_pipolins(gb_records: GenBankRecords):
     for strain_id, record_set in gb_records.items():
         if len(record_set) > 1:
             print(f'Assembling pipolin region for {strain_id}...')
             try:
-                gb_records[strain_id][strain_id] = create_single_record(record_set, pipolin_features)
+                gb_records[strain_id][strain_id] = create_single_record(record_set)
                 gb_records[strain_id][strain_id].id = strain_id
             except NotImplementedError:
                 print(f'FAILED: {strain_id}')
@@ -252,26 +252,6 @@ def assemble_gapped_pipolins(gb_records: GenBankRecords, pipolin_features):
                 del gb_records[strain_id][key]
 
 
-def get_unique_pipolin_features(gb_records: GenBankRecords):
-    """
-    Create a set of the unique pipolin features (excluding hypothetical proteins)
-    grouped by a feature type. Only ungapped pipolins will be traversed for features.
-    """
-    pipolin_features = {'tRNA': set(), 'CDS': set()}
-    for record_set in gb_records.values():
-        if len(record_set) == 1:
-            for record in record_set.values():
-                for feature in record.features:
-                    if feature.type in pipolin_features:
-                        if 'product' in feature.qualifiers:
-                            if len(feature.qualifiers['product']) > 1:
-                                raise AssertionError('Only a single product is expected!')
-                            if feature.qualifiers['product'][0] != 'hypothetical protein':
-                                pipolin_features[feature.type].add(feature.qualifiers['product'][0])
-
-    return pipolin_features
-
-
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('in-dir', type=click.Path(exists=True))
 @click.argument('out-dir', type=click.Path())
@@ -283,8 +263,7 @@ def main(in_dir, out_dir):
     NOTE: WORKS ONLY FOR SHORT PIPOLINS !!!
     """
     gb_records = read_genbank_records(in_dir)
-    pipolin_features = get_unique_pipolin_features(gb_records)
-    assemble_gapped_pipolins(gb_records, pipolin_features)
+    assemble_gapped_pipolins(gb_records)
     
     check_dir(out_dir)
     write_genbank_records(gb_records, out_dir)
