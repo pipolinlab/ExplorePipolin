@@ -102,7 +102,8 @@ def get_polb_only_contigs(record_set):
 def get_assembly_gap_position(unchangeable_record):
     for i_f, feature in enumerate(unchangeable_record.features):
         if feature.type == 'assembly_gap':
-            return i_f
+            if 'pipolin_structure' in feature.qualifiers['linkage_evidence']:
+                return i_f
 
 
 def glue_unchangeable_and_att(unchangeable_record, att_record) -> SeqRecord:
@@ -184,10 +185,8 @@ def modify_polb_only_record(polb_contigs, record_set):
     polbs = get_polbs_from_record(record_set[polb_contigs[0]])
     if len(polbs) != 1:
         raise NotImplementedError
-    if polbs[0][0] > polbs[0][1]:
-        raise AssertionError(f'The contig {polb_contigs[0]} probably must be reverted!')
     else:
-        print(f'>>> The contig {polb_contigs[0]} probably has the correct direction!')
+        print(f'>>> The polB contig is {polb_contigs[0]}!')
         assembly_gap = create_assembly_gap_record(record_set[polb_contigs[0]])
         record_set[polb_contigs[0]] = assembly_gap + record_set[polb_contigs[0]] + assembly_gap
 
@@ -202,7 +201,6 @@ def create_single_record(record_set, pipolin_features) -> SeqRecord:
         return finish_one_unchangeable_contig(record_set, unchangeable_contigs)
 
     elif len(unchangeable_contigs) == 0:
-        # TODO: not trivial here...
         return finish_all_separate_contigs(record_set, pipolin_features)
     else:
         raise AssertionError('Only a single pipolin region is expected per genome!')
@@ -218,20 +216,21 @@ def finish_one_unchangeable_contig(record_set, unchangeable_contigs) -> SeqRecor
     else:
         gap_position = get_assembly_gap_position(record_set[unchangeable_contigs[0]])
         direction = 'left' if gap_position == 1 else 'right'
-        if direction == 'right':
-            trna_contig = get_trna_contig(record_set, att_only_contigs)
-            if trna_contig is None:
-                raise NotImplementedError
-            else:
-                att_only_contigs.remove(trna_contig)
-                if len(att_only_contigs) == 1:
-                    print('The single record was assembled!!!\n')
+        trna_contig = get_trna_contig(record_set, att_only_contigs)
+        if trna_contig is None:
+            raise NotImplementedError
+        else:
+            att_only_contigs.remove(trna_contig)
+            if len(att_only_contigs) == 1:
+                print('The single record was assembled!!!\n')
+                if direction == 'right':
                     att_record = cut_att_contig(record_set[att_only_contigs[0]], 'right')
                     return record_set[unchangeable_contigs[0]] + att_record
-                else:
-                    raise NotImplementedError
-        else:
-            raise NotImplementedError
+                if direction == 'left':
+                    att_record = cut_att_contig(record_set[att_only_contigs[0]], 'left')
+                    return att_record + record_set[unchangeable_contigs[0]]
+            else:
+                raise NotImplementedError
 
 
 def assemble_gapped_pipolins(gb_records: GenBankRecords, pipolin_features):
