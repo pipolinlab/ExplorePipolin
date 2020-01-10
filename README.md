@@ -10,7 +10,8 @@ To extract the subsequence from a genome:
  `$ get_subsequence.py genome/NZ_JNMI010000006.1.fa 90094 90008 tRNA.fa`
 
 The whole analysis:
- * `download_genomes_ncbi.py`
+ * `download_genomes_ncbi.py` TODO: downloads contigs 
+ instead of the whole genome sequences in some cases. How to fix?
  * For Saskia's strains: `edit_contig_names.sh <in-dir>` --
  to shorten the long contig names
  * `identify_pipolins_roughly.py` using reference 
