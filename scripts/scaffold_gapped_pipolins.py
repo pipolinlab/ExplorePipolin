@@ -9,6 +9,7 @@ from Bio.SeqRecord import SeqRecord
 from utilities import CONTEXT_SETTINGS
 from utilities import read_genbank_records, write_genbank_records
 from utilities import write_gff_records
+from utilities import write_fna_records
 from utilities import GenBankRecords
 from utilities import check_dir
 
@@ -268,6 +269,7 @@ def main(in_dir, out_dir):
     check_dir(out_dir)
     write_genbank_records(gb_records, out_dir)
     write_gff_records(gb_records, out_dir)
+    write_fna_records(gb_records, out_dir)
 
 
 if __name__ == '__main__':

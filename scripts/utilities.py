@@ -204,26 +204,33 @@ def blast_seqs_against_seq(dir_with_seqs, seq, output_dir):
 GenBankRecords = MutableMapping[str, MutableMapping[str, SeqIO.SeqRecord]]
 
 
-def read_genbank_records(annot_dir) -> GenBankRecords:
+def read_genbank_records(in_dir) -> GenBankRecords:
     genbank_records: GenBankRecords = {}
-    for file in os.listdir(annot_dir):
+    for file in os.listdir(in_dir):
         if file.endswith('.gbk'):
-            record = SeqIO.to_dict(SeqIO.parse(os.path.join(annot_dir, file), format='genbank'))
+            record = SeqIO.to_dict(SeqIO.parse(os.path.join(in_dir, file), format='genbank'))
             genbank_records[os.path.splitext(file)[0]] = record
     return genbank_records
 
 
-def write_genbank_records(genbank_records, new_annot_dir):
-    for key, value in genbank_records.items():
+def write_genbank_records(gb_records, out_dir):
+    for key, value in gb_records.items():
         records = [record for record in value.values()]
-        with open(os.path.join(new_annot_dir, f'{key}.gbk'), 'w') as ouf:
+        with open(os.path.join(out_dir, f'{key}.gbk'), 'w') as ouf:
             SeqIO.write(records, ouf, 'genbank')
 
 
-def write_gff_records(gff_records, new_annot_dir):
-    for key, value in gff_records.items():
+def write_gff_records(in_records, out_dir):
+    for key, value in in_records.items():
         records = [record for record in value.values()]
-        with open(os.path.join(new_annot_dir, f'{key}.gff'), 'w') as ouf:
+        with open(os.path.join(out_dir, f'{key}.gff'), 'w') as ouf:
             GFF.write(records, ouf)
             print('##FASTA', file=ouf)
+            SeqIO.write(records, ouf, format='fasta')
+
+
+def write_fna_records(gb_records, out_dir):
+    for key, value in gb_records.items():
+        records = [record for record in value.values()]
+        with open(os.path.join(out_dir, f'{key}.fna'), 'w') as ouf:
             SeqIO.write(records, ouf, format='fasta')
