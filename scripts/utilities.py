@@ -232,5 +232,5 @@ def write_gff_records(in_records, out_dir):
 def write_fna_records(gb_records, out_dir):
     for key, value in gb_records.items():
         records = [record for record in value.values()]
-        with open(os.path.join(out_dir, f'{key}.fna'), 'w') as ouf:
+        with open(os.path.join(out_dir, f'{key}.fa'), 'w') as ouf:
             SeqIO.write(records, ouf, format='fasta')
