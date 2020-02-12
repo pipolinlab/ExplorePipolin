@@ -231,6 +231,9 @@ def write_gff_records(in_records, out_dir):
 
 def write_fna_records(gb_records, out_dir):
     for key, value in gb_records.items():
-        records = [record for record in value.values()]
+        if len(value.values()) > 1:
+            raise AssertionError('The only record is expected!')
+        record = list(value.values()).pop()
+        record.id = key
         with open(os.path.join(out_dir, f'{key}.fa'), 'w') as ouf:
-            SeqIO.write(records, ouf, format='fasta')
+            SeqIO.write(record, ouf, format='fasta')
