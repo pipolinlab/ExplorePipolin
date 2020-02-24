@@ -23,6 +23,14 @@ def download_genomes_ncbi(blast_tab, out_dir):
     ids = [i.id for i in blast_result]   # ids are all unique here
     ids.append(blast_result.id)   # NZ_JNMI01000006.1
 
+    # TODO: it downloads contigs instead of the whole genome sequences in some cases.
+    # SOLUTION: for each id in ids it is possible to fetch additional information:
+    #  efetch -format native -mode xml -id NZ_JNMI01000006.1 -db sequences > output.xml
+    # and then parse xml for the presence of the assembly id. After this it is possible
+    # to download the whole genome with the same command:
+    #  efetch -format fasta -id <assembly_id> -db sequences > output.fa
+    # The efetch command is from ncbi-entrez-direct package.
+
     check_dir(out_dir)
     os.chdir(out_dir)
     ncbi_acc_download(ids)

@@ -29,11 +29,12 @@ def concatenate(fasta_file, new_fasta):
         for record in records:
             if record.id == duplicate:
                 records_to_concat.append(record)
-        if len(records_to_concat) > 1:
-            records_to_concat.sort(key=lambda x: x.name)
-            new_seq = ''.join(str(record.seq) for record in records_to_concat)
-            new_records.append(SeqRecord(seq=Seq(new_seq), id=duplicate,
-                                         description='Primer-independent DNA polymerase PolB'))
+        if len(records_to_concat) <= 1:
+            raise AssertionError('Something wrong!!!')
+        records_to_concat.sort(key=lambda x: x.name)
+        new_seq = ''.join(str(record.seq) for record in records_to_concat)
+        new_records.append(SeqRecord(seq=Seq(new_seq), id=duplicate,
+                                     description='Primer-independent DNA polymerase PolB'))
 
     new_records.extend(record for record in records if record.id not in duplicates)
     with open(new_fasta, 'w') as ouf:
