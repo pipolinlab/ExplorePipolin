@@ -34,6 +34,13 @@ def get_polbs_from_record(record):
     return polbs
 
 
+def get_trna_end(trna_record):
+    for feature in trna_record.features:
+        if feature.type == 'tRNA':
+            if feature.qualifiers['product'] == ['tRNA-Leu']:
+                return feature.location.end
+
+
 def get_unchangeable_contigs(record_set):
     """
     If there are a polB and an att, the whole contig is included into the assembly.
@@ -156,7 +163,19 @@ def cut_att_contig(att_record, direction):
     return new_att_record
 
 
-def finish_all_separate_contigs(record_set) -> SeqRecord:
+def cut_trna_contig(trna_record):
+    trna_end = get_trna_end(trna_record)
+    new_trna_record = trna_record[:trna_end + 50]
+    source_feature = SeqFeature(type='source', location=FeatureLocation(1, len(new_trna_record), strand=+1),
+                                qualifiers={'mol_type': trna_record.features[0].qualifiers['mol_type'],
+                                            'organism': trna_record.features[0].qualifiers['organism'],
+                                            'strain': trna_record.features[0].qualifiers['strain']})
+    new_trna_record.features.insert(0, source_feature)
+
+    return new_trna_record
+
+
+def finish_all_separate_contigs(record_set, long) -> SeqRecord:
     polb_contigs = get_polb_only_contigs(record_set)
     modify_polb_only_record(polb_contigs, record_set)
 
@@ -192,22 +211,22 @@ def modify_polb_only_record(polb_contigs, record_set):
         record_set[polb_contigs[0]] = assembly_gap + record_set[polb_contigs[0]] + assembly_gap
 
 
-def create_single_record(record_set) -> SeqRecord:
+def create_single_record(record_set,  long) -> SeqRecord:
     unchangeable_contigs = get_unchangeable_contigs(record_set)
     print(f'The unchangeable contigs: {unchangeable_contigs}!')
     for contig in unchangeable_contigs:
         record_set[contig] = add_assembly_gap_to_unchangeable(record_set[contig])
 
     if len(unchangeable_contigs) == 1:
-        return finish_one_unchangeable_contig(record_set, unchangeable_contigs)
+        return finish_one_unchangeable_contig(record_set, unchangeable_contigs, long)
 
     elif len(unchangeable_contigs) == 0:
-        return finish_all_separate_contigs(record_set)
+        return finish_all_separate_contigs(record_set, long)
     else:
         raise AssertionError('Only a single pipolin region is expected per genome!')
 
 
-def finish_one_unchangeable_contig(record_set, unchangeable_contigs) -> SeqRecord:
+def finish_one_unchangeable_contig(record_set, unchangeable_contigs, long) -> SeqRecord:
     att_only_contigs = get_att_only_contigs(record_set)
 
     if len(att_only_contigs) == 1:
@@ -222,24 +241,36 @@ def finish_one_unchangeable_contig(record_set, unchangeable_contigs) -> SeqRecor
             raise NotImplementedError
         else:
             att_only_contigs.remove(trna_contig)
+
+            trna_record = cut_trna_contig(record_set[trna_contig])
+            gap = create_assembly_gap_record(record_set[unchangeable_contigs[0]])
+
             if len(att_only_contigs) == 1:
                 print('The single record was assembled!!!\n')
                 if direction == 'right':
                     att_record = cut_att_contig(record_set[att_only_contigs[0]], 'right')
-                    return record_set[unchangeable_contigs[0]] + att_record
+                    short_pipolin = record_set[unchangeable_contigs[0]] + att_record
+                    if long:
+                        return short_pipolin + gap + trna_record
+                    else:
+                        return short_pipolin
                 if direction == 'left':
                     att_record = cut_att_contig(record_set[att_only_contigs[0]], 'left')
-                    return att_record + record_set[unchangeable_contigs[0]]
+                    short_pipolin = att_record + record_set[unchangeable_contigs[0]]
+                    if long:
+                        return short_pipolin + gap + trna_record
+                    else:
+                        return short_pipolin
             else:
                 raise NotImplementedError
 
 
-def assemble_gapped_pipolins(gb_records: GenBankRecords):
+def assemble_gapped_pipolins(gb_records: GenBankRecords, long):
     for strain_id, record_set in gb_records.items():
         if len(record_set) > 1:
             print(f'Assembling pipolin region for {strain_id}...')
             try:
-                gb_records[strain_id][strain_id] = create_single_record(record_set)
+                gb_records[strain_id][strain_id] = create_single_record(record_set, long)
                 gb_records[strain_id][strain_id].id = strain_id
             except NotImplementedError:
                 print(f'FAILED: {strain_id}')
@@ -251,20 +282,27 @@ def assemble_gapped_pipolins(gb_records: GenBankRecords):
                     keys_to_delele.append(key)
             for key in keys_to_delele:
                 del gb_records[strain_id][key]
+        else:
+            (record_id, record), = record_set.items()
+            if record_id != strain_id:
+                gb_records[strain_id][record_id].id = strain_id
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('in-dir', type=click.Path(exists=True))
 @click.argument('out-dir', type=click.Path())
-def main(in_dir, out_dir):
+@click.option('--long', is_flag=True, help='If long, pipolin regions are identified by leftmost and rightmost '
+                                           'atts. If it is not specified, the closest atts to pi-polB will determine '
+                                           'the pipolin bounds.')
+def main(in_dir, out_dir, long):
     """
     The script takes IN_DIR with *.gbk files (generated after annotation and with included atts),
     detects not assembled pipolins and tries to order the contigs into one sequence,
     filling in gaps with NNs and adding the /assembly_gap feature to the *.gbk files.
-    NOTE: WORKS ONLY FOR SHORT PIPOLINS !!!
+    TODO: also learn how to scaffold long pipolins!
     """
     gb_records = read_genbank_records(in_dir)
-    assemble_gapped_pipolins(gb_records)
+    assemble_gapped_pipolins(gb_records, long)
     
     check_dir(out_dir)
     write_genbank_records(gb_records, out_dir)

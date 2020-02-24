@@ -231,7 +231,7 @@ def write_gff_records(in_records, out_dir):
 
 def write_fna_records(gb_records, out_dir):
     for key, value in gb_records.items():
-        if len(value.values()) > 1:
+        if len(value) > 1:
             raise AssertionError('The only record is expected!')
         record = list(value.values()).pop()
         record.id = key

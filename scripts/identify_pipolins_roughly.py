@@ -55,13 +55,18 @@ def identify_pipolins_roughly(ref_polb, ref_att, ref_trna, genomes_dir, out_dir)
     polbs_blast_path = os.path.join(out_dir, 'polb_blast')
     atts_blast_path = os.path.join(out_dir, 'att_blast')
     trna_blast_path = os.path.join(out_dir, 'trna_blast')
+    print('>>> Running BLAST against piPolB...')
     blast_seqs_against_seq(genomes_dir, ref_polb, polbs_blast_path)
+    print('>>> Running BLAST against AttL...')
     blast_seqs_against_seq(genomes_dir, ref_att, atts_blast_path)
+    print('>>> Running BLAST against tRNA...')
     blast_seqs_against_seq(genomes_dir, ref_trna, trna_blast_path)
 
+    print('>>> Creating "pipolins" shelve object...')
     pipolins = create_pipolins(genomes_dir, polbs_blast_path, atts_blast_path)
     out_file = os.path.join(out_dir, 'shelve.db')
     save_to_shelve(out_file, pipolins, 'pipolins')
+    print('DONE!')
 
 
 if __name__ == '__main__':
