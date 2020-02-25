@@ -69,6 +69,7 @@ def read_record_ranges(record: SeqRecord):
     ranges = []
     for feature in record.features:
         ranges.append((feature.location.start, feature.location.end, feature.location.strand))
+
     return ranges
 
 
@@ -76,30 +77,26 @@ def find_feature_position(s_ranges, q_range):
     all_ranges = s_ranges + [q_range]
     all_ranges.sort(key=lambda x: (x[0], x[1]))
     q_position = all_ranges.index(q_range)
-    q = set(range(q_range[0], q_range[1] + 1))
+
     if all_ranges[q_position][0] < all_ranges[q_position - 1][1]:
         if all_ranges[q_position][2] == all_ranges[q_position - 1][2]:
-            s = set(range(all_ranges[q_position - 1][0], all_ranges[q_position - 1][1]))
-            qs = q.intersection(s)
-            # if len(qs) / len(s) >= 0.9:
             s_position = s_ranges.index(all_ranges[q_position - 1])
             return s_position
+
     if all_ranges[q_position][1] > all_ranges[q_position + 1][0]:
         if all_ranges[q_position][2] == all_ranges[q_position + 1][2]:
-            s = set(range(all_ranges[q_position + 1][0], all_ranges[q_position + 1][1]))
-            qs = q.intersection(s)
-            # if len(qs) / len(s) >= 0.9:
             s_position = s_ranges.index(all_ranges[q_position + 1])
             return s_position
+
     return None
 
 
 def color_feature(record: SeqRecord, feature_position, db_type):
     if record.features[feature_position].qualifiers['colour'] == ['255 250 240']:
         if db_type == 'vir':
-            record.features[feature_position].qualifiers['colour'] = orange
-        elif db_type == 'amr':
             record.features[feature_position].qualifiers['colour'] = light_steel_blue
+        elif db_type == 'amr':
+            record.features[feature_position].qualifiers['colour'] = orange
         else:
             raise AssertionError('Something is wrong here!')
 
@@ -111,7 +108,8 @@ def add_info_from_summary(gb_records: GenBankRecords, summary_path, db_type):
             entry_line = line.strip().split(sep='\t')
             q_id = entry_line[1]
             q_location = (int(entry_line[2]), int(entry_line[3]), 1 if entry_line[4] == '+' else -1)
-            q_cov = float(entry_line[10])
+            q_cov = float(entry_line[9])
+
             if q_cov >= 10.0:
                 record = gb_records[os.path.basename(summary_path)[:-4]][q_id]
                 record_ranges = read_record_ranges(record)
