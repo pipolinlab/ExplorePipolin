@@ -7,6 +7,7 @@ from utilities import read_genbank_records, write_genbank_records
 
 red = '255 0 0'   # Primer-independent DNA polymerase PolB
 brick_red = '139 58 58'   # Tyrosine recombinase XerC
+brown = '200 150 100'   # Prophage integrase IntS
 yellow = '255 255 0'   # Type I site-specific deoxyribonuclease (hsdR)
 # Type I restriction modification enzyme
 # Type I restriction modification system methyltransferase (hsdM)
@@ -19,6 +20,9 @@ floral_white = '255 250 240'   # others
 black = '0 0 0'   # pipolin_structure
 pink = '255 200 200'   # paired-ends
 
+orange = '255 165 0'   # virulence gene
+light_steel_blue = '176 196 222'   # AMR gene
+
 products_to_colours = {'Primer-independent DNA polymerase PolB': red,
                        'Tyrosine recombinase XerC': brick_red,
                        'Type I site-specific deoxyribonuclease (hsdR)': yellow,
@@ -27,7 +31,8 @@ products_to_colours = {'Primer-independent DNA polymerase PolB': red,
                        'metallohydrolase': magenta, 'excisionase': purple,
                        'Uracil-DNA glycosylase': cyan, 'tRNA-Leu': green,
                        'repeat_region': blue, 'pipolin_structure': black,
-                       'paired-ends': pink, 'other': floral_white}
+                       'paired-ends': pink, 'Prophage integrase IntS': brown,
+                       'other': floral_white}
 
 
 def colour_feature(qualifiers):
