@@ -114,13 +114,13 @@ def get_assembly_gap_position(unchangeable_record):
                 return i_f
 
 
-def glue_unchangeable_and_att(unchangeable_record, att_record) -> SeqRecord:
+def glue_unchangeable_and_att(unchangeable_record, att_record, long) -> SeqRecord:
     gap_position = get_assembly_gap_position(unchangeable_record)
     if gap_position == 1:
-        att_record = cut_att_contig(att_record, 'left')
+        att_record = cut_att_contig(att_record, 'left', long)
         glued_record = att_record + unchangeable_record
     else:
-        att_record = cut_att_contig(att_record, 'right')
+        att_record = cut_att_contig(att_record, 'right', long)
         glued_record = unchangeable_record + att_record
     return glued_record
 
@@ -148,10 +148,13 @@ def get_trna_contig(record_set, att_only_contigs):
     return None
 
 
-def cut_att_contig(att_record, direction):
+def cut_att_contig(att_record, direction, long):
     atts = get_atts_from_record(att_record)
     if direction == 'right':
-        new_att_record = att_record[:atts[0][1] + 50]
+        if long and len(atts) != 1:
+            new_att_record = att_record[:atts[1][1] + 50]
+        else:
+            new_att_record = att_record[:atts[0][1] + 50]
     else:
         new_att_record = att_record[atts[0][0] - 50:]
     source_feature = SeqFeature(type='source', location=FeatureLocation(1, len(new_att_record), strand=+1),
@@ -192,8 +195,8 @@ def finish_all_separate_contigs(record_set, long) -> SeqRecord:
     if len(att_contigs) == 1:
         print('>>>The only right and left atts are found!')
         left_atts.append(att_contigs[0])
-        right_contig = cut_att_contig(record_set[right_atts[0]], 'right')
-        left_contig = cut_att_contig(record_set[left_atts[0]], 'left')
+        right_contig = cut_att_contig(record_set[right_atts[0]], 'right', long)
+        left_contig = cut_att_contig(record_set[left_atts[0]], 'left', long)
         return left_contig + record_set[polb_contigs[0]] + right_contig
     else:
         assert False
@@ -231,7 +234,7 @@ def finish_one_unchangeable_contig(record_set, unchangeable_contigs, long) -> Se
 
     if len(att_only_contigs) == 1:
         print('The single record was assembled!!!\n')
-        return glue_unchangeable_and_att(record_set[unchangeable_contigs[0]], record_set[att_only_contigs[0]])
+        return glue_unchangeable_and_att(record_set[unchangeable_contigs[0]], record_set[att_only_contigs[0]], long)
 
     else:
         gap_position = get_assembly_gap_position(record_set[unchangeable_contigs[0]])
@@ -248,14 +251,14 @@ def finish_one_unchangeable_contig(record_set, unchangeable_contigs, long) -> Se
             if len(att_only_contigs) == 1:
                 print('The single record was assembled!!!\n')
                 if direction == 'right':
-                    att_record = cut_att_contig(record_set[att_only_contigs[0]], 'right')
+                    att_record = cut_att_contig(record_set[att_only_contigs[0]], 'right', long)
                     short_pipolin = record_set[unchangeable_contigs[0]] + att_record
                     if long:
                         return short_pipolin + gap + trna_record
                     else:
                         return short_pipolin
                 if direction == 'left':
-                    att_record = cut_att_contig(record_set[att_only_contigs[0]], 'left')
+                    att_record = cut_att_contig(record_set[att_only_contigs[0]], 'left', long)
                     short_pipolin = att_record + record_set[unchangeable_contigs[0]]
                     if long:
                         return short_pipolin + gap + trna_record
