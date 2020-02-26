@@ -22,8 +22,8 @@ floral_white = '255 250 240'   # others
 black = '0 0 0'   # pipolin_structure
 pink = '255 200 200'   # paired-ends
 
-orange = '255 165 0'   # virulence gene
-light_steel_blue = '176 196 222'   # AMR gene
+orange = '255 165 0'   # AMR gene
+light_steel_blue = '176 196 222'   # virulence gene
 
 products_to_colours = {'Primer-independent DNA polymerase PolB': red,
                        'Tyrosine recombinase XerC': brick_red,
