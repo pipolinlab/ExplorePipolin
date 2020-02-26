@@ -4,7 +4,7 @@
 import os
 import click
 from Bio import SeqIO
-from utilities import CONTEXT_SETTINGS
+from utilities import CONTEXT_SETTINGS, read_from_prokka_dir
 from utilities import check_dir
 
 
@@ -12,8 +12,8 @@ from utilities import check_dir
 @click.argument('roary-dir', type=click.Path(exists=True))
 @click.argument('prokka-dir', type=click.Path(exists=True))
 @click.argument('out-dir', type=click.Path())
-@click.option('--ext',type=click.Choice(['faa', 'ffn']), required=True,
-             help='Put "faa" if you need amino acid sequences and "ffn" if you need nucleotide sequences')
+@click.option('--ext', type=click.Choice(['faa', 'ffn']), required=True,
+              help='Put "faa" if you need amino acid sequences and "ffn" if you need nucleotide sequences')
 def extract_roary_groups(roary_dir, prokka_dir, out_dir, ext):
     """
     TODO
@@ -26,14 +26,7 @@ def extract_roary_groups(roary_dir, prokka_dir, out_dir, ext):
             group = [i.replace('"', '') for i in group]  # remove quotation marks from items
             roary_groups[group[0]] = [group[i] for i in range(14, len(group)) if len(group[i]) > 0]
 
-    files = []
-    for file in os.listdir(prokka_dir):
-        if file.endswith(ext):
-            files.append(os.path.join(prokka_dir, file))
-
-    records = {}
-    for file in files:
-        records.update(SeqIO.to_dict(SeqIO.parse(file, 'fasta')))
+    records = read_from_prokka_dir(prokka_dir, ext)
 
     check_dir(out_dir)
     for group_id, genes in roary_groups.items():

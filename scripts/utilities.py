@@ -237,3 +237,14 @@ def write_fna_records(gb_records, out_dir):
         record.id = key
         with open(os.path.join(out_dir, f'{key}.fa'), 'w') as ouf:
             SeqIO.write(record, ouf, format='fasta')
+
+
+def read_from_prokka_dir(prokka_dir, ext):
+    files = []
+    for file in os.listdir(prokka_dir):
+        if file.endswith(ext):
+            files.append(os.path.join(prokka_dir, file))
+    records = {}
+    for file in files:
+        records.update(SeqIO.to_dict(SeqIO.parse(file, 'fasta')))
+    return records
