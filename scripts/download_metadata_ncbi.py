@@ -76,6 +76,11 @@ def download_metadata_ncbi(blast_tab, out_file):
 
         metadata.append(Metadata(assembly_acc, species_name, strain, ','.join(acc_ids)))
 
+    # add the info about LREC strains
+    metadata.append(Metadata('chr_LREC237', 'Escherichia coli', 'LREC237', '-'))
+    for i in range(239, 263):
+        metadata.append(Metadata(f'chr_LREC{i}', 'Escherichia coli', f'LREC{i}', '-'))
+
     with open(out_file, 'w') as ouf:
         for line in metadata:
             print('\t'.join(list(line)), file=ouf)
