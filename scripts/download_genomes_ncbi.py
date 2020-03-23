@@ -25,21 +25,19 @@ def download_genomes_ncbi(metadata_file, out_dir):
             print(f'Downloading the {num + 1} genome...')
             assembly_id, _, _, ids_string = line.strip().split('\t')
 
-            seqs = []
-            seqs_batch_request = subprocess.run(['epost', '-id', ids_string, '-db', 'nucleotide'],
-                                                stdout=subprocess.PIPE)
-            seqs_batch_fetched = subprocess.run(['efetch', '-format', 'fasta'], input=seqs_batch_request.stdout,
-                                                stdout=subprocess.PIPE)
-            seqs.extend(SeqIO.parse(StringIO(seqs_batch_fetched.stdout.decode(encoding='UTF8')), format='fasta'))
+            if ids_string != '-':
+                seqs = []
+                seqs_batch_request = subprocess.run(['epost', '-id', ids_string, '-db', 'nucleotide'],
+                                                    stdout=subprocess.PIPE)
+                seqs_batch_fetched = subprocess.run(['efetch', '-format', 'fasta'], input=seqs_batch_request.stdout,
+                                                    stdout=subprocess.PIPE)
+                seqs.extend(SeqIO.parse(StringIO(seqs_batch_fetched.stdout.decode(encoding='UTF8')), format='fasta'))
 
-            acc_ids = ids_string.split(sep=',')
-            file_name = acc_ids[0] if len(acc_ids) == 1 else assembly_id
+                if len(ids_string.split(sep=',')) != len(seqs):
+                    raise AssertionError('The number of downloaded sequences is wrong!!!')
 
-            if len(acc_ids) != len(seqs):
-                raise AssertionError('The number of downloaded sequences is wrong!!!')
-
-            with open(os.path.join(out_dir, file_name + '.fa'), 'w') as ouf:
-                SeqIO.write(seqs, ouf, format='fasta')
+                with open(os.path.join(out_dir, assembly_id + '.fa'), 'w') as ouf:
+                    SeqIO.write(seqs, ouf, format='fasta')
 
 
 if __name__ == '__main__':
