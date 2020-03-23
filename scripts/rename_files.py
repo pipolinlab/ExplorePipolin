@@ -5,13 +5,11 @@ import os
 import shutil
 import click
 from utilities import CONTEXT_SETTINGS
-from utilities import check_dir
 
 
 def create_dict_w_strainnames(names_file):
     accs_to_strainnames = {}
     with open(names_file) as inf:
-        _ = inf.readline()  # skip header
         for line in inf:
             names = line.strip().split(sep='\t')
             accs_to_strainnames[names[1]] = names[0]
@@ -27,12 +25,16 @@ def rename(in_dir, out_dir, names_file):
     TODO
     """
     accs_to_strainnames = create_dict_w_strainnames(names_file)
-    check_dir(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
     for root, _, files in os.walk(in_dir):
         for filename in files:
             old_path = os.path.join(root, filename)
             base, extension = os.path.splitext(filename)
-            new_filename = accs_to_strainnames[base] + extension
+            try:
+                new_filename = accs_to_strainnames[base] + extension
+            except KeyError:
+                new_filename = base + extension
+
             new_path = os.path.join(out_dir, new_filename)
             shutil.copy(old_path, new_path)
 
