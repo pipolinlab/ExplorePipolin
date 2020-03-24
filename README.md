@@ -9,9 +9,12 @@ To extract the subsequence from a genome:
 
  `$ get_subsequence.py genome/NZ_JNMI010000006.1.fa 90094 90008 tRNA.fa`
 
-The whole analysis:
- * `download_genomes_ncbi.py` TODO: download all contigs when 
- the assembly is on the contig level.
+The main modules:
+ * `download_metadata_ncbi.py` -- downloads the metadata for the analysed 
+ genomes, such as accessions, organism and strain names
+ * `download_genomes_ncbi.py` -- downloads genome (chromosome) sequences 
+ given NCBI assembly accession (i.e. for a not-complete genome, it downloads
+  all its contigs)
  * For Saskia's strains: `edit_contig_names.sh <in-dir>` --
  to shorten the long contig names
  * `identify_pipolins_roughly.py` using reference 

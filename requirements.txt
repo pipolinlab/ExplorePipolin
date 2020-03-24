@@ -1,0 +1,6 @@
+-- python packages --
+click
+biopython
+
+-- other packages --
+ncbi-entrez-direct
