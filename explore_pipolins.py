@@ -1,15 +1,24 @@
 #!/usr/bin/env -S PYTHONPATH=${PWD}/src python3
 # -*- encoding: utf-8 -*-
 
+import os
 import click
-from prefect import Flow, Parameter, task
+from prefect import task, Flow, Parameter
 from utilities import CONTEXT_SETTINGS
+from identify_pipolins_roughly import run_blast_against_att, run_blast_against_polb, run_blast_against_trna
 from identify_pipolins_roughly import identify_pipolins_roughly
 from analyse_pipolin_orientation import analyse_pipolin_orientation
+from extract_pipolin_regions import extract_pipolin_regions
+from annotate_pipolins import annotate_pipolins
 
 REF_POLB = './data/pi-polB.fa'
 REF_ATT = './data/attL.fa'
 REF_TRNA = './data/tRNA.fa'
+
+
+@task
+def get_rough_pipolins_dir(out_dir):
+    return os.path.join(out_dir, 'rough_pipolins')
 
 
 def get_flow():
@@ -17,8 +26,14 @@ def get_flow():
         genomes = Parameter('genomes')
         out_dir = Parameter('out_dir')
 
-        identify_pipolins_roughly(genomes, out_dir, REF_POLB, REF_ATT, REF_TRNA)
-        analyse_pipolin_orientation(out_dir)
+        polbs_blast = run_blast_against_polb(genomes, out_dir, REF_POLB)
+        atts_blast = run_blast_against_att(genomes, out_dir, REF_ATT)
+        trna_blast = run_blast_against_trna(genomes, out_dir, REF_TRNA)
+        pipolins = identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast)
+        orientations = analyse_pipolin_orientation(out_dir, polbs_blast, atts_blast, trna_blast)
+        rough_pipolins_dir = get_rough_pipolins_dir(out_dir)
+        extract_pipolin_regions(genomes, out_dir, rough_pipolins_dir, pipolins, orientations, long=False)
+        annotate_pipolins()
 
     return flow
 

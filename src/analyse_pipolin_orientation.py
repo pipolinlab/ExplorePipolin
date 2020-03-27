@@ -10,15 +10,15 @@ from utilities import save_to_shelve
 
 
 @task
-def analyse_pipolin_orientation(in_dir):
+def analyse_pipolin_orientation(in_dir, polbs_blast, atts_blast, trna_blast):
     orientations = {}
-    strains = [file.split(sep='-')[0] for file in os.listdir(os.path.join(in_dir, 'att_blast'))]
+    strains = [file.split(sep='-')[0] for file in os.listdir(atts_blast)]
     for strain in strains:
         orientations[strain] = {}
     for strain in strains:
-        atts = read_blastxml(os.path.join(os.path.join(in_dir, 'att_blast'), f'{strain}-fmt5.txt'))
-        trnas = read_blastxml(os.path.join(os.path.join(in_dir, 'trna_blast'), f'{strain}-fmt5.txt'))
-        polbs = read_blastxml(os.path.join(os.path.join(in_dir, 'polb_blast'), f'{strain}-fmt5.txt'))
+        atts = read_blastxml(os.path.join(atts_blast, f'{strain}-fmt5.txt'))
+        trnas = read_blastxml(os.path.join(trna_blast, f'{strain}-fmt5.txt'))
+        polbs = read_blastxml(os.path.join(polbs_blast, f'{strain}-fmt5.txt'))
 
         for entry in trnas:
             for hit in entry:
@@ -49,6 +49,7 @@ def analyse_pipolin_orientation(in_dir):
             if entry.id not in orientations[strain]:  # the case, when no orientation info from tRNA or att
                 orientations[strain][entry.id] = polb_frames[0]  # 1 or -1
     save_to_shelve(os.path.join(in_dir, 'shelve.db'), orientations, 'orientations')
+    return 'orientations'
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

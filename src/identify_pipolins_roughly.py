@@ -4,6 +4,7 @@
 import os
 import click
 from prefect import task
+
 from utilities import CONTEXT_SETTINGS
 from utilities import blast_seqs_against_seq
 from utilities import Feature, Pipolin
@@ -40,22 +41,37 @@ def create_pipolins(genomes, polbs_blast_path, atts_blast_path):
 
 
 @task
-def identify_pipolins_roughly(genomes, out_dir, ref_polb, ref_att, ref_trna):
-    os.makedirs(out_dir, exist_ok=True)
+def run_blast_against_polb(genomes, out_dir, ref_polb):
     polbs_blast_path = os.path.join(out_dir, 'polb_blast')
-    atts_blast_path = os.path.join(out_dir, 'att_blast')
-    trna_blast_path = os.path.join(out_dir, 'trna_blast')
     print('>>> Running BLAST against piPolB...')
     blast_seqs_against_seq(genomes, ref_polb, polbs_blast_path)
+    return polbs_blast_path
+
+
+@task
+def run_blast_against_att(genomes, out_dir, ref_att):
+    atts_blast_path = os.path.join(out_dir, 'att_blast')
     print('>>> Running BLAST against AttL...')
     blast_seqs_against_seq(genomes, ref_att, atts_blast_path)
+    return atts_blast_path
+
+
+@task
+def run_blast_against_trna(genomes, out_dir, ref_trna):
+    trna_blast_path = os.path.join(out_dir, 'trna_blast')
     print('>>> Running BLAST against tRNA...')
     blast_seqs_against_seq(genomes, ref_trna, trna_blast_path)
+    return trna_blast_path
+
+
+@task
+def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
+    #TODO os.makedirs(out_dir, exist_ok=True)
     print('>>> Creating "pipolins" shelve object...')
-    pipolins = create_pipolins(genomes, polbs_blast_path, atts_blast_path)
+    pipolins = create_pipolins(genomes, polbs_blast, atts_blast)
     out_file = os.path.join(out_dir, 'shelve.db')
     save_to_shelve(out_file, pipolins, 'pipolins')
-    print('DONE!')
+    return 'pipolins'
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
