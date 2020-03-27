@@ -1,6 +1,7 @@
 -- python packages --
 click
-biopython
+Biopython
+prefect
 
 -- other packages --
 ncbi-entrez-direct
