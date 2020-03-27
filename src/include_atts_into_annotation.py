@@ -12,7 +12,6 @@ from utilities import CONTEXT_SETTINGS
 from utilities import read_from_shelve
 from utilities import read_genbank_records, write_genbank_records
 from utilities import write_gff_records
-from utilities import check_dir
 
 
 def read_gff_records(annot_dir):
@@ -93,7 +92,7 @@ def include_atts_into_annotation(shelve_file, object_name, orig_annot_dir, new_a
     add_atts(gb_records, 'gb', pipolins)
     add_atts(gff_records, 'gff', pipolins)
 
-    check_dir(new_annot_dir)
+    os.makedirs(new_annot_dir, exist_ok=True)
     write_genbank_records(gb_records, new_annot_dir)
     write_gff_records(gff_records, new_annot_dir)
 

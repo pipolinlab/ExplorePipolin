@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 
+import os
 import click
 from Bio.Seq import Seq
 from Bio.Alphabet.IUPAC import IUPACAmbiguousDNA
@@ -11,7 +12,6 @@ from utilities import read_genbank_records, write_genbank_records
 from utilities import write_gff_records
 from utilities import write_fna_records
 from utilities import GenBankRecords
-from utilities import check_dir
 
 # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
 # https://github.com/biopython/biopython/issues/1755
@@ -307,7 +307,7 @@ def main(in_dir, out_dir, long):
     gb_records = read_genbank_records(in_dir)
     assemble_gapped_pipolins(gb_records, long)
     
-    check_dir(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
     write_genbank_records(gb_records, out_dir)
     write_gff_records(gb_records, out_dir)
     write_fna_records(gb_records, out_dir)

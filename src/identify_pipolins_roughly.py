@@ -5,7 +5,6 @@ import os
 import click
 from utilities import CONTEXT_SETTINGS
 from utilities import blast_seqs_against_seq
-from utilities import check_dir
 from utilities import Feature, Pipolin
 from utilities import save_to_shelve
 from utilities import read_blastxml
@@ -51,7 +50,7 @@ def identify_pipolins_roughly(ref_polb, ref_att, ref_trna, genomes_dir, out_dir)
     If there are several contigs in the genome, each contig should have unique name.
     If OUT_DIR exists, it should be empty.
     """
-    check_dir(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
     polbs_blast_path = os.path.join(out_dir, 'polb_blast')
     atts_blast_path = os.path.join(out_dir, 'att_blast')
     trna_blast_path = os.path.join(out_dir, 'trna_blast')

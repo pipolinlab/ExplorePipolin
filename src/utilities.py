@@ -136,11 +136,6 @@ class Pipolin:
         return self.strain_id == self.polymerases[0].node
 
 
-def check_dir(out_dir):
-    if not os.path.exists(out_dir):
-        os.mkdir(out_dir)
-
-
 def ncbi_acc_download(acc_ids):
     for acc_id in acc_ids:
         print(f'Downloading {acc_id}...')
@@ -191,7 +186,7 @@ def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
 
 
 def blast_seqs_against_seq(dir_with_seqs, seq, output_dir):
-    check_dir(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
     genomes = os.listdir(dir_with_seqs)
 
     for genome in genomes:

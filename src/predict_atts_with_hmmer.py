@@ -5,7 +5,6 @@ import click
 import os
 import subprocess
 from utilities import CONTEXT_SETTINGS
-from utilities import check_dir
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -17,7 +16,7 @@ def predict_atts_with_hmmer(hmm, pipolins_dir, out_dir):
     TODO
     """
     pipolin_regions = os.listdir(pipolins_dir)
-    check_dir(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
     os.chdir(out_dir)
     for pipolin in pipolin_regions:
         genome_id = pipolin.split(sep="-")[0]

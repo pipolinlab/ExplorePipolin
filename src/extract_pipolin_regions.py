@@ -7,7 +7,6 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from utilities import CONTEXT_SETTINGS
 from utilities import Feature, Pipolin
-from utilities import check_dir
 from utilities import read_from_shelve
 
 
@@ -29,7 +28,7 @@ def extract_pipolin_regions(shelve_file, genomes_dir, out_dir, long):
     for file in os.listdir(genomes_dir):
         genomes[file[:-3]] = SeqIO.to_dict(SeqIO.parse(os.path.join(genomes_dir, file), 'fasta'))
 
-    check_dir(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
     for pipolin in pipolins:
         if pipolin.is_complete_genome():
             bounds = pipolin.get_pipolin_bounds(long)

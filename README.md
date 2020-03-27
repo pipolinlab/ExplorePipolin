@@ -36,6 +36,9 @@ The main modules:
  * `easyfig_add_colours.py`
  
 Prediction of ATTs:
+
+TODO: write a script for de-novo search of direct repeats!!!
+
  1. Prepared ATT sequences with `prepare_atts_for_msa.py`
  ```
 The total number of atts is 198

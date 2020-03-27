@@ -5,7 +5,6 @@ import os
 import click
 from Bio import SeqIO
 from utilities import CONTEXT_SETTINGS, read_from_prokka_dir
-from utilities import check_dir
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -28,7 +27,7 @@ def extract_roary_groups(roary_dir, prokka_dir, out_dir, ext):
 
     records = read_from_prokka_dir(prokka_dir, ext)
 
-    check_dir(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
     for group_id, genes in roary_groups.items():
         seqs = [records[gene] for gene in genes if gene in records]
         with open(os.path.join(out_dir, f'{group_id}.{ext}'), 'w') as ouf:
