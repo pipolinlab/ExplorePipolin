@@ -185,14 +185,12 @@ def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
     return roary_groups
 
 
-def blast_seqs_against_seq(dir_with_seqs, seq, output_dir):
+def blast_seqs_against_seq(genomes, seq, output_dir):
     os.makedirs(output_dir, exist_ok=True)
-    genomes = os.listdir(dir_with_seqs)
-
     for genome in genomes:
-        with open(os.path.join(output_dir, f'{genome[:-3]}-fmt5.txt'), 'w') as ouf:
+        with open(os.path.join(output_dir, f'{os.path.basename(genome)[:-3]}-fmt5.txt'), 'w') as ouf:
             subprocess.run(['blastn', '-query', seq,
-                            '-subject', f'{os.path.join(dir_with_seqs, genome)}',
+                            '-subject', f'{genome}',
                             '-outfmt', '5'], stdout=ouf)
 
 
