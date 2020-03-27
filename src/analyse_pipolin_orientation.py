@@ -10,15 +10,15 @@ from utilities import save_to_shelve
 
 
 @task
-def analyse_pipolin_orientation(polb_blast_dir, att_blast_dir, trna_blast_dir, shelve_file):
+def analyse_pipolin_orientation(in_dir):
     orientations = {}
-    strains = [file.split(sep='-')[0] for file in os.listdir(att_blast_dir)]
+    strains = [file.split(sep='-')[0] for file in os.listdir(os.path.join(in_dir, 'att_blast'))]
     for strain in strains:
         orientations[strain] = {}
     for strain in strains:
-        atts = read_blastxml(os.path.join(att_blast_dir, f'{strain}-fmt5.txt'))
-        trnas = read_blastxml(os.path.join(trna_blast_dir, f'{strain}-fmt5.txt'))
-        polbs = read_blastxml(os.path.join(polb_blast_dir, f'{strain}-fmt5.txt'))
+        atts = read_blastxml(os.path.join(os.path.join(in_dir, 'att_blast'), f'{strain}-fmt5.txt'))
+        trnas = read_blastxml(os.path.join(os.path.join(in_dir, 'trna_blast'), f'{strain}-fmt5.txt'))
+        polbs = read_blastxml(os.path.join(os.path.join(in_dir, 'polb_blast'), f'{strain}-fmt5.txt'))
 
         for entry in trnas:
             for hit in entry:
@@ -48,19 +48,16 @@ def analyse_pipolin_orientation(polb_blast_dir, att_blast_dir, trna_blast_dir, s
                 continue
             if entry.id not in orientations[strain]:  # the case, when no orientation info from tRNA or att
                 orientations[strain][entry.id] = polb_frames[0]  # 1 or -1
-    save_to_shelve(shelve_file, orientations, 'orientations')
+    save_to_shelve(os.path.join(in_dir, 'shelve.db'), orientations, 'orientations')
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('polb-blast-dir', type=click.Path(exists=True))
-@click.argument('att-blast-dir', type=click.Path(exists=True))
-@click.argument('trna-blast-dir', type=click.Path(exists=True))
-@click.argument('shelve-file', type=click.Path(exists=True))
-def main(polb_blast_dir, att_blast_dir, trna_blast_dir, shelve_file):
+@click.argument('in-dir', type=click.Path(exists=True))
+def main(in_dir):
     """
     TODO
     """
-    analyse_pipolin_orientation(polb_blast_dir, att_blast_dir, trna_blast_dir, shelve_file)
+    analyse_pipolin_orientation(in_dir)
 
 
 if __name__ == '__main__':
