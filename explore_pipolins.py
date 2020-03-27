@@ -14,11 +14,7 @@ from annotate_pipolins import annotate_pipolins
 REF_POLB = './data/pi-polB.fa'
 REF_ATT = './data/attL.fa'
 REF_TRNA = './data/tRNA.fa'
-
-
-@task
-def get_rough_pipolins_dir(out_dir):
-    return os.path.join(out_dir, 'rough_pipolins')
+PROTEINS = './data/HHpred_proteins.faa'
 
 
 def get_flow():
@@ -31,9 +27,8 @@ def get_flow():
         trna_blast = run_blast_against_trna(genomes, out_dir, REF_TRNA)
         pipolins = identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast)
         orientations = analyse_pipolin_orientation(out_dir, polbs_blast, atts_blast, trna_blast)
-        rough_pipolins_dir = get_rough_pipolins_dir(out_dir)
-        extract_pipolin_regions(genomes, out_dir, rough_pipolins_dir, pipolins, orientations, long=False)
-        annotate_pipolins()
+        rough_pipolins = extract_pipolin_regions(genomes, out_dir, pipolins, orientations, long=False)
+        annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
 
     return flow
 

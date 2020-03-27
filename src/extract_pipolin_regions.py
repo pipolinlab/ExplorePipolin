@@ -12,13 +12,13 @@ from utilities import read_from_shelve
 
 
 @task
-def extract_pipolin_regions(in_genomes, shelve_in_dir, out_dir, pipolins, orientations, long):
+def extract_pipolin_regions(in_genomes, shelve_in_dir, pipolins, orientations, long):
     pipolins = read_from_shelve(os.path.join(shelve_in_dir, 'shelve.db'), pipolins)
     orientations = read_from_shelve(os.path.join(shelve_in_dir, 'shelve.db'), orientations)
     genomes = {}
     for file in in_genomes:
         genomes[os.path.basename(file)[:-3]] = SeqIO.to_dict(SeqIO.parse(file, 'fasta'))
-    os.makedirs(out_dir, exist_ok=True)
+    os.makedirs(os.path.join(shelve_in_dir, 'rough_pipolins'), exist_ok=True)
     for pipolin in pipolins:
         if pipolin.is_complete_genome():
             bounds = pipolin.get_pipolin_bounds(long)
@@ -38,8 +38,11 @@ def extract_pipolin_regions(in_genomes, shelve_in_dir, out_dir, pipolins, orient
                 sequence = sequence.reverse_complement() if orientation == -1 else sequence
                 records.append(SeqRecord(seq=sequence, id=node, description=f'{len(sequence)}'))
 
-        with open(os.path.join(out_dir, f'{pipolin.strain_id}-pipolin.fa'), 'w') as ouf:
+        with open(os.path.join(os.path.join(shelve_in_dir, 'rough_pipolins'),
+                               f'{pipolin.strain_id}-pipolin.fa'), 'w') as ouf:
             SeqIO.write(records, ouf, 'fasta')
+
+        return os.path.join(shelve_in_dir, 'rough_pipolins')
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
