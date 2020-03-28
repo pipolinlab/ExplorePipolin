@@ -1,9 +1,8 @@
 #!/usr/bin/env -S PYTHONPATH=${PWD}/src python3
 # -*- encoding: utf-8 -*-
 
-import os
 import click
-from prefect import task, Flow, Parameter
+from prefect import Flow, Parameter
 from utilities import CONTEXT_SETTINGS
 from identify_pipolins_roughly import run_blast_against_att, run_blast_against_polb, run_blast_against_trna
 from identify_pipolins_roughly import identify_pipolins_roughly

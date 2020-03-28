@@ -7,10 +7,8 @@ import subprocess
 from utilities import CONTEXT_SETTINGS
 from Bio import SeqIO
 from io import StringIO
-from prefect import task
 
 
-@task
 def download_genomes_ncbi(metadata_file, out_dir):
     os.makedirs(out_dir, exist_ok=True)
     with open(metadata_file) as inf:

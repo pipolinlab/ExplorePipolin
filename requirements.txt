@@ -5,3 +5,6 @@ prefect
 
 -- other packages --
 ncbi-entrez-direct
+ncbi-blast+
+hmmer
+prokka
