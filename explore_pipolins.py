@@ -10,11 +10,13 @@ from identify_pipolins_roughly import identify_pipolins_roughly
 from analyse_pipolin_orientation import analyse_pipolin_orientation
 from extract_pipolin_regions import extract_pipolin_regions
 from annotate_pipolins import annotate_pipolins
+from predict_atts_with_hmmer import predict_atts_with_hmmer
 
 REF_POLB = './data/pi-polB.fa'
 REF_ATT = './data/attL.fa'
 REF_TRNA = './data/tRNA.fa'
 PROTEINS = './data/HHpred_proteins.faa'
+ATT_HMM = './data/att.hmm'
 
 
 def get_flow():
@@ -29,6 +31,7 @@ def get_flow():
         orientations = analyse_pipolin_orientation(out_dir, polbs_blast, atts_blast, trna_blast)
         rough_pipolins = extract_pipolin_regions(genomes, out_dir, pipolins, orientations, long=False)
         annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
+        predict_atts_with_hmmer(ATT_HMM, rough_pipolins, out_dir)
 
     return flow
 

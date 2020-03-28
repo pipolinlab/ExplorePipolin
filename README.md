@@ -27,6 +27,7 @@ The main modules:
  rightmost atts (`--long` option).
  * `annotate_pipolins.py`
  * Here the steps to predict ATTs (see below)
+ * `predict_atts_with_hmmer.py`
  * `store_new_att_bounds.py` 
  (parse HMMER output for atts)
  * `include_atts_into_annotation.py` 
@@ -52,7 +53,6 @@ The total number of atts is 198
  3. Compared the alignments. Modified them, using 
  Jalview: deleted not conserved regions from both ends.
  4. Created HMM profile with `hmmbuild` and `hmmpress`.
- 5. `predict_atts_with_hmmer.py`
 
 To get the sequences from roary groups:
  * `extract_roary_groups.py`
