@@ -28,17 +28,17 @@ def get_flow():
         out_dir = Parameter('out_dir')
 
         polbs_blast = run_blast_against_polb(genomes, out_dir, REF_POLB)
-        atts_blast = run_blast_against_att(genomes, out_dir, REF_ATT)
-        trna_blast = run_blast_against_trna(genomes, out_dir, REF_TRNA)
+        # atts_blast = run_blast_against_att(genomes, out_dir, REF_ATT)
+        # trna_blast = run_blast_against_trna(genomes, out_dir, REF_TRNA)
         pipolins = identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast)
-        orientations = analyse_pipolin_orientation(out_dir, polbs_blast, atts_blast, trna_blast)
-        rough_pipolins = extract_pipolin_regions(genomes, out_dir, pipolins, orientations, long=False)
-        prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
-        att_hmmer = predict_atts_with_hmmer(ATT_HMM, rough_pipolins, out_dir)
-        short_pipolins = store_new_att_bounds(out_dir, 'short-pipolins', att_hmmer)
-        prokka_atts = include_atts_into_annotation(out_dir, short_pipolins, prokka)
-        prokka_atts_scaffolded = scaffold_gapped_pipolins(prokka_atts, out_dir, long=False)
-        easyfig_add_colours(prokka_atts_scaffolded, abricate_dir=None)
+        # orientations = analyse_pipolin_orientation(out_dir, polbs_blast, atts_blast, trna_blast)
+        # rough_pipolins = extract_pipolin_regions(genomes, out_dir, pipolins, orientations, long=False)
+        # prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
+        # att_hmmer = predict_atts_with_hmmer(ATT_HMM, rough_pipolins, out_dir)
+        # short_pipolins = store_new_att_bounds(out_dir, 'short-pipolins', att_hmmer)
+        # prokka_atts = include_atts_into_annotation(out_dir, short_pipolins, prokka)
+        # prokka_atts_scaffolded = scaffold_gapped_pipolins(prokka_atts, out_dir, long=False)
+        # easyfig_add_colours(prokka_atts_scaffolded, abricate_dir=None)
 
     return flow
 

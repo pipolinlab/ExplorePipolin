@@ -12,17 +12,11 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 class Feature:
-    def __init__(self, start, end, node):
+    def __init__(self, start, end, frame, node):
         self.start: int = start
         self.end: int = end
+        self.frame: int = frame   # 1 or -1
         self.node: str = node
-
-    def normalize(self):
-        # TODO: doesn't work as there is no info about direction! Do not use 'blast-tab'!
-        if self.start > self.end:
-            return Feature(self.end, self.start, self.node)
-        else:
-            return self
 
 
 class Pipolin:
@@ -35,8 +29,8 @@ class Pipolin:
         if not self.is_complete_genome():
             raise AssertionError('Should be complete!')
 
-        polymerases = sorted((i.normalize() for i in self.polymerases), key=lambda p: p.start)
-        atts = sorted((i.normalize() for i in self.atts), key=lambda p: p.start)
+        polymerases = sorted((i for i in self.polymerases), key=lambda p: p.start)
+        atts = sorted((i for i in self.atts), key=lambda p: p.start)
 
         if not self._is_polymerase_inside(atts, polymerases):
             raise AssertionError('The polymerases are not within att bounds!')
@@ -185,7 +179,7 @@ def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
     return roary_groups
 
 
-def blast_seqs_against_seq(genomes, seq, output_dir):
+def blast_genomes_against_seq(genomes, seq, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     for genome in genomes:
         with open(os.path.join(output_dir, f'{os.path.basename(genome)[:-3]}-fmt5.txt'), 'w') as ouf:
@@ -195,6 +189,27 @@ def blast_seqs_against_seq(genomes, seq, output_dir):
 
 
 GenBankRecords = MutableMapping[str, MutableMapping[str, SeqIO.SeqRecord]]
+
+
+def search_repeats_in_genome(genome_records):
+    pass
+
+
+def find_repeats(genomes, att_repeats):
+    os.makedirs(att_repeats, exist_ok=True)
+    for genome in genomes:
+        with open(os.path.join(att_repeats, f'{os.path.basename(genome)[:-3]}.batch'), 'w') as ouf:
+            records = SeqIO.to_dict(SeqIO.parse(genome, format='fasta'))
+            repeats = search_repeats_in_genome(genome_records=records)
+            for repeat in repeats:
+                print(repeat, file=ouf)
+
+
+def run_aragorn(genomes, aragorn_results):
+    os.makedirs(aragorn_results, exist_ok=True)
+    for genome in genomes:
+        with open(os.path.join(aragorn_results, f'{os.path.basename(genome)[:-3]}.batch'), 'w') as ouf:
+            subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
 
 
 def read_genbank_records(in_dir) -> GenBankRecords:
