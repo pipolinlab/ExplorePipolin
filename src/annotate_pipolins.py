@@ -20,6 +20,8 @@ def annotate_pipolins(pipolins_dir, proteins, out_dir):
                         '--rfam', '--proteins', proteins, '--force',
                         '--locustag', f'{genome_id}', os.path.join(pipolins_dir, pipolin)])
 
+    return os.path.join(out_dir, 'prokka')
+
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('pipolins-dir', type=click.Path(exists=True))

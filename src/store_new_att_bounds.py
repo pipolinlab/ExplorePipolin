@@ -32,6 +32,8 @@ def store_new_att_bounds(shelve_in_dir, object_name, att_hmm_dir):
             pipolin.atts.append(Feature(bounds[0], bounds[1], name))
     save_to_shelve(os.path.join(shelve_in_dir, 'shelve.db'), pipolins, object_name)
 
+    return object_name
+
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('shelve-file', type=click.Path(exists=True))

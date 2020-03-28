@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 import os
+from prefect import task
 from typing import Mapping
 import click
 from random import randrange
@@ -74,28 +75,33 @@ def add_atts(records, records_format, pipolins):
                 add_new_gb_feature(att_feature, record)
 
 
+@task
+def include_atts_into_annotation(shelve_in_dir, object_name, orig_annot_dir):
+    pipolins = read_from_shelve(os.path.join(shelve_in_dir, 'shelve.db'), object_name)
+    gb_records = read_genbank_records(orig_annot_dir)
+    gff_records = read_gff_records(orig_annot_dir)
+    add_atts(gb_records, 'gb', pipolins)
+    add_atts(gff_records, 'gff', pipolins)
+    new_annot_dir = os.path.join(shelve_in_dir, 'prokka_atts')
+    os.makedirs(new_annot_dir, exist_ok=True)
+    write_genbank_records(gb_records, new_annot_dir)
+    write_gff_records(gff_records, new_annot_dir)
+
+    return new_annot_dir
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('shelve-file', type=click.Path(exists=True))
 @click.option('--object-name', required=True)
 @click.argument('orig-annot-dir', type=click.Path(exists=True))
 @click.argument('new-annot-dir', type=click.Path())
-def include_atts_into_annotation(shelve_file, object_name, orig_annot_dir, new_annot_dir):
+def main(shelve_file, object_name, orig_annot_dir, new_annot_dir):
     """
     Adds att regions to the annotations (*.gbk and *.gff files)
     TODO: add also *.faa and *.ffn files!
     """
-    pipolins = read_from_shelve(shelve_file, object_name)
-
-    gb_records = read_genbank_records(orig_annot_dir)
-    gff_records = read_gff_records(orig_annot_dir)
-
-    add_atts(gb_records, 'gb', pipolins)
-    add_atts(gff_records, 'gff', pipolins)
-
-    os.makedirs(new_annot_dir, exist_ok=True)
-    write_genbank_records(gb_records, new_annot_dir)
-    write_gff_records(gff_records, new_annot_dir)
+    include_atts_into_annotation(shelve_file, object_name, orig_annot_dir)
 
 
 if __name__ == '__main__':
-    include_atts_into_annotation()
+    main()

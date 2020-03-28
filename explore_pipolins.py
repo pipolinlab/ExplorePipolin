@@ -12,6 +12,7 @@ from extract_pipolin_regions import extract_pipolin_regions
 from annotate_pipolins import annotate_pipolins
 from predict_atts_with_hmmer import predict_atts_with_hmmer
 from store_new_att_bounds import store_new_att_bounds
+from include_atts_into_annotation import include_atts_into_annotation
 
 REF_POLB = './data/pi-polB.fa'
 REF_ATT = './data/attL.fa'
@@ -31,9 +32,10 @@ def get_flow():
         pipolins = identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast)
         orientations = analyse_pipolin_orientation(out_dir, polbs_blast, atts_blast, trna_blast)
         rough_pipolins = extract_pipolin_regions(genomes, out_dir, pipolins, orientations, long=False)
-        annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
+        prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
         att_hmmer = predict_atts_with_hmmer(ATT_HMM, rough_pipolins, out_dir)
-        store_new_att_bounds(out_dir, 'short-pipolins', att_hmmer)
+        short_pipolins = store_new_att_bounds(out_dir, 'short-pipolins', att_hmmer)
+        prokka_atts = include_atts_into_annotation(out_dir, short_pipolins, prokka)
 
     return flow
 
