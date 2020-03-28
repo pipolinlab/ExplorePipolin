@@ -3,6 +3,7 @@
 
 import os
 import click
+from prefect import task
 from Bio.Seq import Seq
 from Bio.Alphabet.IUPAC import IUPACAmbiguousDNA
 from Bio.SeqFeature import SeqFeature, FeatureLocation
@@ -291,6 +292,19 @@ def assemble_gapped_pipolins(gb_records: GenBankRecords, long):
                 gb_records[strain_id][record_id].id = strain_id
 
 
+@task
+def scaffold_gapped_pipolins(in_dir, out_dir, long):
+    gb_records = read_genbank_records(in_dir)
+    assemble_gapped_pipolins(gb_records, long)
+    new_dir = os.path.join(out_dir, 'prokka_atts_scaffolded')
+    os.makedirs(new_dir, exist_ok=True)
+    write_genbank_records(gb_records, new_dir)
+    write_gff_records(gb_records, new_dir)
+    write_fna_records(gb_records, new_dir)
+
+    return new_dir
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('in-dir', type=click.Path(exists=True))
 @click.argument('out-dir', type=click.Path())
@@ -304,13 +318,7 @@ def main(in_dir, out_dir, long):
     filling in gaps with NNs and adding the /assembly_gap feature to the *.gbk files.
     TODO: also learn how to scaffold long pipolins!
     """
-    gb_records = read_genbank_records(in_dir)
-    assemble_gapped_pipolins(gb_records, long)
-    
-    os.makedirs(out_dir, exist_ok=True)
-    write_genbank_records(gb_records, out_dir)
-    write_gff_records(gb_records, out_dir)
-    write_fna_records(gb_records, out_dir)
+    scaffold_gapped_pipolins(in_dir, out_dir, long)
 
 
 if __name__ == '__main__':
