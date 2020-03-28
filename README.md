@@ -1,38 +1,49 @@
-# ExplorePipolin
+# PipolinFinder
 
-To extract the subsequence from a genome:
- * `get_subsequence.py`
- 
- `$ get_subsequence.py genomes/NZ_JNMI01000006.1.fa 80191 82792 pi-polB.fa`
- 
- `$ get_subsequence.py genomes/NZ_JNMI01000006.1.fa 64241 64373 attL.fa`
+Pipolins constitute a new group of self-synthesizing or self-replicating 
+mobile genetic elements (MGEs). They are widespread among diverse bacterial 
+phyla and mitochondria.
 
- `$ get_subsequence.py genome/NZ_JNMI010000006.1.fa 90094 90008 tRNA.fa`
+> [Redrejo-Rodríguez, Modesto, et al. "Primer-independent DNA synthesis 
+>by a family B DNA polymerase from self-replicating Mobile genetic elements." 
+>Cell reports 21.6 (2017): 1574-1587.](https://doi.org/10.1016/j.celrep.2017.10.039)
 
-The main modules:
+ **PipolinFinder** is a search tool that identifies and annotates pipolin 
+ elements within bacterial genome.
+
+## Quick usage
+
+As input, PipolinFinder takes FASTA file(s) with genome sequence(s). 
+A genome sequence can be either a single complete chromosome (preferred) 
+or contigs (in a single multiFASTA file):
+
+```bash
+Usage: pipolin_finder.py [OPTIONS] [GENOMES]...
+
+  TODO
+
+Options:
+  --out-dir PATH
+  -h, --help      Show this message and exit.
+```
+
+## Background
+
+The main modules (scripts):
  * `download_metadata_ncbi.py` -- downloads the metadata for the analysed 
  genomes, such as accessions, organism and strain names
  * `download_genomes_ncbi.py` -- downloads genome (chromosome) sequences 
- given NCBI assembly accession (i.e. for a not-complete genome, it downloads
-  all its contigs)
- * For Saskia's strains: `edit_contig_names.sh <in-dir>` --
- to shorten the long contig names
- * `identify_pipolins_roughly.py` using reference 
- `att.fa` and `pi-polB.fa` sequences
- (saves "pipolins" object into shelve.db)
- * `analyse_pipolin_orientation` (saves "orientations" 
- object into shelve.db) 
- * `extract_pipolin_regions.py` It is possible to 
- extract regions, determined by the leftmost and 
- rightmost atts (`--long` option).
+ given NCBI assembly accession (i.e. for a non-complete genome, it 
+ downloads all its contigs)
+ * `identify_pipolins_roughly.py` using a reference `pi-polB.fa` sequence
+ * `analyse_pipolin_orientation`
+ * `extract_pipolin_regions.py` It is possible to extract regions, 
+ determined by the leftmost and rightmost atts (`--long` option).
  * `annotate_pipolins.py`
- * Here the steps to predict ATTs (see below)
  * `predict_atts_with_hmmer.py`
- * `store_new_att_bounds.py` 
- (parse HMMER output for atts)
+ * `store_new_att_bounds.py` -- parses HMMER output for atts
  * `include_atts_into_annotation.py` 
- TODO: So far, the script includes atts only into GB 
- and GFF files.
+ TODO: So far, the script includes atts only into GB and GFF files.
  * `scaffold_gapped_pipolins.py`
  * `easyfig_add_colours.py`
  
@@ -53,6 +64,19 @@ The total number of atts is 198
  3. Compared the alignments. Modified them, using 
  Jalview: deleted not conserved regions from both ends.
  4. Created HMM profile with `hmmbuild` and `hmmpress`.
+
+
+To extract the subsequence from a genome:
+ * `get_subsequence.py`
+ 
+ `$ get_subsequence.py genomes/NZ_JNMI01000006.1.fa 80191 82792 pi-polB.fa`
+ 
+ `$ get_subsequence.py genomes/NZ_JNMI01000006.1.fa 64241 64373 attL.fa`
+
+ `$ get_subsequence.py genome/NZ_JNMI010000006.1.fa 90094 90008 tRNA.fa`
+
+ For Saskia's strains: 
+ * `edit_contig_names.sh <in-dir>` -- to shorten the long contig names
 
 To get the sequences from roary groups:
  * `extract_roary_groups.py`
