@@ -18,6 +18,8 @@ def predict_atts_with_hmmer(hmm, pipolins_dir, out_dir):
         subprocess.run(['nhmmscan', '--tblout', f'{os.path.join(out_dir, "att_hmmer", genome_id)}-atts.tbl',
                         '-E', '1e-10', hmm, path])
 
+    return os.path.join(out_dir, 'att_hmmer')
+
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('hmm', type=click.Path(exists=True))
