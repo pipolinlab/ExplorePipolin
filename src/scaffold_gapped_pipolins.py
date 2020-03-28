@@ -9,10 +9,10 @@ from Bio.Alphabet.IUPAC import IUPACAmbiguousDNA
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 from utilities import CONTEXT_SETTINGS
-from utilities import read_genbank_records, write_genbank_records
+from utilities import read_seqio_records, write_genbank_records
 from utilities import write_gff_records
 from utilities import write_fna_records
-from utilities import GenBankRecords
+from utilities import SeqIORecordsDict
 
 # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
 # https://github.com/biopython/biopython/issues/1755
@@ -269,7 +269,7 @@ def finish_one_unchangeable_contig(record_set, unchangeable_contigs, long) -> Se
                 raise NotImplementedError
 
 
-def assemble_gapped_pipolins(gb_records: GenBankRecords, long):
+def assemble_gapped_pipolins(gb_records: SeqIORecordsDict, long):
     for strain_id, record_set in gb_records.items():
         if len(record_set) > 1:
             print(f'Assembling pipolin region for {strain_id}...')
@@ -294,7 +294,7 @@ def assemble_gapped_pipolins(gb_records: GenBankRecords, long):
 
 @task
 def scaffold_gapped_pipolins(in_dir, out_dir, long):
-    gb_records = read_genbank_records(in_dir)
+    gb_records = read_seqio_records(in_dir)
     assemble_gapped_pipolins(gb_records, long)
     new_dir = os.path.join(out_dir, 'prokka_atts_scaffolded')
     os.makedirs(new_dir, exist_ok=True)

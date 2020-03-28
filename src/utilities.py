@@ -188,21 +188,22 @@ def blast_genomes_against_seq(genomes, seq, output_dir):
                             '-outfmt', '5'], stdout=ouf)
 
 
-GenBankRecords = MutableMapping[str, MutableMapping[str, SeqIO.SeqRecord]]
+SeqIORecordsDict = MutableMapping[str, MutableMapping[str, SeqIO.SeqRecord]]
 
 
-def search_repeats_in_genome(genome_records):
-    pass
-
-
-def find_repeats(genomes, att_repeats):
-    os.makedirs(att_repeats, exist_ok=True)
-    for genome in genomes:
-        with open(os.path.join(att_repeats, f'{os.path.basename(genome)[:-3]}.batch'), 'w') as ouf:
-            records = SeqIO.to_dict(SeqIO.parse(genome, format='fasta'))
-            repeats = search_repeats_in_genome(genome_records=records)
-            for repeat in repeats:
-                print(repeat, file=ouf)
+def read_seqio_records(files, file_format) -> SeqIORecordsDict:
+    records_dict: SeqIORecordsDict = {}
+    if file_format == 'genbank':
+        ext = '.gbk'
+    elif file_format == 'fasta':
+        ext = '.fa'
+    else:
+        raise AssertionError('Only genbank or fasta formats are acceptable!')
+    for file in files:
+        if file.endswith(ext):
+            record = SeqIO.to_dict(SeqIO.parse(file, format=file_format))
+            records_dict[os.path.splitext(os.path.basename(file))[0]] = record
+    return records_dict
 
 
 def run_aragorn(genomes, aragorn_results):
@@ -210,15 +211,6 @@ def run_aragorn(genomes, aragorn_results):
     for genome in genomes:
         with open(os.path.join(aragorn_results, f'{os.path.basename(genome)[:-3]}.batch'), 'w') as ouf:
             subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
-
-
-def read_genbank_records(in_dir) -> GenBankRecords:
-    genbank_records: GenBankRecords = {}
-    for file in os.listdir(in_dir):
-        if file.endswith('.gbk'):
-            record = SeqIO.to_dict(SeqIO.parse(os.path.join(in_dir, file), format='genbank'))
-            genbank_records[os.path.splitext(file)[0]] = record
-    return genbank_records
 
 
 def write_genbank_records(gb_records, out_dir):

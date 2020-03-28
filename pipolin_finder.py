@@ -6,6 +6,9 @@ from prefect import Flow, Parameter
 from utilities import CONTEXT_SETTINGS
 from identify_pipolins_roughly import run_blast_against_att, run_blast_against_polb, run_blast_against_trna
 from identify_pipolins_roughly import identify_pipolins_roughly
+from identify_pipolins_roughly import find_att_repeats
+from identify_pipolins_roughly import create_pipolins
+from identify_pipolins_roughly import add_polb_features
 from analyse_pipolin_orientation import analyse_pipolin_orientation
 from extract_pipolin_regions import extract_pipolin_regions
 from annotate_pipolins import annotate_pipolins
@@ -27,11 +30,14 @@ def get_flow():
         genomes = Parameter('genomes')
         out_dir = Parameter('out_dir')
 
-        polbs_blast = run_blast_against_polb(genomes, out_dir, REF_POLB)
+        pipolins = create_pipolins(genomes=genomes)
+        polbs_dir = run_blast_against_polb(genomes=genomes, root_dir=out_dir, ref_polb=REF_POLB)
+        add_polb_features(pipolins=pipolins, polbs_blast_dir=polbs_dir)
+        att_dir = find_att_repeats(genomes=genomes, pipolins=pipolins, root_dir=out_dir)
         # atts_blast = run_blast_against_att(genomes, out_dir, REF_ATT)
         # trna_blast = run_blast_against_trna(genomes, out_dir, REF_TRNA)
-        pipolins = identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast)
-        # orientations = analyse_pipolin_orientation(out_dir, polbs_blast, atts_blast, trna_blast)
+        pipolins = identify_pipolins_roughly(genomes, out_dir, polbs_dir, atts_blast)
+        # orientations = analyse_pipolin_orientation(out_dir, polbs_dir, atts_blast, trna_blast)
         # rough_pipolins = extract_pipolin_regions(genomes, out_dir, pipolins, orientations, long=False)
         # prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
         # att_hmmer = predict_atts_with_hmmer(ATT_HMM, rough_pipolins, out_dir)

@@ -11,7 +11,7 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 from BCBio import GFF
 from utilities import CONTEXT_SETTINGS
 from utilities import read_from_shelve
-from utilities import read_genbank_records, write_genbank_records
+from utilities import read_seqio_records, write_genbank_records
 from utilities import write_gff_records
 
 
@@ -78,7 +78,7 @@ def add_atts(records, records_format, pipolins):
 @task
 def include_atts_into_annotation(shelve_in_dir, object_name, orig_annot_dir):
     pipolins = read_from_shelve(os.path.join(shelve_in_dir, 'shelve.db'), object_name)
-    gb_records = read_genbank_records(orig_annot_dir)
+    gb_records = read_seqio_records(orig_annot_dir)
     gff_records = read_gff_records(orig_annot_dir)
     add_atts(gb_records, 'gb', pipolins)
     add_atts(gff_records, 'gff', pipolins)

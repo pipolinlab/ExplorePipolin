@@ -4,13 +4,14 @@
 import os
 import click
 from prefect import task
+from Bio import SeqIO
 from utilities import CONTEXT_SETTINGS
 from utilities import blast_genomes_against_seq
 from utilities import Feature, Pipolin
 from utilities import save_to_shelve
 from utilities import read_blastxml
 from utilities import run_aragorn
-from utilities import find_repeats
+from utilities import read_seqio_records
 
 
 def feature_from_blasthit(hit, id):
@@ -19,30 +20,27 @@ def feature_from_blasthit(hit, id):
     return Feature(start=start, end=end, frame=hit.hit_frame, node=id)
 
 
-def create_pipolins(genomes, polbs_blast_path, atts_blast_path):
+@task
+def create_pipolins(genomes):
     pipolins = []
-
     for genome in genomes:
         pipolins.append(Pipolin(strain_id=os.path.basename(genome)[:-3]))
+    return pipolins
+
+
+@task
+def add_polb_features(pipolins, polbs_blast_dir):
     for i_p, pipolin in enumerate(pipolins):
-        polbs = read_blastxml(os.path.join(polbs_blast_path, f'{pipolin.strain_id}-fmt5.txt'))
+        polbs = read_blastxml(os.path.join(polbs_blast_dir, f'{pipolin.strain_id}-fmt5.txt'))
         for entry in polbs:
             for hit in entry:
                 polb_feature = feature_from_blasthit(hit, entry.id)
                 pipolins[i_p].polymerases.append(polb_feature)
 
-        # atts = read_blastxml(os.path.join(atts_blast_path, f'{pipolin.strain_id}-fmt5.txt'))
-        # for entry in atts:
-        #     for hit in entry:
-        #         att_feature = feature_from_blasthit(hit, entry.id)
-        #         pipolins[i_p].atts.append(att_feature)
-
-    return pipolins
-
 
 @task
-def run_blast_against_polb(genomes, out_dir, ref_polb):
-    polbs_blast_path = os.path.join(out_dir, 'polb_blast')
+def run_blast_against_polb(genomes, root_dir, ref_polb):
+    polbs_blast_path = os.path.join(root_dir, 'polb_blast')
     blast_genomes_against_seq(genomes, ref_polb, polbs_blast_path)
     return polbs_blast_path
 
@@ -54,11 +52,21 @@ def detect_trnas(genomes, out_dir):
     return aragorn_results
 
 
+def search_repeats_in_genome(genome_records, pipolin):
+    pass
+
+
 @task
-def find_att_repeats(genomes, out_dir):
-    att_repeats = os.path.join(out_dir, 'att_repeats')
-    find_repeats(genomes, att_repeats)
-    return att_repeats
+def find_att_repeats(genomes, pipolins, root_dir):
+    att_repeats_dir = os.path.join(root_dir, 'att_repeats')
+    os.makedirs(att_repeats_dir, exist_ok=True)
+    genomes_dict = read_seqio_records(files=genomes, file_format='fasta')
+    for i_p, pipolin in enumerate(pipolins):
+        with open(os.path.join(att_repeats_dir, f'{os.path.basename(pipolin.strain_id)[:-3]}.batch'), 'w') as ouf:
+            repeats = search_repeats_in_genome(genome_records=genomes_dict[pipolin.strain_id], pipolin=pipolin)
+            # for repeat in repeats:
+            #     print(repeat, file=ouf)
+    return att_repeats_dir
 
 
 @task   # TODO: replace with de-novo atts search finction!
@@ -77,7 +85,6 @@ def run_blast_against_trna(genomes, out_dir, ref_trna):
 
 @task
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
-    pipolins = create_pipolins(genomes, polbs_blast, atts_blast)
     out_file = os.path.join(out_dir, 'shelve.db')
     save_to_shelve(out_file, pipolins, 'pipolins')
     return 'pipolins'
