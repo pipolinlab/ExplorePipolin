@@ -14,6 +14,7 @@ from predict_atts_with_hmmer import predict_atts_with_hmmer
 from store_new_att_bounds import store_new_att_bounds
 from include_atts_into_annotation import include_atts_into_annotation
 from scaffold_gapped_pipolins import scaffold_gapped_pipolins
+from easyfig_add_colours import easyfig_add_colours
 
 REF_POLB = './data/pi-polB.fa'
 REF_ATT = './data/attL.fa'
@@ -38,6 +39,7 @@ def get_flow():
         short_pipolins = store_new_att_bounds(out_dir, 'short-pipolins', att_hmmer)
         prokka_atts = include_atts_into_annotation(out_dir, short_pipolins, prokka)
         prokka_atts_scaffolded = scaffold_gapped_pipolins(prokka_atts, out_dir, long=False)
+        easyfig_add_colours(prokka_atts_scaffolded, abricate_dir=None)
 
     return flow
 

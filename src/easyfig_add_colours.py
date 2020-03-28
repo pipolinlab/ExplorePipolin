@@ -3,6 +3,7 @@
 
 import os
 import click
+from prefect import task
 from utilities import CONTEXT_SETTINGS, GenBankRecords
 from utilities import read_genbank_records, write_genbank_records
 from Bio.SeqIO import SeqRecord
@@ -130,13 +131,8 @@ def find_and_color_amr_and_virulence(gb_records: GenBankRecords, abricate_dir):
                 add_info_from_summary(gb_records, os.path.join(content_path, summary), db_type)
 
 
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('in-dir', type=click.Path(exists=True))
-@click.argument('abricate_dir', type=click.Path(exists=True), required=False)
+@task
 def easyfig_add_colours(in_dir, abricate_dir):
-    """
-    IN_DIR contains *.gbk files to modify.
-    """
     gb_records = read_genbank_records(in_dir)
     add_colours(gb_records)
     if abricate_dir is not None:
@@ -144,5 +140,15 @@ def easyfig_add_colours(in_dir, abricate_dir):
     write_genbank_records(gb_records, in_dir)
 
 
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument('in-dir', type=click.Path(exists=True))
+@click.argument('abricate_dir', type=click.Path(exists=True), required=False)
+def main(in_dir, abricate_dir):
+    """
+    IN_DIR contains *.gbk files to modify.
+    """
+    easyfig_add_colours(in_dir, abricate_dir)
+
+
 if __name__ == '__main__':
-    easyfig_add_colours()
+    main()
