@@ -2,7 +2,8 @@
 # -*- encoding: utf-8 -*-
 
 import click
-from prefect import Flow, Parameter
+from prefect import Flow, Parameter, unmapped
+# from prefect.tasks.core.constants import Constant
 from utilities import CONTEXT_SETTINGS
 from identify_pipolins_roughly import create_gquery
 from identify_pipolins_roughly import run_blast_against_ref
@@ -27,24 +28,23 @@ ATT_HMM = './data/att.hmm'
 
 def get_flow():
     with Flow('MAIN') as flow:
-        genome = Parameter('genome')
+        genomes = Parameter('genomes')
         out_dir = Parameter('out_dir')
 
-        gquery = create_gquery(genome=genome)
+        gquery = create_gquery.map(genome=genomes)
 
-        polbs_blast = run_blast_against_ref(genome=genome, root_dir=out_dir,
-                                            reference=REF_POLB, dir_name='polb_blast')
-        add_features_from_blast(gquery=gquery, blast_dir=polbs_blast, feature_type='polymerases')
+        polbs_blast = run_blast_against_ref.map(genome=genomes, root_dir=unmapped(out_dir),
+                                                reference=unmapped(REF_POLB), dir_name=unmapped('polb_blast'))
+        t1 = add_features_from_blast.map(gquery=gquery, blast_dir=polbs_blast, feature_type=unmapped('polymerases'))
 
-        atts_blast = run_blast_against_ref(genome=genome, root_dir=out_dir,
-                                           reference=REF_ATT, dir_name='att_blast')
-        add_features_from_blast(gquery=gquery, blast_dir=atts_blast, feature_type='atts')
+        atts_blast = run_blast_against_ref.map(genome=genomes, root_dir=unmapped(out_dir),
+                                               reference=unmapped(REF_ATT), dir_name=unmapped('att_blast'))
+        t2 = add_features_from_blast.map(gquery=gquery, blast_dir=atts_blast, feature_type=unmapped('atts'))
 
-        aragorn_results = detect_trnas(genome=genome, root_dir=out_dir)
-        add_features_from_aragorn(gquery=gquery, aragorn_dir=aragorn_results)
+        aragorn_results = detect_trnas.map(genome=genomes, root_dir=unmapped(out_dir))
+        t3 = add_features_from_aragorn.map(gquery=gquery, aragorn_dir=aragorn_results)
 
-        find_atts_denovo(genome=genome, gquery=gquery, root_dir=out_dir,
-                         upstream_tasks=[add_features_from_blast, add_features_from_aragorn])
+        find_atts_denovo.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir), upstream_tasks=[t1, t2, t3])
 
         # orientations = analyse_pipolin_orientation(out_dir, polbs_blast_dir, atts_blast, trna_blast)
         # rough_pipolins = extract_pipolin_regions(genome, out_dir, gquery, orientations, long=False)
@@ -59,13 +59,13 @@ def get_flow():
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('genome', type=click.Path(exists=True))
+@click.argument('genomes', type=click.Path(exists=True), nargs=-1)
 @click.option('--out-dir', type=click.Path())
-def explore_pipolins(genome, out_dir):
+def explore_pipolins(genomes, out_dir):
     """
     TODO
     """
-    state = get_flow().run(genome=genome, out_dir=out_dir)
+    state = get_flow().run(genomes=genomes, out_dir=out_dir)
     assert state.is_successful()
 
 

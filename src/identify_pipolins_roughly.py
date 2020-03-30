@@ -3,6 +3,7 @@
 
 import os
 import click
+import prefect
 from prefect import task
 from Bio import SeqIO
 import subprocess
@@ -86,40 +87,67 @@ def add_features_from_aragorn(gquery, aragorn_dir):
             gquery.trnas.append(feature)
 
 
-def save_left_right_subsequences(genome_contigs_dict, gquery, repeats_dir):
-    if gquery.is_single_contig():
-        contig_id = next(iter(genome_contigs_dict.keys()))
-        left_window, right_window = gquery.get_left_right_windows()
-        left_seq = genome_contigs_dict[contig_id][left_window[0]:left_window[1]]
-        SeqIO.write(sequences=left_seq, handle=os.path.join(repeats_dir, gquery.gquery_id + '.left'), format='fasta')
-        right_seq = genome_contigs_dict[contig_id][right_window[0]:right_window[1]]
-        SeqIO.write(sequences=right_seq, handle=os.path.join(repeats_dir, gquery.gquery_id + '.right'), format='fasta')
+def save_left_right_subsequences(genome_dict, gquery, repeats_dir):
+    contig_id = next(iter(genome_dict.keys()))
+    left_window, right_window = gquery.get_left_right_windows()
+    left_seq = genome_dict[contig_id][left_window[0]:left_window[1]]
+    SeqIO.write(sequences=left_seq, handle=os.path.join(repeats_dir, gquery.gquery_id + '.left'), format='fasta')
+    right_seq = genome_dict[contig_id][right_window[0]:right_window[1]]
+    SeqIO.write(sequences=right_seq, handle=os.path.join(repeats_dir, gquery.gquery_id + '.right'), format='fasta')
 
 
 def blast_for_identical(gquery_id, repeats_dir):
     with open(os.path.join(repeats_dir, gquery_id + '.fmt5'), 'w') as ouf:
         subprocess.run(['blastn', '-query', os.path.join(repeats_dir, gquery_id + '.left'),
                         '-subject', os.path.join(repeats_dir, gquery_id + '.right'),
-                        '-outfmt', '5', '-perc_identity', '100', '-word_size', '12', '-strand', 'plus'], stdout=ouf)
+                        '-outfmt', '5', '-perc_identity', '100', '-word_size', '12',
+                        '-strand', 'plus'], stdout=ouf)
 
 
-# TODO: finish!
-def filter_repeats(repeats):
+def get_repeats_location(repeats, gquery):
+    left_window, right_window = gquery.get_left_right_windows()
+    qrepeats_location = []
+    srepeats_location = []
     for entry in repeats:
         for hit in entry:
-            print(hit)
+            qrepeats_location.append((hit.query_start + left_window[0], hit.query_end + left_window[0]))
+            srepeats_location.append((hit.hit_start + right_window[0], hit.hit_end + right_window[0]))
+
+    return qrepeats_location, srepeats_location
+
+
+def remove_overlapping(gquery, repeats_location):
+    atts_location = [(i.start, i.end) for i in gquery.atts]
+    leave_this = []
+    for i, i_rep in enumerate(repeats_location[0]):
+        for i_att in atts_location:
+            max_start = max(i_rep[0], i_att[0])
+            min_end = min(i_rep[1], i_att[1])
+            if max_start < min_end:
+                leave_this.append(i)
+
+    return [repeats_location[i] for i in leave_this]
 
 
 @task   # TODO: finish!
 def find_atts_denovo(genome, gquery, root_dir):
+    logger = prefect.context.get('logger')
+
+    if not gquery.is_single_contig():
+        logger.warning('This step is only for complete genomes. Pass...')
+        return
+
     repeats_dir = os.path.join(root_dir, 'repeats_denovo')
     os.makedirs(repeats_dir, exist_ok=True)
+
     genome_dict = read_seqio_records(file=genome, file_format='fasta')
-    save_left_right_subsequences(genome_contigs_dict=genome_dict[gquery.gquery_id],
-                                 gquery=gquery, repeats_dir=repeats_dir)
+    save_left_right_subsequences(genome_dict=genome_dict, gquery=gquery, repeats_dir=repeats_dir)
+
     blast_for_identical(gquery_id=gquery.gquery_id, repeats_dir=repeats_dir)
     repeats = read_blastxml(os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
-    repeats_filtered = filter_repeats(repeats=repeats)
+    repeats_location = get_repeats_location(repeats=repeats, gquery=gquery)
+    repeats_location_filteres = remove_overlapping(gquery=gquery, repeats_location=repeats_location)
+    print(repeats_location_filteres)
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
