@@ -7,7 +7,7 @@ from utilities import CONTEXT_SETTINGS
 from identify_pipolins_roughly import run_blast_against_att, run_blast_against_polb, run_blast_against_trna
 from identify_pipolins_roughly import identify_pipolins_roughly
 from identify_pipolins_roughly import find_att_repeats
-from identify_pipolins_roughly import create_pipolins
+from identify_pipolins_roughly import create_gqueries
 from identify_pipolins_roughly import add_polb_features
 from analyse_pipolin_orientation import analyse_pipolin_orientation
 from extract_pipolin_regions import extract_pipolin_regions
@@ -30,18 +30,18 @@ def get_flow():
         genomes = Parameter('genomes')
         out_dir = Parameter('out_dir')
 
-        pipolins = create_pipolins(genomes=genomes)
+        gqueries = create_gqueries(genomes=genomes)
         polbs_dir = run_blast_against_polb(genomes=genomes, root_dir=out_dir, ref_polb=REF_POLB)
-        add_polb_features(pipolins=pipolins, polbs_blast_dir=polbs_dir)
-        att_dir = find_att_repeats(genomes=genomes, pipolins=pipolins, root_dir=out_dir)
+        add_polb_features(gqueries=gqueries, polbs_blast_dir=polbs_dir)
+        # att_dir = find_att_repeats(genomes=genomes, pipolins=gqueries, root_dir=out_dir)
         # atts_blast = run_blast_against_att(genomes, out_dir, REF_ATT)
         # trna_blast = run_blast_against_trna(genomes, out_dir, REF_TRNA)
-        pipolins = identify_pipolins_roughly(genomes, out_dir, polbs_dir, atts_blast)
+        # gqueries = identify_pipolins_roughly(genomes, out_dir, polbs_dir, atts_blast)
         # orientations = analyse_pipolin_orientation(out_dir, polbs_dir, atts_blast, trna_blast)
-        # rough_pipolins = extract_pipolin_regions(genomes, out_dir, pipolins, orientations, long=False)
+        # rough_pipolins = extract_pipolin_regions(genomes, out_dir, gqueries, orientations, long=False)
         # prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
         # att_hmmer = predict_atts_with_hmmer(ATT_HMM, rough_pipolins, out_dir)
-        # short_pipolins = store_new_att_bounds(out_dir, 'short-pipolins', att_hmmer)
+        # short_pipolins = store_new_att_bounds(out_dir, 'short-gqueries', att_hmmer)
         # prokka_atts = include_atts_into_annotation(out_dir, short_pipolins, prokka)
         # prokka_atts_scaffolded = scaffold_gapped_pipolins(prokka_atts, out_dir, long=False)
         # easyfig_add_colours(prokka_atts_scaffolded, abricate_dir=None)

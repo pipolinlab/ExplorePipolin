@@ -12,18 +12,41 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 class Feature:
-    def __init__(self, start, end, frame, node):
+    def __init__(self, start, end, frame, contig):
         self.start: int = start
         self.end: int = end
         self.frame: int = frame   # 1 or -1
-        self.node: str = node
+        self.contig: str = contig
 
 
-class Pipolin:
-    def __init__(self, strain_id):
-        self.strain_id: str = strain_id
+class Contig:
+    def __init__(self, contig_id, contig_length):
+        self.contig_id: str = contig_id
+        self.contig_length: int = contig_length
+
+
+class GQuery:
+    def __init__(self, gquery_id):
+        self.gquery_id: str = gquery_id
+        self.contigs: MutableSequence[Contig] = []
         self.polymerases: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
+
+    def get_window_boundaries(self):
+        # TODO: how to be with several polymerases?
+        #  * some check for polymerase integrity?
+        #  * some check of how far polymerases are from each other?
+        polymerases = sorted((i for i in self.polymerases), key=lambda p: p.start)
+
+        if self.is_complete_genome():
+            left_edge = polymerases[0].start - 100000
+            left_window = (left_edge if left_edge >= 0 else 0, polymerases[0].start)
+            right_edge = polymerases[-1].end + 100000
+            right_window = (polymerases[-1].end, right_edge if right_edge <= genome_len else genome_len)
+
+            return left_window, right_window
+        else:
+            raise NotImplementedError
 
     def get_pipolin_bounds(self, long):
         if not self.is_complete_genome():
@@ -182,7 +205,7 @@ def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
 def blast_genomes_against_seq(genomes, seq, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     for genome in genomes:
-        with open(os.path.join(output_dir, f'{os.path.basename(genome)[:-3]}-fmt5.txt'), 'w') as ouf:
+        with open(os.path.join(output_dir, f'{os.path.splitext(os.path.basename(genome))[0]}.fmt5'), 'w') as ouf:
             subprocess.run(['blastn', '-query', seq,
                             '-subject', f'{genome}',
                             '-outfmt', '5'], stdout=ouf)

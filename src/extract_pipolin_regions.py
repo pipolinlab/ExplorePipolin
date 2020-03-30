@@ -7,7 +7,7 @@ from prefect import task
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from utilities import CONTEXT_SETTINGS
-from utilities import Feature, Pipolin
+from utilities import Feature, GQuery
 from utilities import read_from_shelve
 
 

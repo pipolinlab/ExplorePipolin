@@ -7,35 +7,40 @@ from prefect import task
 from Bio import SeqIO
 from utilities import CONTEXT_SETTINGS
 from utilities import blast_genomes_against_seq
-from utilities import Feature, Pipolin
+from utilities import Feature, Contig, GQuery
 from utilities import save_to_shelve
 from utilities import read_blastxml
 from utilities import run_aragorn
 from utilities import read_seqio_records
 
 
-def feature_from_blasthit(hit, id):
+def feature_from_blasthit(hit, entry_id):
     start = hit.hit_start if hit.hit_frame == 1 else hit.hit_end
     end = hit.hit_end if hit.hit_frame == 1 else hit.hit_start
-    return Feature(start=start, end=end, frame=hit.hit_frame, node=id)
+    return Feature(start=start, end=end, frame=hit.hit_frame, contig=entry_id)
 
 
 @task
-def create_pipolins(genomes):
-    pipolins = []
-    for genome in genomes:
-        pipolins.append(Pipolin(strain_id=os.path.basename(genome)[:-3]))
-    return pipolins
+def create_gqueries(genomes):
+    gqueries = []
+    genomes_dict = read_seqio_records(files=genomes, file_format='fasta')
+    for f_key, f_value in genomes_dict.items():
+        gqueries.append(GQuery(gquery_id=f_key))
+        for s_key, s_value in f_value.items():
+            contig = Contig(contig_id=s_key, contig_length=len(s_value.seq))
+            gqueries[-1].contigs.append(contig)
+
+    return gqueries
 
 
 @task
-def add_polb_features(pipolins, polbs_blast_dir):
-    for i_p, pipolin in enumerate(pipolins):
-        polbs = read_blastxml(os.path.join(polbs_blast_dir, f'{pipolin.strain_id}-fmt5.txt'))
+def add_polb_features(gqueries, polbs_blast_dir):
+    for i_q, gquery in enumerate(gqueries):
+        polbs = read_blastxml(os.path.join(polbs_blast_dir, f'{gquery.gquery_id}.fmt5'))
         for entry in polbs:
             for hit in entry:
-                polb_feature = feature_from_blasthit(hit, entry.id)
-                pipolins[i_p].polymerases.append(polb_feature)
+                polb_feature = feature_from_blasthit(hit=hit, entry_id=entry.id)
+                gqueries[i_q].polymerases.append(polb_feature)
 
 
 @task
@@ -52,8 +57,9 @@ def detect_trnas(genomes, out_dir):
     return aragorn_results
 
 
-def search_repeats_in_genome(genome_records, pipolin):
-    pass
+def find_repeats_in_genome(genome_records, pipolin):
+    if pipolin.is_complete_genome():
+        pass
 
 
 @task
@@ -63,7 +69,7 @@ def find_att_repeats(genomes, pipolins, root_dir):
     genomes_dict = read_seqio_records(files=genomes, file_format='fasta')
     for i_p, pipolin in enumerate(pipolins):
         with open(os.path.join(att_repeats_dir, f'{os.path.basename(pipolin.strain_id)[:-3]}.batch'), 'w') as ouf:
-            repeats = search_repeats_in_genome(genome_records=genomes_dict[pipolin.strain_id], pipolin=pipolin)
+            repeats = find_repeats_in_genome(genome_records=genomes_dict[pipolin.strain_id], pipolin=pipolin)
             # for repeat in repeats:
             #     print(repeat, file=ouf)
     return att_repeats_dir

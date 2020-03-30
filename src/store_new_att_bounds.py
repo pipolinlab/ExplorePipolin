@@ -5,7 +5,7 @@ import os
 import click
 from prefect import task
 from utilities import CONTEXT_SETTINGS
-from utilities import Feature, Pipolin
+from utilities import Feature, GQuery
 from utilities import read_from_shelve
 from utilities import save_to_shelve
 
