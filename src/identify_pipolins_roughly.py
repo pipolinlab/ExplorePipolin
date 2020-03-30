@@ -17,9 +17,7 @@ from utilities import read_seqio_records
 
 
 def feature_from_blasthit(hit, entry_id):
-    start = hit.hit_start
-    end = hit.hit_end
-    return Feature(start=start, end=end, frame=hit.hit_frame, contig=entry_id)
+    return Feature(start=hit.hit_start, end=hit.hit_end, frame=hit.hit_frame, contig=entry_id)
 
 
 @task
@@ -36,52 +34,27 @@ def create_gqueries(genomes):
 
 
 @task
-def add_polb_features(gqueries, polbs_blast_dir):
+def run_blast_against_ref(genomes, root_dir, reference, dir_name):
+    blast_path = os.path.join(root_dir, dir_name)
+    blast_genomes_against_seq(genomes, reference, blast_path)
+    return blast_path
+
+
+@task
+def add_features_from_blast(gqueries, blast_dir, feature_type):
     for i_q, gquery in enumerate(gqueries):
-        polbs = read_blastxml(os.path.join(polbs_blast_dir, f'{gquery.gquery_id}.fmt5'))
-        for entry in polbs:
+        features = read_blastxml(os.path.join(blast_dir, f'{gquery.gquery_id}.fmt5'))
+        for entry in features:
             for hit in entry:
-                polb_feature = feature_from_blasthit(hit=hit, entry_id=entry.id)
-                gqueries[i_q].polymerases.append(polb_feature)
-
-    return gqueries
+                feature = feature_from_blasthit(hit=hit, entry_id=entry.id)
+                gqueries[i_q].get_features_by_type(feature_type).append(feature)
 
 
 @task
-def run_blast_against_polb(genomes, root_dir, ref_polb):
-    polbs_blast_path = os.path.join(root_dir, 'polb_blast')
-    blast_genomes_against_seq(genomes, ref_polb, polbs_blast_path)
-    return polbs_blast_path
-
-
-@task
-def detect_trnas(genomes, out_dir):
-    aragorn_results = os.path.join(out_dir, 'aragorn_results')
+def detect_trnas(genomes, root_dir):
+    aragorn_results = os.path.join(root_dir, 'aragorn_results')
     run_aragorn(genomes, aragorn_results)
     return aragorn_results
-
-
-def get_kmer_set(kmer_size, seq):
-    kmer_set = set()
-    for i in range(0, len(seq) - kmer_size):
-        kmer_set.add(seq[i:i + kmer_size])
-
-    return kmer_set
-
-
-def remove_overlapping(repeated_kmers):
-    kmer_pairs = list(combinations(repeated_kmers, 2))
-    return repeated_kmers
-
-
-def find_repeated_kmers(left_seq, right_seq):
-    repeated_kmers = []
-    for kmer_size in range(80, 11, -1):
-        left_set = get_kmer_set(kmer_size=kmer_size, seq=left_seq)
-        right_set = get_kmer_set(kmer_size=kmer_size, seq=right_seq)
-        repeated_kmers.append(left_set.intersection(right_set))
-    
-    return remove_overlapping(repeated_kmers=repeated_kmers)
 
 
 def save_left_right_subsequences(genome_contigs_dict, gquery, repeats_dir):
@@ -101,13 +74,14 @@ def blast_for_identical(gquery_id, repeats_dir):
                         '-outfmt', '5', '-perc_identity', '100', '-word_size', '12', '-strand', 'plus'], stdout=ouf)
 
 
+# TODO: finish!
 def filter_repeats(repeats):
     for entry in repeats:
         for hit in entry:
             print(hit)
 
 
-@task
+@task   # TODO: finish!
 def find_atts_denovo(genomes, gqueries, root_dir) -> str:
     repeats_dir = os.path.join(root_dir, 'repeats')
     os.makedirs(repeats_dir, exist_ok=True)
@@ -122,21 +96,6 @@ def find_atts_denovo(genomes, gqueries, root_dir) -> str:
     return repeats_dir
 
 
-@task   # TODO: replace with de-novo atts search finction!
-def run_blast_against_att(genomes, out_dir, ref_att):
-    atts_blast_path = os.path.join(out_dir, 'att_blast')
-    blast_genomes_against_seq(genomes, ref_att, atts_blast_path)
-    return atts_blast_path
-
-
-@task   # TODO: replace with aragorn search function!
-def run_blast_against_trna(genomes, out_dir, ref_trna):
-    trna_blast_path = os.path.join(out_dir, 'trna_blast')
-    blast_genomes_against_seq(genomes, ref_trna, trna_blast_path)
-    return trna_blast_path
-
-
-@task
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
     out_file = os.path.join(out_dir, 'shelve.db')
     save_to_shelve(out_file, pipolins, 'pipolins')

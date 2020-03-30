@@ -32,6 +32,14 @@ class GQuery:
         self.polymerases: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
 
+    def get_features_by_type(self, feature_type):
+        if feature_type == 'polymerases':
+            return self.polymerases
+        elif feature_type == 'atts':
+            return self.atts
+        else:
+            raise AssertionError('Feature type might be either "polymerases" or "atts"!')
+
     def get_left_right_windows(self):
         # TODO: how to be with several polymerases?
         #  * some check for polymerase integrity?
@@ -232,7 +240,7 @@ def read_seqio_records(files, file_format) -> SeqIORecordsDict:
 def run_aragorn(genomes, aragorn_results):
     os.makedirs(aragorn_results, exist_ok=True)
     for genome in genomes:
-        with open(os.path.join(aragorn_results, f'{os.path.basename(genome)[:-3]}.batch'), 'w') as ouf:
+        with open(os.path.join(aragorn_results, f'{os.path.splitext(os.path.basename(genome))[0]}.batch'), 'w') as ouf:
             subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
 
 
