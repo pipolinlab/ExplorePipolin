@@ -63,7 +63,7 @@ def add_new_gb_feature(new_feature, record):
 
 def add_atts(records, records_format, pipolins):
     for pipolin in pipolins:
-        if pipolin.is_complete_genome():
+        if pipolin.is_single_contig():
             record = records[pipolin.strain_id][pipolin.strain_id]
             for att in pipolin.atts:
                 att_feature = create_att_feature(att, pipolin, records_format)

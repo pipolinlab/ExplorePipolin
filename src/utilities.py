@@ -32,24 +32,24 @@ class GQuery:
         self.polymerases: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
 
-    def get_window_boundaries(self):
+    def get_left_right_windows(self):
         # TODO: how to be with several polymerases?
         #  * some check for polymerase integrity?
         #  * some check of how far polymerases are from each other?
         polymerases = sorted((i for i in self.polymerases), key=lambda p: p.start)
-
-        if self.is_complete_genome():
+        if self.is_single_contig():
+            contig_length = self.contigs[0].contig_length
             left_edge = polymerases[0].start - 100000
             left_window = (left_edge if left_edge >= 0 else 0, polymerases[0].start)
             right_edge = polymerases[-1].end + 100000
-            right_window = (polymerases[-1].end, right_edge if right_edge <= genome_len else genome_len)
+            right_window = (polymerases[-1].end, right_edge if right_edge <= contig_length else contig_length)
 
             return left_window, right_window
         else:
             raise NotImplementedError
 
     def get_pipolin_bounds(self, long):
-        if not self.is_complete_genome():
+        if not self.is_single_contig():
             raise AssertionError('Should be complete!')
 
         polymerases = sorted((i for i in self.polymerases), key=lambda p: p.start)
@@ -149,8 +149,8 @@ class GQuery:
             things_to_return[node] = self._get_dangling_feature(features, node, length_by_contig)
             self._add_dangling_atts(atts, things_to_return, length_by_contig)
 
-    def is_complete_genome(self):
-        return self.strain_id == self.polymerases[0].node
+    def is_single_contig(self):
+        return len(self.contigs) == 1
 
 
 def ncbi_acc_download(acc_ids):

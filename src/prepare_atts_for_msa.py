@@ -29,7 +29,7 @@ def extract_all_atts(genomes, pipolins):
     att_records = []
     for pipolin in pipolins:
         atts = pipolin.atts
-        if pipolin.is_complete_genome():
+        if pipolin.is_single_contig():
             ref_seq = genomes[pipolin.strain_id][pipolin.strain_id].seq
             att_records.extend(SeqRecord(seq=return_att_seq(att, ref_seq),
                                          id=f'{pipolin.strain_id}_{i + 1}',
@@ -46,7 +46,7 @@ def extract_all_atts(genomes, pipolins):
 def extract_specific_atts(genomes, pipolins, type):
     att_records = []
     for pipolin in pipolins:
-        if pipolin.is_complete_genome():
+        if pipolin.is_single_contig():
             atts = sorted(pipolin.atts, key=lambda x: x.start)
             ref_seq = genomes[pipolin.strain_id][pipolin.strain_id].seq
             if type == 'left':

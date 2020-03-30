@@ -5,6 +5,8 @@ import os
 import click
 from prefect import task
 from Bio import SeqIO
+import subprocess
+from itertools import combinations
 from utilities import CONTEXT_SETTINGS
 from utilities import blast_genomes_against_seq
 from utilities import Feature, Contig, GQuery
@@ -15,8 +17,8 @@ from utilities import read_seqio_records
 
 
 def feature_from_blasthit(hit, entry_id):
-    start = hit.hit_start if hit.hit_frame == 1 else hit.hit_end
-    end = hit.hit_end if hit.hit_frame == 1 else hit.hit_start
+    start = hit.hit_start
+    end = hit.hit_end
     return Feature(start=start, end=end, frame=hit.hit_frame, contig=entry_id)
 
 
@@ -42,6 +44,8 @@ def add_polb_features(gqueries, polbs_blast_dir):
                 polb_feature = feature_from_blasthit(hit=hit, entry_id=entry.id)
                 gqueries[i_q].polymerases.append(polb_feature)
 
+    return gqueries
+
 
 @task
 def run_blast_against_polb(genomes, root_dir, ref_polb):
@@ -57,22 +61,65 @@ def detect_trnas(genomes, out_dir):
     return aragorn_results
 
 
-def find_repeats_in_genome(genome_records, pipolin):
-    if pipolin.is_complete_genome():
-        pass
+def get_kmer_set(kmer_size, seq):
+    kmer_set = set()
+    for i in range(0, len(seq) - kmer_size):
+        kmer_set.add(seq[i:i + kmer_size])
+
+    return kmer_set
+
+
+def remove_overlapping(repeated_kmers):
+    kmer_pairs = list(combinations(repeated_kmers, 2))
+    return repeated_kmers
+
+
+def find_repeated_kmers(left_seq, right_seq):
+    repeated_kmers = []
+    for kmer_size in range(80, 11, -1):
+        left_set = get_kmer_set(kmer_size=kmer_size, seq=left_seq)
+        right_set = get_kmer_set(kmer_size=kmer_size, seq=right_seq)
+        repeated_kmers.append(left_set.intersection(right_set))
+    
+    return remove_overlapping(repeated_kmers=repeated_kmers)
+
+
+def save_left_right_subsequences(genome_contigs_dict, gquery, repeats_dir):
+    if gquery.is_single_contig():
+        contig_id = next(iter(genome_contigs_dict.keys()))
+        left_window, right_window = gquery.get_left_right_windows()
+        left_seq = genome_contigs_dict[contig_id][left_window[0]:left_window[1]]
+        SeqIO.write(sequences=left_seq, handle=os.path.join(repeats_dir, gquery.gquery_id + '.left'), format='fasta')
+        right_seq = genome_contigs_dict[contig_id][right_window[0]:right_window[1]]
+        SeqIO.write(sequences=right_seq, handle=os.path.join(repeats_dir, gquery.gquery_id + '.right'), format='fasta')
+
+
+def blast_for_identical(gquery_id, repeats_dir):
+    with open(os.path.join(repeats_dir, gquery_id + '.fmt5'), 'w') as ouf:
+        subprocess.run(['blastn', '-query', os.path.join(repeats_dir, gquery_id + '.left'),
+                        '-subject', os.path.join(repeats_dir, gquery_id + '.right'),
+                        '-outfmt', '5', '-perc_identity', '100', '-word_size', '12', '-strand', 'plus'], stdout=ouf)
+
+
+def filter_repeats(repeats):
+    for entry in repeats:
+        for hit in entry:
+            print(hit)
 
 
 @task
-def find_att_repeats(genomes, pipolins, root_dir):
-    att_repeats_dir = os.path.join(root_dir, 'att_repeats')
-    os.makedirs(att_repeats_dir, exist_ok=True)
+def find_atts_denovo(genomes, gqueries, root_dir) -> str:
+    repeats_dir = os.path.join(root_dir, 'repeats')
+    os.makedirs(repeats_dir, exist_ok=True)
     genomes_dict = read_seqio_records(files=genomes, file_format='fasta')
-    for i_p, pipolin in enumerate(pipolins):
-        with open(os.path.join(att_repeats_dir, f'{os.path.basename(pipolin.strain_id)[:-3]}.batch'), 'w') as ouf:
-            repeats = find_repeats_in_genome(genome_records=genomes_dict[pipolin.strain_id], pipolin=pipolin)
-            # for repeat in repeats:
-            #     print(repeat, file=ouf)
-    return att_repeats_dir
+    for i_q, gquery in enumerate(gqueries):
+        save_left_right_subsequences(genome_contigs_dict=genomes_dict[gquery.gquery_id],
+                                     gquery=gquery, repeats_dir=repeats_dir)
+        blast_for_identical(gquery_id=gquery.gquery_id, repeats_dir=repeats_dir)
+        repeats = read_blastxml(os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
+        repeats_filtered = filter_repeats(repeats=repeats)
+
+    return repeats_dir
 
 
 @task   # TODO: replace with de-novo atts search finction!

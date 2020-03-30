@@ -20,7 +20,7 @@ def extract_pipolin_regions(in_genomes, shelve_in_dir, pipolins, orientations, l
         genomes[os.path.basename(file)[:-3]] = SeqIO.to_dict(SeqIO.parse(file, 'fasta'))
     os.makedirs(os.path.join(shelve_in_dir, 'rough_pipolins'), exist_ok=True)
     for pipolin in pipolins:
-        if pipolin.is_complete_genome():
+        if pipolin.is_single_contig():
             bounds = pipolin.get_pipolin_bounds(long)
             sequence = genomes[pipolin.strain_id][pipolin.strain_id].seq[bounds[0]:bounds[1]]
             orientation = orientations[pipolin.strain_id][pipolin.strain_id]

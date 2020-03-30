@@ -6,7 +6,7 @@ from prefect import Flow, Parameter
 from utilities import CONTEXT_SETTINGS
 from identify_pipolins_roughly import run_blast_against_att, run_blast_against_polb, run_blast_against_trna
 from identify_pipolins_roughly import identify_pipolins_roughly
-from identify_pipolins_roughly import find_att_repeats
+from identify_pipolins_roughly import find_atts_denovo
 from identify_pipolins_roughly import create_gqueries
 from identify_pipolins_roughly import add_polb_features
 from analyse_pipolin_orientation import analyse_pipolin_orientation
@@ -30,10 +30,10 @@ def get_flow():
         genomes = Parameter('genomes')
         out_dir = Parameter('out_dir')
 
-        gqueries = create_gqueries(genomes=genomes)
+        gqueries_wo_features = create_gqueries(genomes=genomes)
         polbs_dir = run_blast_against_polb(genomes=genomes, root_dir=out_dir, ref_polb=REF_POLB)
-        add_polb_features(gqueries=gqueries, polbs_blast_dir=polbs_dir)
-        # att_dir = find_att_repeats(genomes=genomes, pipolins=gqueries, root_dir=out_dir)
+        gqueries_polbs = add_polb_features(gqueries=gqueries_wo_features, polbs_blast_dir=polbs_dir)
+        att_dir = find_atts_denovo(genomes=genomes, gqueries=gqueries_polbs, root_dir=out_dir)
         # atts_blast = run_blast_against_att(genomes, out_dir, REF_ATT)
         # trna_blast = run_blast_against_trna(genomes, out_dir, REF_TRNA)
         # gqueries = identify_pipolins_roughly(genomes, out_dir, polbs_dir, atts_blast)
