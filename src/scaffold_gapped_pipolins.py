@@ -12,7 +12,7 @@ from utilities import CONTEXT_SETTINGS
 from utilities import read_seqio_records, write_genbank_records
 from utilities import write_gff_records
 from utilities import write_fna_records
-from utilities import SeqIORecordsDict
+from utilities import SeqIORecords
 
 # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
 # https://github.com/biopython/biopython/issues/1755
@@ -269,7 +269,7 @@ def finish_one_unchangeable_contig(record_set, unchangeable_contigs, long) -> Se
                 raise NotImplementedError
 
 
-def assemble_gapped_pipolins(gb_records: SeqIORecordsDict, long):
+def assemble_gapped_pipolins(gb_records: SeqIORecords, long):
     for strain_id, record_set in gb_records.items():
         if len(record_set) > 1:
             print(f'Assembling pipolin region for {strain_id}...')

@@ -8,7 +8,7 @@ from Bio import SeqIO
 import subprocess
 from collections import defaultdict
 from utilities import CONTEXT_SETTINGS
-from utilities import blast_genomes_against_seq
+from utilities import blast_genome_against_seq
 from utilities import Orientation, Feature, Contig, GQuery
 from utilities import save_to_shelve
 from utilities import read_blastxml
@@ -22,39 +22,36 @@ def feature_from_blasthit(hit, entry_id):
 
 
 @task
-def create_gqueries(genomes):
-    gqueries = []
-    genomes_dict = read_seqio_records(files=genomes, file_format='fasta')
-    for f_key, f_value in genomes_dict.items():
-        gqueries.append(GQuery(gquery_id=f_key))
-        for s_key, s_value in f_value.items():
-            contig = Contig(contig_id=s_key, contig_length=len(s_value.seq))
-            gqueries[-1].contigs.append(contig)
+def create_gquery(genome):
+    gquery = GQuery(gquery_id=os.path.splitext(os.path.basename(genome))[0])
+    genome_dict = read_seqio_records(file=genome, file_format='fasta')
+    for key, value in genome_dict.items():
+        contig = Contig(contig_id=key, contig_length=len(value.seq))
+        gquery.contigs.append(contig)
 
-    return gqueries
+    return gquery
 
 
 @task
-def run_blast_against_ref(genomes, root_dir, reference, dir_name):
+def run_blast_against_ref(genome, root_dir, reference, dir_name):
     blast_path = os.path.join(root_dir, dir_name)
-    blast_genomes_against_seq(genomes, reference, blast_path)
+    blast_genome_against_seq(genome=genome, seq=reference, output_dir=blast_path)
     return blast_path
 
 
 @task
-def add_features_from_blast(gqueries, blast_dir, feature_type):
-    for i_q, gquery in enumerate(gqueries):
-        entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.gquery_id}.fmt5'))
-        for entry in entries:
-            for hit in entry:
-                feature = feature_from_blasthit(hit=hit, entry_id=entry.id)
-                gqueries[i_q].get_features_by_type(feature_type).append(feature)
+def add_features_from_blast(gquery, blast_dir, feature_type):
+    entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.gquery_id}.fmt5'))
+    for entry in entries:
+        for hit in entry:
+            feature = feature_from_blasthit(hit=hit, entry_id=entry.id)
+            gquery.get_features_by_type(feature_type).append(feature)
 
 
 @task
-def detect_trnas(genomes, root_dir):
+def detect_trnas(genome, root_dir):
     aragorn_results = os.path.join(root_dir, 'aragorn_results')
-    run_aragorn(genomes, aragorn_results)
+    run_aragorn(genome, aragorn_results)
     return aragorn_results
 
 
@@ -81,13 +78,12 @@ def read_aragorn_batch(aragorn_batch):
 
 
 @task
-def add_features_from_aragorn(gqueries, aragorn_dir):
-    for i_q, gquery in enumerate(gqueries):
-        entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.gquery_id}.batch'))
-        for e_key, e_value in entries.items():
-            for hit in e_value:
-                feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig=e_key)
-                gqueries[i_q].trnas.append(feature)
+def add_features_from_aragorn(gquery, aragorn_dir):
+    entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.gquery_id}.batch'))
+    for contig, hits in entries.items():
+        for hit in hits:
+            feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig=contig)
+            gquery.trnas.append(feature)
 
 
 def save_left_right_subsequences(genome_contigs_dict, gquery, repeats_dir):
@@ -115,16 +111,15 @@ def filter_repeats(repeats):
 
 
 @task   # TODO: finish!
-def find_atts_denovo(genomes, gqueries, root_dir):
+def find_atts_denovo(genome, gquery, root_dir):
     repeats_dir = os.path.join(root_dir, 'repeats_denovo')
     os.makedirs(repeats_dir, exist_ok=True)
-    genomes_dict = read_seqio_records(files=genomes, file_format='fasta')
-    for i_q, gquery in enumerate(gqueries):
-        save_left_right_subsequences(genome_contigs_dict=genomes_dict[gquery.gquery_id],
-                                     gquery=gquery, repeats_dir=repeats_dir)
-        blast_for_identical(gquery_id=gquery.gquery_id, repeats_dir=repeats_dir)
-        repeats = read_blastxml(os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
-        repeats_filtered = filter_repeats(repeats=repeats)
+    genome_dict = read_seqio_records(file=genome, file_format='fasta')
+    save_left_right_subsequences(genome_contigs_dict=genome_dict[gquery.gquery_id],
+                                 gquery=gquery, repeats_dir=repeats_dir)
+    blast_for_identical(gquery_id=gquery.gquery_id, repeats_dir=repeats_dir)
+    repeats = read_blastxml(os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
+    repeats_filtered = filter_repeats(repeats=repeats)
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):

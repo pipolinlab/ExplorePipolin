@@ -4,7 +4,7 @@
 import os
 import click
 from prefect import task
-from utilities import CONTEXT_SETTINGS, SeqIORecordsDict
+from utilities import CONTEXT_SETTINGS, SeqIORecords
 from utilities import read_seqio_records, write_genbank_records
 from Bio.SeqIO import SeqRecord
 
@@ -56,7 +56,7 @@ def colour_feature(qualifiers):
                 qualifiers['colour'] = [products_to_colours['other']]
 
 
-def add_colours(gb_records: SeqIORecordsDict):
+def add_colours(gb_records: SeqIORecords):
     for record_set in gb_records.values():
         for record in record_set.values():
             for feature in record.features:
@@ -102,7 +102,7 @@ def color_feature(record: SeqRecord, feature_position, db_type):
             raise AssertionError('Something is wrong here!')
 
 
-def add_info_from_summary(gb_records: SeqIORecordsDict, summary_path, db_type):
+def add_info_from_summary(gb_records: SeqIORecords, summary_path, db_type):
     with open(summary_path) as inf:
         _ = inf.readline()   # skip header
         for line in inf:
@@ -120,7 +120,7 @@ def add_info_from_summary(gb_records: SeqIORecordsDict, summary_path, db_type):
                 gb_records[os.path.basename(summary_path)[:-4]][q_id] = record
 
 
-def find_and_color_amr_and_virulence(gb_records: SeqIORecordsDict, abricate_dir):
+def find_and_color_amr_and_virulence(gb_records: SeqIORecords, abricate_dir):
     contents = os.listdir(abricate_dir)
     for content in contents:
         if content in VIRULENCE_DBs or content in AMR_DBs:

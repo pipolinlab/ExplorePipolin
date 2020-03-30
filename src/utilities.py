@@ -223,38 +223,28 @@ def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
     return roary_groups
 
 
-def blast_genomes_against_seq(genomes, seq, output_dir):
+def blast_genome_against_seq(genome, seq, output_dir):
     os.makedirs(output_dir, exist_ok=True)
-    for genome in genomes:
-        with open(os.path.join(output_dir, f'{os.path.splitext(os.path.basename(genome))[0]}.fmt5'), 'w') as ouf:
-            subprocess.run(['blastn', '-query', seq,
-                            '-subject', f'{genome}',
-                            '-outfmt', '5'], stdout=ouf)
+    with open(os.path.join(output_dir, f'{os.path.splitext(os.path.basename(genome))[0]}.fmt5'), 'w') as ouf:
+        subprocess.run(['blastn', '-query', seq, '-subject', genome, '-outfmt', '5'], stdout=ouf)
 
 
-SeqIORecordsDict = MutableMapping[str, MutableMapping[str, SeqIO.SeqRecord]]
+SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
 
-def read_seqio_records(files, file_format) -> SeqIORecordsDict:
-    records_dict: SeqIORecordsDict = {}
-    if file_format == 'genbank':
-        ext = '.gbk'
-    elif file_format == 'fasta':
-        ext = '.fa'
-    else:
+def read_seqio_records(file, file_format) -> SeqIORecords:
+    file_formats = ['genbank', 'fasta']
+    if file_format not in file_formats:
         raise AssertionError('Only genbank or fasta formats are acceptable!')
-    for file in files:
-        if file.endswith(ext):
-            record = SeqIO.to_dict(SeqIO.parse(file, format=file_format))
-            records_dict[os.path.splitext(os.path.basename(file))[0]] = record
-    return records_dict
+
+    records = SeqIO.to_dict(SeqIO.parse(file, format=file_format))
+    return records
 
 
-def run_aragorn(genomes, aragorn_results):
+def run_aragorn(genome, aragorn_results):
     os.makedirs(aragorn_results, exist_ok=True)
-    for genome in genomes:
-        with open(os.path.join(aragorn_results, f'{os.path.splitext(os.path.basename(genome))[0]}.batch'), 'w') as ouf:
-            subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
+    with open(os.path.join(aragorn_results, f'{os.path.splitext(os.path.basename(genome))[0]}.batch'), 'w') as ouf:
+        subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
 
 
 def write_genbank_records(gb_records, out_dir):
