@@ -1,6 +1,7 @@
 import csv
 import os
 import shelve
+from enum import Enum, auto
 from typing import Sequence, MutableSequence, Mapping, MutableMapping
 from itertools import groupby
 import subprocess
@@ -11,11 +12,20 @@ from Bio import SearchIO, SeqIO
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
+class Orientation(Enum):
+    FORWARD = auto()
+    REVERSE = auto()
+
+    @staticmethod
+    def orientation_from_blast(hit_frame):
+        return Orientation.FORWARD if hit_frame == 1 else Orientation.REVERSE
+
+
 class Feature:
     def __init__(self, start, end, frame, contig):
         self.start: int = start
         self.end: int = end
-        self.frame: int = frame   # 1 or -1
+        self.frame: Orientation = frame
         self.contig: str = contig
 
 
@@ -31,14 +41,17 @@ class GQuery:
         self.contigs: MutableSequence[Contig] = []
         self.polymerases: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
+        self.trnas: MutableSequence[Feature] = []
 
     def get_features_by_type(self, feature_type):
         if feature_type == 'polymerases':
             return self.polymerases
         elif feature_type == 'atts':
             return self.atts
+        elif feature_type == 'trnas':
+            return self.trnas
         else:
-            raise AssertionError('Feature type might be either "polymerases" or "atts"!')
+            raise AssertionError('Feature type can be: "polymerases", "atts" or "trnas"!')
 
     def get_left_right_windows(self):
         # TODO: how to be with several polymerases?

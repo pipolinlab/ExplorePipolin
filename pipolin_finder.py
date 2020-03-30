@@ -8,8 +8,8 @@ from identify_pipolins_roughly import create_gqueries
 from identify_pipolins_roughly import run_blast_against_ref
 from identify_pipolins_roughly import add_features_from_blast
 from identify_pipolins_roughly import detect_trnas
+from identify_pipolins_roughly import add_features_from_aragorn
 from identify_pipolins_roughly import find_atts_denovo
-
 from analyse_pipolin_orientation import analyse_pipolin_orientation
 from extract_pipolin_regions import extract_pipolin_regions
 from annotate_pipolins import annotate_pipolins
@@ -21,7 +21,6 @@ from easyfig_add_colours import easyfig_add_colours
 
 REF_POLB = './data/pi-polB.fa'
 REF_ATT = './data/attL.fa'
-REF_TRNA = './data/tRNA.fa'
 PROTEINS = './data/HHpred_proteins.faa'
 ATT_HMM = './data/att.hmm'
 
@@ -31,22 +30,22 @@ def get_flow():
         genomes = Parameter('genomes')
         out_dir = Parameter('out_dir')
 
-        gqueries_wo_features = create_gqueries(genomes=genomes)
+        gqueries = create_gqueries(genomes=genomes)
 
         polbs_blast = run_blast_against_ref(genomes=genomes, root_dir=out_dir,
                                             reference=REF_POLB, dir_name='polb_blast')
-        add_features_from_blast(gqueries=gqueries_wo_features, blast_dir=polbs_blast, feature_type='polymerases')
+        add_features_from_blast(gqueries=gqueries, blast_dir=polbs_blast, feature_type='polymerases')
 
         atts_blast = run_blast_against_ref(genomes=genomes, root_dir=out_dir,
                                            reference=REF_ATT, dir_name='att_blast')
-        add_features_from_blast(gqueries=gqueries_wo_features, blast_dir=atts_blast, feature_type='atts')
+        add_features_from_blast(gqueries=gqueries, blast_dir=atts_blast, feature_type='atts')
 
         aragorn_results = detect_trnas(genomes=genomes, root_dir=out_dir)
+        add_features_from_aragorn(gqueries=gqueries, aragorn_dir=aragorn_results)
 
-        # trna_blast = run_blast_against_ref(genomes=genomes, root_dir=out_dir,
-        #                                    reference=REF_TRNA, dir_name='trna_blast')
+        find_atts_denovo(genomes=genomes, gqueries=gqueries, root_dir=out_dir,
+                         upstream_tasks=[add_features_from_blast, add_features_from_aragorn])
 
-        # att_dir = find_atts_denovo(genomes=genomes, gqueries=gqueries_polbs, root_dir=out_dir)
         # orientations = analyse_pipolin_orientation(out_dir, polbs_blast_dir, atts_blast, trna_blast)
         # rough_pipolins = extract_pipolin_regions(genomes, out_dir, gqueries, orientations, long=False)
         # prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)

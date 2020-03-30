@@ -6,10 +6,10 @@ import click
 from prefect import task
 from Bio import SeqIO
 import subprocess
-from itertools import combinations
+from collections import defaultdict
 from utilities import CONTEXT_SETTINGS
 from utilities import blast_genomes_against_seq
-from utilities import Feature, Contig, GQuery
+from utilities import Orientation, Feature, Contig, GQuery
 from utilities import save_to_shelve
 from utilities import read_blastxml
 from utilities import run_aragorn
@@ -17,7 +17,8 @@ from utilities import read_seqio_records
 
 
 def feature_from_blasthit(hit, entry_id):
-    return Feature(start=hit.hit_start, end=hit.hit_end, frame=hit.hit_frame, contig=entry_id)
+    return Feature(start=hit.hit_start, end=hit.hit_end,
+                   frame=Orientation.orientation_from_blast(hit.hit_frame), contig=entry_id)
 
 
 @task
@@ -43,8 +44,8 @@ def run_blast_against_ref(genomes, root_dir, reference, dir_name):
 @task
 def add_features_from_blast(gqueries, blast_dir, feature_type):
     for i_q, gquery in enumerate(gqueries):
-        features = read_blastxml(os.path.join(blast_dir, f'{gquery.gquery_id}.fmt5'))
-        for entry in features:
+        entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.gquery_id}.fmt5'))
+        for entry in entries:
             for hit in entry:
                 feature = feature_from_blasthit(hit=hit, entry_id=entry.id)
                 gqueries[i_q].get_features_by_type(feature_type).append(feature)
@@ -55,6 +56,38 @@ def detect_trnas(genomes, root_dir):
     aragorn_results = os.path.join(root_dir, 'aragorn_results')
     run_aragorn(genomes, aragorn_results)
     return aragorn_results
+
+
+def read_aragorn_batch(aragorn_batch):
+    entries = defaultdict(list)
+    with open(aragorn_batch) as inf:
+        for line in inf:
+            if line[0] == '>':
+                entry = line.split(sep=' ')[0][1:]
+            else:
+                hit = line.split(sep='\t')
+                if len(hit) < 2:
+                    continue
+                else:
+                    coordinates = hit[0].split(sep=' ')[-1]
+                    if coordinates[0] == 'c':
+                        start, end = (int(i) for i in coordinates[2:-1].split(sep=','))
+                        entries[entry].append((start, end, Orientation.REVERSE))
+                    else:
+                        start, end = (int(i) for i in coordinates[1:-1].split(sep=','))
+                        entries[entry].append((start, end, Orientation.FORWARD))
+
+    return entries
+
+
+@task
+def add_features_from_aragorn(gqueries, aragorn_dir):
+    for i_q, gquery in enumerate(gqueries):
+        entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.gquery_id}.batch'))
+        for e_key, e_value in entries.items():
+            for hit in e_value:
+                feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig=e_key)
+                gqueries[i_q].trnas.append(feature)
 
 
 def save_left_right_subsequences(genome_contigs_dict, gquery, repeats_dir):
@@ -82,8 +115,8 @@ def filter_repeats(repeats):
 
 
 @task   # TODO: finish!
-def find_atts_denovo(genomes, gqueries, root_dir) -> str:
-    repeats_dir = os.path.join(root_dir, 'repeats')
+def find_atts_denovo(genomes, gqueries, root_dir):
+    repeats_dir = os.path.join(root_dir, 'repeats_denovo')
     os.makedirs(repeats_dir, exist_ok=True)
     genomes_dict = read_seqio_records(files=genomes, file_format='fasta')
     for i_q, gquery in enumerate(gqueries):
@@ -92,8 +125,6 @@ def find_atts_denovo(genomes, gqueries, root_dir) -> str:
         blast_for_identical(gquery_id=gquery.gquery_id, repeats_dir=repeats_dir)
         repeats = read_blastxml(os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
         repeats_filtered = filter_repeats(repeats=repeats)
-
-    return repeats_dir
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
