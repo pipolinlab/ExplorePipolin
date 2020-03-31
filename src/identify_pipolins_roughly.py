@@ -116,14 +116,35 @@ def get_repeats_location(repeats, gquery):
     return qrepeats_location, srepeats_location
 
 
-def remove_overlapping(gquery, qrepeats_location, srepeats_location):
+def remove_overlapping_atts(gquery, qrepeats_location, srepeats_location):
     atts_location = [(i.start, i.end) for i in gquery.atts]
     leave_this = []
     for i, i_rep in enumerate(qrepeats_location):
+        # TODO: FIX THIS!
         for i_att in atts_location:
             max_start = max(i_rep[0], i_att[0])
             min_end = min(i_rep[1], i_att[1])
-            if max_start > min_end:
+            if max_start <= min_end:
+                continue
+            else:
+                leave_this.append(i)
+                break
+
+    q_filtered = [qrepeats_location[i] for i in leave_this]
+    s_filtered = [srepeats_location[i] for i in leave_this]
+    return q_filtered, s_filtered
+
+
+def leave_overlapping_trnas(gquery, qrepeats_location, srepeats_location):
+    trnas_location = [(i.start, i.end) for i in gquery.trnas]
+    leave_this = []
+    for i, i_rep in enumerate(zip(qrepeats_location, srepeats_location)):
+        for i_trna in trnas_location:
+            q_max_start = max(i_rep[0][0], i_trna[0])
+            q_min_end = min(i_rep[0][1], i_trna[1])
+            s_max_start = max(i_rep[1][0], i_trna[0])
+            s_min_end = min(i_rep[1][1], i_trna[1])
+            if q_max_start <= q_min_end or s_max_start <= s_min_end:
                 leave_this.append(i)
 
     q_filtered = [qrepeats_location[i] for i in leave_this]
@@ -148,9 +169,12 @@ def find_atts_denovo(genome, gquery, root_dir):
     blast_for_identical(gquery_id=gquery.gquery_id, repeats_dir=repeats_dir)
     repeats = read_blastxml(os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
     qrepeats_location, srepeats_location = get_repeats_location(repeats=repeats, gquery=gquery)
-    q_filtered, s_filtered = remove_overlapping(gquery=gquery,
-                                                qrepeats_location=qrepeats_location,
-                                                srepeats_location=srepeats_location)
+    q_filtered1, s_filtered1 = remove_overlapping_atts(gquery=gquery,
+                                                       qrepeats_location=qrepeats_location,
+                                                       srepeats_location=srepeats_location)
+    q_filtered, s_filtered = leave_overlapping_trnas(gquery=gquery,
+                                                     qrepeats_location=q_filtered1,
+                                                     srepeats_location=s_filtered1)
     with open(os.path.join(repeats_dir, gquery.gquery_id + '.loc'), 'w') as ouf:
         print('lrepeat_loc', 'rrepeat_loc', sep='\t', file=ouf)
         for q, s in zip(q_filtered, s_filtered):
