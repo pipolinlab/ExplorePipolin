@@ -116,20 +116,22 @@ def get_repeats_location(repeats, gquery):
     return qrepeats_location, srepeats_location
 
 
-def remove_overlapping(gquery, repeats_location):
+def remove_overlapping(gquery, qrepeats_location, srepeats_location):
     atts_location = [(i.start, i.end) for i in gquery.atts]
     leave_this = []
-    for i, i_rep in enumerate(repeats_location[0]):
+    for i, i_rep in enumerate(qrepeats_location):
         for i_att in atts_location:
             max_start = max(i_rep[0], i_att[0])
             min_end = min(i_rep[1], i_att[1])
-            if max_start < min_end:
+            if max_start > min_end:
                 leave_this.append(i)
 
-    return [repeats_location[i] for i in leave_this]
+    q_filtered = [qrepeats_location[i] for i in leave_this]
+    s_filtered = [srepeats_location[i] for i in leave_this]
+    return q_filtered, s_filtered
 
 
-@task   # TODO: finish!
+@task
 def find_atts_denovo(genome, gquery, root_dir):
     logger = prefect.context.get('logger')
 
@@ -145,9 +147,14 @@ def find_atts_denovo(genome, gquery, root_dir):
 
     blast_for_identical(gquery_id=gquery.gquery_id, repeats_dir=repeats_dir)
     repeats = read_blastxml(os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
-    repeats_location = get_repeats_location(repeats=repeats, gquery=gquery)
-    repeats_location_filteres = remove_overlapping(gquery=gquery, repeats_location=repeats_location)
-    print(repeats_location_filteres)
+    qrepeats_location, srepeats_location = get_repeats_location(repeats=repeats, gquery=gquery)
+    q_filtered, s_filtered = remove_overlapping(gquery=gquery,
+                                                qrepeats_location=qrepeats_location,
+                                                srepeats_location=srepeats_location)
+    with open(os.path.join(repeats_dir, gquery.gquery_id + '.loc'), 'w') as ouf:
+        print('lrepeat_loc', 'rrepeat_loc', sep='\t', file=ouf)
+        for q, s in zip(q_filtered, s_filtered):
+            print(q, s, sep='\t', file=ouf)
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
