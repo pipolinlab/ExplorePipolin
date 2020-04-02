@@ -8,7 +8,7 @@ from utilities import CONTEXT_SETTINGS
 from identify_pipolins_roughly import create_gquery
 from identify_pipolins_roughly import run_blast_against_ref
 from identify_pipolins_roughly import add_features_from_blast
-from identify_pipolins_roughly import detect_trnas
+from identify_pipolins_roughly import detect_trnas_with_aragorn
 from identify_pipolins_roughly import add_features_from_aragorn
 from identify_pipolins_roughly import find_atts_denovo
 from analyse_pipolin_orientation import analyse_pipolin_orientation
@@ -41,10 +41,11 @@ def get_flow():
                                                reference=unmapped(REF_ATT), dir_name=unmapped('att_blast'))
         t2 = add_features_from_blast.map(gquery=gquery, blast_dir=atts_blast, feature_type=unmapped('atts'))
 
-        aragorn_results = detect_trnas.map(genome=genomes, root_dir=unmapped(out_dir))
+        aragorn_results = detect_trnas_with_aragorn.map(genome=genomes, root_dir=unmapped(out_dir))
         t3 = add_features_from_aragorn.map(gquery=gquery, aragorn_dir=aragorn_results)
 
-        find_atts_denovo.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir), upstream_tasks=[t1, t2, t3])
+        atts_denovo = find_atts_denovo.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
+                                           upstream_tasks=[t1, t2, t3])
 
         # orientations = analyse_pipolin_orientation(out_dir, polbs_blast_dir, atts_blast, trna_blast)
         # rough_pipolins = extract_pipolin_regions(genome, out_dir, gquery, orientations, long=False)

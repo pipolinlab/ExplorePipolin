@@ -182,10 +182,6 @@ def ncbi_acc_download(acc_ids):
         subprocess.run(['/home/liubov/.local/bin/ncbi-acc-download', '-F', 'fasta', acc_id])
 
 
-# def read_blasttab(blast_tab):
-#     return SearchIO.read(blast_tab, 'blast-tab', comments=True)
-
-
 def read_blastxml(blast_xml):
     return SearchIO.read(blast_xml, 'blast-xml')
 
@@ -283,3 +279,8 @@ def read_from_prokka_dir(prokka_dir, ext):
     for file in files:
         records.update(SeqIO.to_dict(SeqIO.parse(file, 'fasta')))
     return records
+
+
+def feature_from_blasthit(hit, entry_id):
+    return Feature(start=hit.hit_start, end=hit.hit_end,
+                   frame=Orientation.orientation_from_blast(hit.hit_frame), contig=entry_id)

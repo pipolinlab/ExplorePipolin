@@ -15,11 +15,7 @@ from utilities import save_to_shelve
 from utilities import read_blastxml
 from utilities import run_aragorn
 from utilities import read_seqio_records
-
-
-def feature_from_blasthit(hit, entry_id):
-    return Feature(start=hit.hit_start, end=hit.hit_end,
-                   frame=Orientation.orientation_from_blast(hit.hit_frame), contig=entry_id)
+from utilities import feature_from_blasthit
 
 
 @task
@@ -50,7 +46,7 @@ def add_features_from_blast(gquery, blast_dir, feature_type):
 
 
 @task
-def detect_trnas(genome, root_dir):
+def detect_trnas_with_aragorn(genome, root_dir):
     aragorn_results = os.path.join(root_dir, 'aragorn_results')
     run_aragorn(genome, aragorn_results)
     return aragorn_results
@@ -163,7 +159,7 @@ def find_atts_denovo(genome, gquery, root_dir):
         logger.warning('This step is only for complete genomes. Pass...')
         return
 
-    repeats_dir = os.path.join(root_dir, 'repeats_denovo')
+    repeats_dir = os.path.join(root_dir, 'atts_denovo')
     os.makedirs(repeats_dir, exist_ok=True)
 
     genome_dict = read_seqio_records(file=genome, file_format='fasta')
@@ -172,16 +168,18 @@ def find_atts_denovo(genome, gquery, root_dir):
     blast_for_identical(gquery_id=gquery.gquery_id, repeats_dir=repeats_dir)
     repeats = read_blastxml(os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
     qrepeats_location, srepeats_location = get_proper_location(repeats=repeats, gquery=gquery)
-    q_filtered1, s_filtered1 = remove_overlapping_atts(gquery=gquery,
-                                                       qrepeats_location=qrepeats_location,
-                                                       srepeats_location=srepeats_location)
-    q_filtered, s_filtered = leave_overlapping_trnas(gquery=gquery,
-                                                     qrepeats_location=q_filtered1,
-                                                     srepeats_location=s_filtered1)
+    qrepeats_filtered, srepeats_filtered = remove_overlapping_atts(gquery=gquery,
+                                                                   qrepeats_location=qrepeats_location,
+                                                                   srepeats_location=srepeats_location)
+    qrepeats_filtered, srepeats_filtered = leave_overlapping_trnas(gquery=gquery,
+                                                                   qrepeats_location=qrepeats_filtered,
+                                                                   srepeats_location=srepeats_filtered)
     with open(os.path.join(repeats_dir, gquery.gquery_id + '.loc'), 'w') as ouf:
         print('lrepeat_loc', 'rrepeat_loc', sep='\t', file=ouf)
-        for q, s in zip(q_filtered, s_filtered):
+        for q, s in zip(qrepeats_filtered, srepeats_filtered):
             print(q, s, sep='\t', file=ouf)
+
+    return repeats_dir
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
