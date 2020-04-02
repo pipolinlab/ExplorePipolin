@@ -11,6 +11,7 @@ from identify_pipolins_roughly import add_features_from_blast
 from identify_pipolins_roughly import detect_trnas_with_aragorn
 from identify_pipolins_roughly import add_features_from_aragorn
 from identify_pipolins_roughly import find_atts_denovo
+from identify_pipolins_roughly import add_features_atts_denovo
 from analyse_pipolin_orientation import analyse_pipolin_orientation
 from extract_pipolin_regions import extract_pipolin_regions
 from annotate_pipolins import annotate_pipolins
@@ -46,7 +47,7 @@ def get_flow():
 
         atts_denovo = find_atts_denovo.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
                                            upstream_tasks=[t1, t2, t3])
-
+        add_features_atts_denovo(gquery=gquery, atts_denovo_dir=atts_denovo)
         # orientations = analyse_pipolin_orientation(out_dir, polbs_blast_dir, atts_blast, trna_blast)
         # rough_pipolins = extract_pipolin_regions(genome, out_dir, gquery, orientations, long=False)
         # prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)

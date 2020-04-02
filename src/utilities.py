@@ -42,7 +42,7 @@ class GQuery:
         self.polymerases: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
         self.trnas: MutableSequence[Feature] = []
-        self.repeats: MutableSequence[Feature] = []
+        self.atts_denovo: MutableSequence[Feature] = []
 
     def get_features_by_type(self, feature_type):
         if feature_type == 'polymerases':

@@ -182,6 +182,12 @@ def find_atts_denovo(genome, gquery, root_dir):
     return repeats_dir
 
 
+@task
+def add_features_atts_denovo(gquery, atts_denovo_dir):
+    # TODO!
+    pass
+
+
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
     out_file = os.path.join(out_dir, 'shelve.db')
     save_to_shelve(out_file, pipolins, 'pipolins')
