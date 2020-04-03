@@ -20,11 +20,18 @@ class Orientation(Enum):
     def orientation_from_blast(hit_frame):
         return Orientation.FORWARD if hit_frame == 1 else Orientation.REVERSE
 
+    def __neg__(self):
+        if self is self.FORWARD:
+            return self.REVERSE
+        else:
+            return self.FORWARD
+
 
 class Contig:
-    def __init__(self, contig_id, contig_length):
+    def __init__(self, contig_id, contig_length, orientation=Orientation.FORWARD):
         self.contig_id: str = contig_id
         self.contig_length: int = contig_length
+        self.contig_orientation: Orientation = orientation
 
 
 class Feature:
@@ -44,12 +51,21 @@ class GQuery:
         self.trnas: MutableSequence[Feature] = []
         self.atts_denovo: MutableSequence[Feature] = []
 
-    def get_contig_by_id(self, contig_id):
+    def get_features_of_contig(self, contig_id, feature_type: str) -> MutableSequence[Feature]:
+        features_to_return = []
+        features = self.get_features_by_type(feature_type=feature_type)
+        for feature in features:
+            if feature.contig.contig_id == contig_id:
+                features_to_return.append(feature)
+
+        return features_to_return
+
+    def get_contig_by_id(self, contig_id) -> Contig:
         for contig in self.contigs:
             if contig.contig_id == contig_id:
                 return contig
 
-    def get_features_by_type(self, feature_type):
+    def get_features_by_type(self, feature_type: str) -> MutableSequence[Feature]:
         if feature_type == 'polymerases':
             return self.polymerases
         elif feature_type == 'atts':
