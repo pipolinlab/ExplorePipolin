@@ -175,17 +175,23 @@ def find_atts_denovo(genome, gquery, root_dir):
                                                                    qrepeats_location=qrepeats_filtered,
                                                                    srepeats_location=srepeats_filtered)
     with open(os.path.join(repeats_dir, gquery.gquery_id + '.loc'), 'w') as ouf:
-        print('lrepeat_loc', 'rrepeat_loc', sep='\t', file=ouf)
+        print('lrepeat_start', 'lrepeat_end', 'rrepeat_start', 'rrepeat_end', sep='\t', file=ouf)
         for q, s in zip(qrepeats_filtered, srepeats_filtered):
-            print(q, s, sep='\t', file=ouf)
+            print(q[0], q[1], s[0], s[1], sep='\t', file=ouf)
 
     return repeats_dir
 
 
 @task
 def add_features_atts_denovo(gquery, atts_denovo_dir):
-    # TODO!
-    pass
+    with open(os.path.join(atts_denovo_dir, gquery.gquery_id + '.loc')) as inf:
+        _ = inf.readline()
+        for line in inf:
+            repeats_locations = line.strip().split(sep='\t')
+            gquery.atts_denovo.append(Feature(start=repeats_locations[0], end=repeats_locations[1],
+                                              frame=Orientation.FORWARD, contig=gquery.contigs[0]))
+            gquery.atts_denovo.append(Feature(start=repeats_locations[2], end=repeats_locations[3],
+                                              frame=Orientation.FORWARD, contig=gquery.contigs[0]))
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
