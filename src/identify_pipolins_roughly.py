@@ -57,7 +57,7 @@ def read_aragorn_batch(aragorn_batch):
     with open(aragorn_batch) as inf:
         for line in inf:
             if line[0] == '>':
-                entry = line.split(sep=' ')[0][1:]
+                entry = line.strip().split(sep=' ')[0][1:]
             else:
                 hit = line.split(sep='\t')
                 if len(hit) < 2:

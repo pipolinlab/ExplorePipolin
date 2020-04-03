@@ -12,27 +12,26 @@ from identify_pipolins_roughly import is_overlapping
 @task
 def analyse_pipolin_orientation(gquery):
     # TODO: do we expect a single pipolin per genome?
-    anchor_trna = []
+    # TODO: how to be with atts_denovo if they are?
+    anchor_trnas = []
     for trna in gquery.trnas:
         for att in gquery.atts:
             if att.contig.contig_id == trna.contig.contig_id:
                 if is_overlapping(range1=(att.start, att.end), range2=(trna.start, trna.end)):
-                    anchor_trna.append(trna)
-    if len(anchor_trna) > 1:
+                    anchor_trnas.append(trna)
+
+    anchor_contigs = [trna.contig.contig_id for trna in anchor_trnas]
+    if len(anchor_trnas) != len(anchor_contigs):
         raise AssertionError("I am expecting a single tRNA to overlap with a single att (per contig)!")
 
-    # TODO: how to be with atts_denovo if they are?
-
-    if len(anchor_trna) == 1:
-        anchor_atts = gquery.get_features_of_contig(contig_id=anchor_trna[0].contig.contig_id, feature_type='atts')
+    for anchor_trna in anchor_trnas:
+        anchor_atts = gquery.get_features_of_contig(contig_id=anchor_trna.contig.contig_id, feature_type='atts')
         anchor_att_frames = [att.frame for att in anchor_atts]
         if len(set(anchor_att_frames)) != 1:
             raise AssertionError('ATTs are expected to be located in the same frame, as they are direct repeats!')
-        if set(anchor_att_frames).pop() == anchor_trna[0].frame:
+        if set(anchor_att_frames).pop() == anchor_trna.frame:
             raise AssertionError('ATT and tRNA should be on the different strands!')
-        anchor_trna[0].contig.contig_orientation = - anchor_trna[0].frame
-    else:
-        raise AssertionError(f'The anchor tRNA was not found for {gquery.gquery_id}!!! ???')
+        anchor_trna.contig.contig_orientation = - anchor_trna.frame
 
     for contig in gquery.contigs:
         contig_atts = gquery.get_features_of_contig(contig_id=contig.contig_id, feature_type='atts')
