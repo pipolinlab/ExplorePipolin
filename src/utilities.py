@@ -21,18 +21,18 @@ class Orientation(Enum):
         return Orientation.FORWARD if hit_frame == 1 else Orientation.REVERSE
 
 
-class Feature:
-    def __init__(self, start, end, frame, contig):
-        self.start: int = start
-        self.end: int = end
-        self.frame: Orientation = frame
-        self.contig: str = contig
-
-
 class Contig:
     def __init__(self, contig_id, contig_length):
         self.contig_id: str = contig_id
         self.contig_length: int = contig_length
+
+
+class Feature:
+    def __init__(self, start, end, frame, contig: Contig):
+        self.start: int = start
+        self.end: int = end
+        self.frame: Orientation = frame
+        self.contig: Contig = contig
 
 
 class GQuery:
@@ -43,6 +43,11 @@ class GQuery:
         self.atts: MutableSequence[Feature] = []
         self.trnas: MutableSequence[Feature] = []
         self.atts_denovo: MutableSequence[Feature] = []
+
+    def get_contig_by_id(self, contig_id):
+        for contig in self.contigs:
+            if contig.contig_id == contig_id:
+                return contig
 
     def get_features_by_type(self, feature_type):
         if feature_type == 'polymerases':
@@ -281,6 +286,7 @@ def read_from_prokka_dir(prokka_dir, ext):
     return records
 
 
-def feature_from_blasthit(hit, entry_id):
+def feature_from_blasthit(hit, gquery, contig_id):
     return Feature(start=hit.hit_start, end=hit.hit_end,
-                   frame=Orientation.orientation_from_blast(hit.hit_frame), contig=entry_id)
+                   frame=Orientation.orientation_from_blast(hit.hit_frame),
+                   contig=gquery.get_contig_by_id(contig_id))

@@ -41,7 +41,7 @@ def add_features_from_blast(gquery, blast_dir, feature_type):
     entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.gquery_id}.fmt5'))
     for entry in entries:
         for hit in entry:
-            feature = feature_from_blasthit(hit=hit, entry_id=entry.id)
+            feature = feature_from_blasthit(hit=hit, gquery=gquery, contig_id=entry.id)
             gquery.get_features_by_type(feature_type).append(feature)
 
 
@@ -79,7 +79,7 @@ def add_features_from_aragorn(gquery, aragorn_dir):
     entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.gquery_id}.batch'))
     for contig, hits in entries.items():
         for hit in hits:
-            feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig=contig)
+            feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig=gquery.get_contig_by_id(contig))
             gquery.trnas.append(feature)
 
 

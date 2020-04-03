@@ -10,7 +10,7 @@ from utilities import save_to_shelve
 
 
 @task
-def analyse_pipolin_orientation(in_dir, polbs_blast, atts_blast, trna_blast):
+def analyse_pipolin_orientation(gquery):
     orientations = {}
     strains = [file.split(sep='-')[0] for file in os.listdir(atts_blast)]
     for strain in strains:
