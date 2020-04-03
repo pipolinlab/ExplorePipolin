@@ -49,7 +49,7 @@ def get_flow():
                                            upstream_tasks=[t1, t2, t3])
         t4 = add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
         t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t4])
-        # rough_pipolins = extract_pipolin_regions(genome, out_dir, gquery, orientations, long=False)
+        rough_pipolins = extract_pipolin_regions(genome, out_dir, gquery, orientations, long=False)
         # prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
         # att_hmmer = predict_atts_with_hmmer(ATT_HMM, rough_pipolins, out_dir)
         # short_pipolins = store_new_att_bounds(out_dir, 'short-gquery', att_hmmer)
