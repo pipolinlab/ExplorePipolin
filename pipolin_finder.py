@@ -56,7 +56,7 @@ def get_flow():
                                        proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
         prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
                                                        root_dir=unmapped(out_dir))
-        # easyfig_add_colours(prokka_atts_scaffolded, abricate_dir=None)
+        easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, abricate_dir=unmapped(None))
 
     return flow
 

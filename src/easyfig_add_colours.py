@@ -7,6 +7,7 @@ from prefect import task
 from utilities import CONTEXT_SETTINGS, SeqIORecords
 from utilities import read_seqio_records, write_genbank_records
 from Bio.SeqIO import SeqRecord
+from utilities import GQuery
 
 red = '255 0 0'   # Primer-independent DNA polymerase PolB
 brick_red = '139 58 58'   # Tyrosine recombinase XerC
@@ -57,13 +58,12 @@ def colour_feature(qualifiers):
 
 
 def add_colours(gb_records: SeqIORecords):
-    for record_set in gb_records.values():
-        for record in record_set.values():
-            for feature in record.features:
-                if feature.type in products_to_colours:
-                    feature.qualifiers['colour'] = products_to_colours[feature.type]
-                else:
-                    colour_feature(feature.qualifiers)
+    for record in gb_records.values():
+        for feature in record.features:
+            if feature.type in products_to_colours:
+                feature.qualifiers['colour'] = products_to_colours[feature.type]
+            else:
+                colour_feature(feature.qualifiers)
 
 
 def read_record_ranges(record: SeqRecord):
@@ -132,12 +132,12 @@ def find_and_color_amr_and_virulence(gb_records: SeqIORecords, abricate_dir):
 
 
 @task
-def easyfig_add_colours(in_dir, abricate_dir):
-    gb_records = read_seqio_records(in_dir)
+def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
+    gb_records = read_seqio_records(file=os.path.join(in_dir, gquery.gquery_id + '.gbk'), file_format='genbank')
     add_colours(gb_records)
     if abricate_dir is not None:
         find_and_color_amr_and_virulence(gb_records, abricate_dir)
-    write_genbank_records(gb_records, in_dir)
+    write_genbank_records(gb_records=gb_records, out_dir=in_dir, gquery=gquery)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
