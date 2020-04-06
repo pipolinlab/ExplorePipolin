@@ -273,17 +273,16 @@ def inspect_gapped_pipolin(gquery: GQuery, long):
             print(f'FAILED: {gquery.gquery_id}')
 
 
-
 @task
-def scaffold_gapped_pipolins(gquery, long):
+def is_scaffolding_required(gquery):
     if gquery.is_single_contig() or gquery.is_on_the_same_contig():
         print('>>>Scaffolding is not required!')
-        start, end = gquery.get_pipolin_bounds(long)
+        start, end = gquery.get_pipolin_bounds(long=False)
         pipolin = PipolinFragment(contig=gquery.polymerases[0].contig, start=start, end=end)
-        # pipolin.hallmarks.append(...)
-        gquery.pipolin_fragments.append(pipolin)
+        gquery.pipolin_fragment = pipolin
     else:
         # TODO
+        print('>>>Scaffolding is required! Pass...')
         raise NotImplementedError
         # inspect_gapped_pipolin(gquery, long)
 
@@ -313,7 +312,7 @@ def main(in_dir, out_dir, long):
     filling in gaps with NNs and adding the /assembly_gap feature to the *.gbk files.
     TODO: also learn how to scaffold long pipolins!
     """
-    scaffold_gapped_pipolins(in_dir, out_dir, long)
+    is_scaffolding_required(in_dir, out_dir, long)
 
 
 if __name__ == '__main__':

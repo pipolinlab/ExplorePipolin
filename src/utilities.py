@@ -2,7 +2,7 @@ import csv
 import os
 import shelve
 from enum import Enum, auto
-from typing import Sequence, MutableSequence, Mapping, MutableMapping
+from typing import Sequence, MutableSequence, Mapping, MutableMapping, Optional
 from itertools import groupby
 import subprocess
 
@@ -59,7 +59,7 @@ class GQuery:
         self.trnas: MutableSequence[Feature] = []
         self.target_trnas: MutableSequence[Feature] = []
         self.atts_denovo: MutableSequence[Feature] = []
-        self.pipolin_fragments: MutableSequence[PipolinFragment] = []
+        self.pipolin_fragment: Optional[PipolinFragment] = None
 
     def get_features_of_contig(self, contig_id, feature_type: str) -> MutableSequence[Feature]:
         features_to_return = []
@@ -118,7 +118,7 @@ class GQuery:
         atts = sorted((i for i in self.atts), key=lambda p: p.start)
 
         if not self._is_polymerase_inside(atts, polymerases):
-            raise AssertionError('The polymerases are not within att bounds!')
+            raise AssertionError('The polymerase are not within att bounds!')
 
         if len(atts) > 3:
             raise AssertionError('There are more than 3 atts!')
@@ -133,7 +133,6 @@ class GQuery:
                 return atts[0].start - 50, atts[1].end + 50
             else:
                 return atts[1].start - 50, atts[2].end + 50
-
 
     @staticmethod
     def _is_polymerase_inside(atts, polymerases):

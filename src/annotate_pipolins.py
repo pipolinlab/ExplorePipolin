@@ -8,18 +8,18 @@ import subprocess
 from utilities import CONTEXT_SETTINGS
 
 
-# @task
-def annotate_pipolins(pipolins, proteins, out_dir):
-    os.makedirs(os.path.join(out_dir, 'prokka'), exist_ok=True)
-    for i_p, pipolin in enumerate(pipolins):
-        print(i_p)
-        genome_id = os.path.basename(pipolin.split(sep="-")[0])
-        subprocess.run(['/home/liubov/repos/prokka/bin/prokka', '--outdir', os.path.join(out_dir, 'prokka'),
-                        '--prefix', f'{genome_id}', '--rawproduct', '--cdsrnaolap', '--cpus', '4',
-                        '--rfam', '--proteins', proteins, '--force',
-                        '--locustag', f'{genome_id}', pipolin])
+@task
+def annotate_pipolins(gquery, pipolins_dir, proteins, root_dir):
+    prokka_dir = os.path.join(root_dir, 'prokka')
+    os.makedirs(prokka_dir, exist_ok=True)
 
-    return os.path.join(out_dir, 'prokka')
+    subprocess.run(['/home/liubov/repos/prokka/bin/prokka', '--outdir', prokka_dir,
+                    '--prefix', gquery.gquery_id, '--rawproduct', '--cdsrnaolap', '--cpus', '4',
+                    '--rfam', '--proteins', proteins, '--force',
+                    '--locustag', gquery.gquery_id,
+                    os.path.join(pipolins_dir, gquery.gquery_id + '.fa')])
+
+    return prokka_dir
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

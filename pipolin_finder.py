@@ -15,10 +15,8 @@ from identify_pipolins_roughly import add_features_atts_denovo
 from analyse_pipolin_orientation import analyse_pipolin_orientation
 from extract_pipolin_regions import extract_pipolin_regions
 from annotate_pipolins import annotate_pipolins
-from predict_atts_with_hmmer import predict_atts_with_hmmer
-from store_new_att_bounds import store_new_att_bounds
 from include_atts_into_annotation import include_atts_into_annotation
-from scaffold_gapped_pipolins import scaffold_gapped_pipolins
+from scaffold_gapped_pipolins import is_scaffolding_required
 from easyfig_add_colours import easyfig_add_colours
 
 REF_POLB = './data/pi-polB.fa'
@@ -48,13 +46,14 @@ def get_flow():
         atts_denovo = find_atts_denovo.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
                                            upstream_tasks=[t3])
         t4 = add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
+
         t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t4])
-        scaffold_gapped_pipolins.map(gquery=gquery, long=unmapped(False), upstream_tasks=[t5])
-        # pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
-        #                                                 long=False)
-        # prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
-        # att_hmmer = predict_atts_with_hmmer(ATT_HMM, rough_pipolins, out_dir)
-        # short_pipolins = store_new_att_bounds(out_dir, 'short-gquery', att_hmmer)
+        t6 = is_scaffolding_required.map(gquery=gquery, upstream_tasks=[t5])
+
+        pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery,
+                                                        root_dir=unmapped(out_dir), upstream_tasks=[t6])
+        prokka = annotate_pipolins.map(gquery=gquery, pipolins_dir=pipolin_sequences,
+                                       proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
         # prokka_atts = include_atts_into_annotation(out_dir, short_pipolins, prokka)
         # easyfig_add_colours(prokka_atts_scaffolded, abricate_dir=None)
 
