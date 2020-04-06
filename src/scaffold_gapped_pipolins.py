@@ -273,12 +273,21 @@ def inspect_gapped_pipolin(gquery: GQuery, long):
             print(f'FAILED: {gquery.gquery_id}')
 
 
+def is_inside_fragment(feature, fragment_start, fragment_end):
+    return feature.start >= fragment_start and feature.end <= fragment_end
+
+
 @task
-def is_scaffolding_required(gquery):
+def is_scaffolding_required(gquery: GQuery):
     if gquery.is_single_contig() or gquery.is_on_the_same_contig():
         print('>>>Scaffolding is not required!')
         start, end = gquery.get_pipolin_bounds(long=False)
         pipolin = PipolinFragment(contig=gquery.polymerases[0].contig, start=start, end=end)
+
+        for att in gquery.atts:
+            if is_inside_fragment(feature=att, fragment_start=start, fragment_end=end):
+                pipolin.atts.append(att)
+
         gquery.pipolin_fragment = pipolin
     else:
         # TODO

@@ -20,6 +20,9 @@ class Orientation(Enum):
     def orientation_from_blast(hit_frame):
         return Orientation.FORWARD if hit_frame == 1 else Orientation.REVERSE
 
+    def to_pm_one_encoding(self):
+        return +1 if self.FORWARD else -1
+
     def __neg__(self):
         if self is self.FORWARD:
             return self.REVERSE
@@ -47,7 +50,7 @@ class PipolinFragment:
         self.contig: Contig = contig
         self.start: int = start
         self.end: int = end
-        self.hallmarks: MutableSequence[Feature] = []
+        self.atts: MutableSequence[Feature] = []
 
 
 class GQuery:
@@ -281,20 +284,18 @@ def run_aragorn(genome, aragorn_results):
         subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
 
 
-def write_genbank_records(gb_records, out_dir):
-    for key, value in gb_records.items():
-        records = [record for record in value.values()]
-        with open(os.path.join(out_dir, f'{key}.gbk'), 'w') as ouf:
-            SeqIO.write(records, ouf, 'genbank')
+def write_genbank_records(gb_records: SeqIORecords, out_dir, gquery):
+    records = [record for record in gb_records.values()]
+    with open(os.path.join(out_dir, f'{gquery.gquery_id}.gbk'), 'w') as ouf:
+        SeqIO.write(records, ouf, 'genbank')
 
 
-def write_gff_records(in_records, out_dir):
-    for key, value in in_records.items():
-        records = [record for record in value.values()]
-        with open(os.path.join(out_dir, f'{key}.gff'), 'w') as ouf:
-            GFF.write(records, ouf)
-            print('##FASTA', file=ouf)
-            SeqIO.write(records, ouf, format='fasta')
+def write_gff_records(in_records, out_dir, gquery):
+    records = [record for record in in_records.values()]
+    with open(os.path.join(out_dir, f'{gquery.gquery_id}.gff'), 'w') as ouf:
+        GFF.write(records, ouf)
+        print('##FASTA', file=ouf)
+        SeqIO.write(records, ouf, format='fasta')
 
 
 def write_fna_records(gb_records, out_dir):

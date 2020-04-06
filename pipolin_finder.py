@@ -54,7 +54,8 @@ def get_flow():
                                                         root_dir=unmapped(out_dir), upstream_tasks=[t6])
         prokka = annotate_pipolins.map(gquery=gquery, pipolins_dir=pipolin_sequences,
                                        proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
-        # prokka_atts = include_atts_into_annotation(out_dir, short_pipolins, prokka)
+        prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
+                                                       root_dir=unmapped(out_dir))
         # easyfig_add_colours(prokka_atts_scaffolded, abricate_dir=None)
 
     return flow

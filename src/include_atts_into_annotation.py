@@ -13,38 +13,30 @@ from utilities import CONTEXT_SETTINGS
 from utilities import read_from_shelve
 from utilities import read_seqio_records, write_genbank_records
 from utilities import write_gff_records
+from utilities import GQuery, Feature
 
 
-def read_gff_records(annot_dir):
-    gff_records: Mapping[str, Mapping[str, SeqIO.SeqRecord]] = {}
-    for file in os.listdir(annot_dir):
-        if file.endswith('.gff'):
-            with open(os.path.join(annot_dir, file)) as inf:
-                records = {}
-                for entry in GFF.parse(inf):
-                    records[entry.id] = entry
-                gff_records[os.path.splitext(file)[0]] = records
+def read_gff_records(file):
+    gff_records = {}
+    with open(file) as inf:
+        for entry in GFF.parse(inf):
+            gff_records[entry.id] = entry
+
     return gff_records
 
 
-def get_bounds_with_strand(att_feature):
-    if att_feature.start < att_feature.end:
-        return (att_feature.start, att_feature.end), +1
-    else:
-        return (att_feature.end, att_feature.start), -1
-
-
-def create_att_feature(att, pipolin, records_format):
-    bounds, strand = get_bounds_with_strand(att)
+def create_att_feature(att: Feature, gquery: GQuery, records_format: str):
+    f_start = att.start - gquery.pipolin_fragment.start
+    f_end = att.end - gquery.pipolin_fragment.start
     random_number = randrange(10000, 99999)
-    gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{pipolin.strain_id}_{random_number}'],
+    gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{gquery.gquery_id}_{random_number}'],
                      'rpt_family': ['Att'], 'rpt_type': ['direct']}
     gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
-                      'ID': [f'{pipolin.strain_id}_{random_number}'], 'inference': ['HMM:custom'],
-                      'locus_tag': [f'{pipolin.strain_id}_{random_number}'],
+                      'ID': [f'{gquery.gquery_id}_{random_number}'], 'inference': ['HMM:custom'],
+                      'locus_tag': [f'{gquery.gquery_id}_{random_number}'],
                       'rpt_family': ['Att'], 'rpt_type': ['direct']}
     att_feature = SeqFeature(type='repeat_region',
-                             location=FeatureLocation(bounds[0], bounds[1], strand=strand),
+                             location=FeatureLocation(start=f_start, end=f_end, strand=att.frame.to_pm_one_encoding()),
                              qualifiers=gb_qualifiers if records_format == 'gb' else gff_qualifiers)
     return att_feature
 
@@ -61,33 +53,27 @@ def add_new_gb_feature(new_feature, record):
     record.features.insert(new_feature_index, new_feature)
 
 
-def add_atts(records, records_format, pipolins):
-    for pipolin in pipolins:
-        if pipolin.is_single_contig():
-            record = records[pipolin.strain_id][pipolin.strain_id]
-            for att in pipolin.atts:
-                att_feature = create_att_feature(att, pipolin, records_format)
-                add_new_gb_feature(att_feature, record)
-        else:
-            for att in pipolin.atts:
-                record = records[pipolin.strain_id][att.node]
-                att_feature = create_att_feature(att, pipolin, records_format)
-                add_new_gb_feature(att_feature, record)
+def add_atts(records, records_format, gquery: GQuery):
+    for att in gquery.pipolin_fragment.atts:
+        att_feature = create_att_feature(att=att, gquery=gquery, records_format=records_format)
+        add_new_gb_feature(att_feature, records[gquery.pipolin_fragment.contig.contig_id])
 
 
 @task
-def include_atts_into_annotation(shelve_in_dir, object_name, orig_annot_dir):
-    pipolins = read_from_shelve(os.path.join(shelve_in_dir, 'shelve.db'), object_name)
-    gb_records = read_seqio_records(orig_annot_dir)
-    gff_records = read_gff_records(orig_annot_dir)
-    add_atts(gb_records, 'gb', pipolins)
-    add_atts(gff_records, 'gff', pipolins)
-    new_annot_dir = os.path.join(shelve_in_dir, 'prokka_atts')
-    os.makedirs(new_annot_dir, exist_ok=True)
-    write_genbank_records(gb_records, new_annot_dir)
-    write_gff_records(gff_records, new_annot_dir)
+def include_atts_into_annotation(gquery, prokka_dir, root_dir):
+    gb_records = read_seqio_records(file=os.path.join(prokka_dir, gquery.gquery_id + '.gbk'), file_format='genbank')
+    gff_records = read_gff_records(file=os.path.join(prokka_dir, gquery.gquery_id + '.gff'))
 
-    return new_annot_dir
+    add_atts(gb_records, 'gb', gquery)
+    add_atts(gff_records, 'gff', gquery)
+
+    prokka_atts_dir = os.path.join(root_dir, 'prokka_atts')
+    os.makedirs(prokka_atts_dir, exist_ok=True)
+
+    write_genbank_records(gb_records=gb_records, out_dir=prokka_atts_dir, gquery=gquery)
+    write_gff_records(in_records=gff_records, out_dir=prokka_atts_dir, gquery=gquery)
+
+    return prokka_atts_dir
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
