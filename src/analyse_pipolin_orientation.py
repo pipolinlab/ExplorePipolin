@@ -2,10 +2,8 @@
 # -*- encoding: utf-8 -*-
 
 import click
-import os
 from prefect import task
 from utilities import CONTEXT_SETTINGS
-from utilities import save_to_shelve
 from identify_pipolins_roughly import is_overlapping
 
 

@@ -42,6 +42,14 @@ class Feature:
         self.contig: Contig = contig
 
 
+class PipolinFragment:
+    def __init__(self, contig, start, end, hallmarks):
+        self.contig: Contig = contig
+        self.start: int = start
+        self.end: int = end
+        self.hallmarks: MutableSequence[Feature] = []
+
+
 class GQuery:
     def __init__(self, gquery_id):
         self.gquery_id: str = gquery_id
@@ -49,7 +57,9 @@ class GQuery:
         self.polymerases: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
         self.trnas: MutableSequence[Feature] = []
+        self.target_trnas: MutableSequence[Feature] = []
         self.atts_denovo: MutableSequence[Feature] = []
+        self.pipolin_fragments: MutableSequence[PipolinFragment] = []
 
     def get_features_of_contig(self, contig_id, feature_type: str) -> MutableSequence[Feature]:
         features_to_return = []

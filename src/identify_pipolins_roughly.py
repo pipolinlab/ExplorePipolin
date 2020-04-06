@@ -82,6 +82,12 @@ def add_features_from_aragorn(gquery, aragorn_dir):
             feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig=gquery.get_contig_by_id(contig))
             gquery.trnas.append(feature)
 
+    for trna in gquery.trnas:
+        for att in gquery.atts:
+            if att.contig.contig_id == trna.contig.contig_id:
+                if is_overlapping(range1=(att.start, att.end), range2=(trna.start, trna.end)):
+                    gquery.target_trnas.append(trna)
+
 
 def save_left_right_subsequences(genome_dict, gquery, repeats_dir):
     contig_id = next(iter(genome_dict.keys()))
@@ -193,6 +199,8 @@ def add_features_atts_denovo(gquery, atts_denovo_dir):
                                                   frame=Orientation.FORWARD, contig=gquery.contigs[0]))
                 gquery.atts_denovo.append(Feature(start=repeats_locations[2], end=repeats_locations[3],
                                                   frame=Orientation.FORWARD, contig=gquery.contigs[0]))
+
+        # TODO: add overlapping tRNAs to target_trnas!!!
     except TypeError:
         pass
 

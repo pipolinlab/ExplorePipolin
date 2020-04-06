@@ -43,18 +43,19 @@ def get_flow():
         t2 = add_features_from_blast.map(gquery=gquery, blast_dir=atts_blast, feature_type=unmapped('atts'))
 
         aragorn_results = detect_trnas_with_aragorn.map(genome=genomes, root_dir=unmapped(out_dir))
-        t3 = add_features_from_aragorn.map(gquery=gquery, aragorn_dir=aragorn_results)
+        t3 = add_features_from_aragorn.map(gquery=gquery, aragorn_dir=aragorn_results, upstream_tasks=[t1, t2])
 
         atts_denovo = find_atts_denovo.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
-                                           upstream_tasks=[t1, t2, t3])
+                                           upstream_tasks=[t3])
         t4 = add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
         t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t4])
-        rough_pipolins = extract_pipolin_regions(genome, out_dir, gquery, orientations, long=False)
+        # pipolin_coordinates = scaffold_gapped_pipolins(gquery=gquery, long=False, upstream_tasks=[t5])
+        # pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
+        #                                                 long=False)
         # prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
         # att_hmmer = predict_atts_with_hmmer(ATT_HMM, rough_pipolins, out_dir)
         # short_pipolins = store_new_att_bounds(out_dir, 'short-gquery', att_hmmer)
         # prokka_atts = include_atts_into_annotation(out_dir, short_pipolins, prokka)
-        # prokka_atts_scaffolded = scaffold_gapped_pipolins(prokka_atts, out_dir, long=False)
         # easyfig_add_colours(prokka_atts_scaffolded, abricate_dir=None)
 
     return flow
