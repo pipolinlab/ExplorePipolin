@@ -43,7 +43,7 @@ class Feature:
 
 
 class PipolinFragment:
-    def __init__(self, contig, start, end, hallmarks):
+    def __init__(self, contig, start, end):
         self.contig: Contig = contig
         self.start: int = start
         self.end: int = end

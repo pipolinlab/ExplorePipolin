@@ -13,6 +13,7 @@ from utilities import read_seqio_records, write_genbank_records
 from utilities import write_gff_records
 from utilities import write_fna_records
 from utilities import SeqIORecords
+from utilities import PipolinFragment
 
 # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
 # https://github.com/biopython/biopython/issues/1755
@@ -293,7 +294,19 @@ def assemble_gapped_pipolins(gb_records: SeqIORecords, long):
 
 
 @task
-def scaffold_gapped_pipolins(in_dir, out_dir, long):
+def scaffold_gapped_pipolins(gquery, long):
+    if gquery.is_single_contig():
+        print('>>>Scaffolding is not required!')
+        start, end = gquery.get_pipolin_bounds(long)
+        pipolin = PipolinFragment(contig=gquery.contigs[0], start=start, end=end)
+        # pipolin.hallmarks.append(...)
+        gquery.pipolin_fragments.append(pipolin)
+    else:
+
+        assemble_gapped_pipolins(gb_records, long)
+
+
+def scaffold_gapped_pipolins_(in_dir, out_dir, long):
     gb_records = read_seqio_records(in_dir)
     assemble_gapped_pipolins(gb_records, long)
     new_dir = os.path.join(out_dir, 'prokka_atts_scaffolded')

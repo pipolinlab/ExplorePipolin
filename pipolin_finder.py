@@ -49,7 +49,7 @@ def get_flow():
                                            upstream_tasks=[t3])
         t4 = add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
         t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t4])
-        # pipolin_coordinates = scaffold_gapped_pipolins(gquery=gquery, long=False, upstream_tasks=[t5])
+        scaffold_gapped_pipolins.map(gquery=gquery, long=unmapped(False), upstream_tasks=[t5])
         # pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
         #                                                 long=False)
         # prokka = annotate_pipolins(rough_pipolins, PROTEINS, out_dir)
