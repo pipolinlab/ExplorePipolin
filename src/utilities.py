@@ -96,6 +96,7 @@ class GQuery:
         return len(set(target_contigs)) == 1
 
     def get_left_right_windows(self):
+        # `find_atts_denovo()`
         # TODO: how to be with several polymerases?
         #  * some check for polymerase integrity?
         #  * some check of how far polymerases are from each other?
@@ -109,9 +110,10 @@ class GQuery:
 
             return left_window, right_window
         else:
-            raise NotImplementedError
+            raise AssertionError('This method is only for complete genomes!')
 
     def get_pipolin_bounds(self, long):
+        # Scaffolding is not required
         polymerases = sorted((i for i in self.polymerases), key=lambda p: p.start)
         atts = sorted((i for i in self.atts), key=lambda p: p.start)
 
@@ -131,6 +133,7 @@ class GQuery:
                 return atts[0].start - 50, atts[1].end + 50
             else:
                 return atts[1].start - 50, atts[2].end + 50
+
 
     @staticmethod
     def _is_polymerase_inside(atts, polymerases):

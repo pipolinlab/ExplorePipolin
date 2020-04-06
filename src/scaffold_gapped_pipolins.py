@@ -8,7 +8,7 @@ from Bio.Seq import Seq
 from Bio.Alphabet.IUPAC import IUPACAmbiguousDNA
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
-from utilities import CONTEXT_SETTINGS
+from utilities import CONTEXT_SETTINGS, Contig
 from utilities import read_seqio_records, write_genbank_records
 from utilities import write_gff_records
 from utilities import write_fna_records
@@ -43,7 +43,7 @@ def get_trna_end(trna_record):
                 return feature.location.end
 
 
-def get_unchangeable_contig(gquery: GQuery):
+def get_unchangeable_contig(gquery: GQuery) -> Contig:
     """
     If there are a polB and an att, the whole contig is included into the assembly.
     """
@@ -55,7 +55,7 @@ def get_unchangeable_contig(gquery: GQuery):
                                                    feature_type='atts')
 
     if len(atts_next_polb) != 0:
-        return gquery.polymerases[0].contig.contig_id
+        return gquery.polymerases[0].contig
 
 
 def create_assembly_gap_record(record):
@@ -86,14 +86,12 @@ def add_assembly_gap_to_unchangeable(record):
     return modified_record
 
 
-def get_att_only_contigs(record_set):
+def get_att_only_contigs(gquery):
     att_only_contigs = []
-    for record_id, record in record_set.items():
-        atts = get_atts_from_record(record)
-        polbs = get_polbs_from_record(record)
-
-        if len(polbs) == 0 and len(atts) != 0:
-            att_only_contigs.append(record_id)
+    for att in gquery.atts:
+        polbs_next_att = gquery.get_features_of_contig(contig_id=att.contig.contig_id, feature_type='polymerases')
+        if len(polbs_next_att) == 0:
+            att_only_contigs.append(att.contig)
 
     return att_only_contigs
 
@@ -181,28 +179,30 @@ def cut_trna_contig(trna_record):
     return new_trna_record
 
 
-def finish_all_separate_contigs(record_set, long) -> SeqRecord:
-    polb_contigs = get_polb_only_contigs(record_set)
-    modify_polb_only_record(polb_contigs, record_set)
-
-    att_contigs = get_att_only_contigs(record_set)
-    right_atts = []
-    left_atts = []
-    trna_contig = get_trna_contig(record_set, att_contigs)
-    if trna_contig is None:
-        raise NotImplementedError
-    else:
-        att_contigs.remove(trna_contig)
-        right_atts.append(trna_contig)
-
-    if len(att_contigs) == 1:
-        print('>>>The only right and left atts are found!')
-        left_atts.append(att_contigs[0])
-        right_contig = cut_att_contig(record_set[right_atts[0]], 'right', long)
-        left_contig = cut_att_contig(record_set[left_atts[0]], 'left', long)
-        return left_contig + record_set[polb_contigs[0]] + right_contig
-    else:
-        assert False
+def try_finish_separate(gquery: GQuery, long):
+    pass
+    # TODO
+    # polb_contigs = get_polb_only_contigs(record_set)
+    # modify_polb_only_record(polb_contigs, record_set)
+    #
+    # att_contigs = get_att_only_contigs(record_set)
+    # right_atts = []
+    # left_atts = []
+    # trna_contig = get_trna_contig(record_set, att_contigs)
+    # if trna_contig is None:
+    #     raise NotImplementedError
+    # else:
+    #     att_contigs.remove(trna_contig)
+    #     right_atts.append(trna_contig)
+    #
+    # if len(att_contigs) == 1:
+    #     print('>>>The only right and left atts are found!')
+    #     left_atts.append(att_contigs[0])
+    #     right_contig = cut_att_contig(record_set[right_atts[0]], 'right', long)
+    #     left_contig = cut_att_contig(record_set[left_atts[0]], 'left', long)
+    #     return left_contig + record_set[polb_contigs[0]] + right_contig
+    # else:
+    #     assert False
 
 
 def modify_polb_only_record(polb_contigs, record_set):
@@ -217,60 +217,58 @@ def modify_polb_only_record(polb_contigs, record_set):
         record_set[polb_contigs[0]] = assembly_gap + record_set[polb_contigs[0]] + assembly_gap
 
 
-def create_single_record(gquery,  long):
+def try_creating_single_record(gquery, long):
     unchangeable_contig = get_unchangeable_contig(gquery)
     print(f'The unchangeable contigs: {unchangeable_contig}!')
 
-    if len(unchangeable_contig) == 1:
-        return finish_one_unchangeable_contig(gquery, unchangeable_contig, long)
+    if unchangeable_contig is not None:
+        try_finish_unchangeable(gquery, unchangeable_contig, long)
+    else:
+        try_finish_separate(gquery, long)
 
-    elif len(unchangeable_contig) == 0:
-        return finish_all_separate_contigs(gquery, long)
 
-
-def finish_one_unchangeable_contig(record_set, unchangeable_contigs, long) -> SeqRecord:
-    att_only_contigs = get_att_only_contigs(record_set)
+def try_finish_unchangeable(gquery: GQuery, unchangeable_contig: Contig, long):
+    att_only_contigs = get_att_only_contigs(gquery)
 
     if len(att_only_contigs) == 1:
-        print('The single record was assembled!!!\n')
-        return glue_unchangeable_and_att(record_set[unchangeable_contigs[0]], record_set[att_only_contigs[0]], long)
-
-    else:
-        gap_position = get_assembly_gap_position(record_set[unchangeable_contigs[0]])
-        direction = 'left' if gap_position == 1 else 'right'
-        trna_contig = get_trna_contig(record_set, att_only_contigs)
-        if trna_contig is None:
-            raise NotImplementedError
-        else:
-            att_only_contigs.remove(trna_contig)
-
-            trna_record = cut_trna_contig(record_set[trna_contig])
-            gap = create_assembly_gap_record(record_set[unchangeable_contigs[0]])
-
-            if len(att_only_contigs) == 1:
-                print('The single record was assembled!!!\n')
-                if direction == 'right':
-                    att_record = cut_att_contig(record_set[att_only_contigs[0]], 'right', long)
-                    short_pipolin = record_set[unchangeable_contigs[0]] + att_record
-                    if long:
-                        return short_pipolin + gap + trna_record
-                    else:
-                        return short_pipolin
-                if direction == 'left':
-                    att_record = cut_att_contig(record_set[att_only_contigs[0]], 'left', long)
-                    short_pipolin = att_record + record_set[unchangeable_contigs[0]]
-                    if long:
-                        return short_pipolin + gap + trna_record
-                    else:
-                        return short_pipolin
-            else:
-                raise NotImplementedError
+        print('The single record was inspected!!!\n')
+        # start, end = gquery.get_unchangeable_bounds(unchangeable_contig.contig_id)
+    # else:
+    #     gap_position = get_assembly_gap_position(record_set[unchangeable_contig[0]])
+    #     direction = 'left' if gap_position == 1 else 'right'
+    #     trna_contig = get_trna_contig(record_set, att_only_contigs)
+    #     if trna_contig is None:
+    #         raise NotImplementedError
+    #     else:
+    #         att_only_contigs.remove(trna_contig)
+    #
+    #         trna_record = cut_trna_contig(record_set[trna_contig])
+    #         gap = create_assembly_gap_record(record_set[unchangeable_contig[0]])
+    #
+    #         if len(att_only_contigs) == 1:
+    #             print('The single record was assembled!!!\n')
+    #             if direction == 'right':
+    #                 att_record = cut_att_contig(record_set[att_only_contigs[0]], 'right', long)
+    #                 short_pipolin = record_set[unchangeable_contig[0]] + att_record
+    #                 if long:
+    #                     return short_pipolin + gap + trna_record
+    #                 else:
+    #                     return short_pipolin
+    #             if direction == 'left':
+    #                 att_record = cut_att_contig(record_set[att_only_contigs[0]], 'left', long)
+    #                 short_pipolin = att_record + record_set[unchangeable_contig[0]]
+    #                 if long:
+    #                     return short_pipolin + gap + trna_record
+    #                 else:
+    #                     return short_pipolin
+    #         else:
+    #             raise NotImplementedError
 
 
 def inspect_gapped_pipolin(gquery: GQuery, long):
         print(f'Inspecting {gquery.gquery_id}...')
         try:
-            create_single_record(gquery, long)
+            try_creating_single_record(gquery, long)
         except NotImplementedError:
             print(f'FAILED: {gquery.gquery_id}')
 
@@ -285,7 +283,9 @@ def scaffold_gapped_pipolins(gquery, long):
         # pipolin.hallmarks.append(...)
         gquery.pipolin_fragments.append(pipolin)
     else:
-        inspect_gapped_pipolin(gquery, long)
+        # TODO
+        raise NotImplementedError
+        # inspect_gapped_pipolin(gquery, long)
 
 
 # def scaffold_gapped_pipolins_(in_dir, out_dir, long):
