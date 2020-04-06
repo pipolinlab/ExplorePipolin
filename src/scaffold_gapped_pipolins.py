@@ -13,7 +13,7 @@ from utilities import read_seqio_records, write_genbank_records
 from utilities import write_gff_records
 from utilities import write_fna_records
 from utilities import SeqIORecords
-from utilities import PipolinFragment
+from utilities import PipolinFragment, GQuery
 
 # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
 # https://github.com/biopython/biopython/issues/1755
@@ -43,18 +43,19 @@ def get_trna_end(trna_record):
                 return feature.location.end
 
 
-def get_unchangeable_contigs(record_set):
+def get_unchangeable_contig(gquery: GQuery):
     """
     If there are a polB and an att, the whole contig is included into the assembly.
     """
-    unchangeable_contigs = []
-    for record_id, record in record_set.items():
-        atts = get_atts_from_record(record)
-        polbs = get_polbs_from_record(record)
+    polb_contigs = [i.contig.contig_id for i in gquery.polymerases]
+    if len(set(polb_contigs)) != 1:
+        raise AssertionError('Only a single pipolin region is expected per genome!')
 
-        if len(atts) != 0 and len(polbs) != 0:
-            unchangeable_contigs.append(record_id)
-    return unchangeable_contigs
+    atts_next_polb = gquery.get_features_of_contig(contig_id=gquery.polymerases[0].contig.contig_id,
+                                                   feature_type='atts')
+
+    if len(atts_next_polb) != 0:
+        return gquery.polymerases[0].contig.contig_id
 
 
 def create_assembly_gap_record(record):
@@ -216,19 +217,15 @@ def modify_polb_only_record(polb_contigs, record_set):
         record_set[polb_contigs[0]] = assembly_gap + record_set[polb_contigs[0]] + assembly_gap
 
 
-def create_single_record(record_set,  long) -> SeqRecord:
-    unchangeable_contigs = get_unchangeable_contigs(record_set)
-    print(f'The unchangeable contigs: {unchangeable_contigs}!')
-    for contig in unchangeable_contigs:
-        record_set[contig] = add_assembly_gap_to_unchangeable(record_set[contig])
+def create_single_record(gquery,  long):
+    unchangeable_contig = get_unchangeable_contig(gquery)
+    print(f'The unchangeable contigs: {unchangeable_contig}!')
 
-    if len(unchangeable_contigs) == 1:
-        return finish_one_unchangeable_contig(record_set, unchangeable_contigs, long)
+    if len(unchangeable_contig) == 1:
+        return finish_one_unchangeable_contig(gquery, unchangeable_contig, long)
 
-    elif len(unchangeable_contigs) == 0:
-        return finish_all_separate_contigs(record_set, long)
-    else:
-        raise AssertionError('Only a single pipolin region is expected per genome!')
+    elif len(unchangeable_contig) == 0:
+        return finish_all_separate_contigs(gquery, long)
 
 
 def finish_one_unchangeable_contig(record_set, unchangeable_contigs, long) -> SeqRecord:
@@ -270,52 +267,37 @@ def finish_one_unchangeable_contig(record_set, unchangeable_contigs, long) -> Se
                 raise NotImplementedError
 
 
-def assemble_gapped_pipolins(gb_records: SeqIORecords, long):
-    for strain_id, record_set in gb_records.items():
-        if len(record_set) > 1:
-            print(f'Assembling pipolin region for {strain_id}...')
-            try:
-                gb_records[strain_id][strain_id] = create_single_record(record_set, long)
-                gb_records[strain_id][strain_id].id = strain_id
-            except NotImplementedError:
-                print(f'FAILED: {strain_id}')
-                continue
+def inspect_gapped_pipolin(gquery: GQuery, long):
+        print(f'Inspecting {gquery.gquery_id}...')
+        try:
+            create_single_record(gquery, long)
+        except NotImplementedError:
+            print(f'FAILED: {gquery.gquery_id}')
 
-            keys_to_delele = []
-            for key in gb_records[strain_id].keys():
-                if key != strain_id:
-                    keys_to_delele.append(key)
-            for key in keys_to_delele:
-                del gb_records[strain_id][key]
-        else:
-            (record_id, record), = record_set.items()
-            if record_id != strain_id:
-                gb_records[strain_id][record_id].id = strain_id
 
 
 @task
 def scaffold_gapped_pipolins(gquery, long):
-    if gquery.is_single_contig():
+    if gquery.is_single_contig() or gquery.is_on_the_same_contig():
         print('>>>Scaffolding is not required!')
         start, end = gquery.get_pipolin_bounds(long)
-        pipolin = PipolinFragment(contig=gquery.contigs[0], start=start, end=end)
+        pipolin = PipolinFragment(contig=gquery.polymerases[0].contig, start=start, end=end)
         # pipolin.hallmarks.append(...)
         gquery.pipolin_fragments.append(pipolin)
     else:
+        inspect_gapped_pipolin(gquery, long)
 
-        assemble_gapped_pipolins(gb_records, long)
 
-
-def scaffold_gapped_pipolins_(in_dir, out_dir, long):
-    gb_records = read_seqio_records(in_dir)
-    assemble_gapped_pipolins(gb_records, long)
-    new_dir = os.path.join(out_dir, 'prokka_atts_scaffolded')
-    os.makedirs(new_dir, exist_ok=True)
-    write_genbank_records(gb_records, new_dir)
-    write_gff_records(gb_records, new_dir)
-    write_fna_records(gb_records, new_dir)
-
-    return new_dir
+# def scaffold_gapped_pipolins_(in_dir, out_dir, long):
+#     gb_records = read_seqio_records(in_dir)
+#     assemble_gapped_pipolins(gb_records, long)
+#     new_dir = os.path.join(out_dir, 'prokka_atts_scaffolded')
+#     os.makedirs(new_dir, exist_ok=True)
+#     write_genbank_records(gb_records, new_dir)
+#     write_gff_records(gb_records, new_dir)
+#     write_fna_records(gb_records, new_dir)
+#
+#     return new_dir
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

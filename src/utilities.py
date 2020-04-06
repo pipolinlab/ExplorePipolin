@@ -85,6 +85,16 @@ class GQuery:
         else:
             raise AssertionError('Feature type can be: "polymerases", "atts" or "trnas"!')
 
+    def is_single_contig(self):
+        return len(self.contigs) == 1
+
+    def is_on_the_same_contig(self):
+        target_contigs = []
+        target_contigs.extend(i.contig.contig_id for i in self.polymerases)
+        target_contigs.extend(i.contig.contig_id for i in self.atts)
+        target_contigs.extend(i.contig.contig_id for i in self.target_trnas)
+        return len(set(target_contigs)) == 1
+
     def get_left_right_windows(self):
         # TODO: how to be with several polymerases?
         #  * some check for polymerase integrity?
@@ -102,9 +112,6 @@ class GQuery:
             raise NotImplementedError
 
     def get_pipolin_bounds(self, long):
-        if not self.is_single_contig():
-            raise AssertionError('Should be complete!')
-
         polymerases = sorted((i for i in self.polymerases), key=lambda p: p.start)
         atts = sorted((i for i in self.atts), key=lambda p: p.start)
 
@@ -201,9 +208,6 @@ class GQuery:
         else:
             things_to_return[node] = self._get_dangling_feature(features, node, length_by_contig)
             self._add_dangling_atts(atts, things_to_return, length_by_contig)
-
-    def is_single_contig(self):
-        return len(self.contigs) == 1
 
 
 def ncbi_acc_download(acc_ids):
