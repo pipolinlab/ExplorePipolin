@@ -1,6 +1,7 @@
 import csv
 import os
 import shelve
+from collections import defaultdict
 from enum import Enum, auto
 from typing import Sequence, MutableSequence, Mapping, MutableMapping, Optional
 from itertools import groupby
@@ -91,6 +92,18 @@ class GQuery:
         else:
             raise AssertionError('Feature type can be: "polbs", "atts" or "trnas"!')
 
+    def feature_from_blasthit(self, hit, contig_id):
+        return Feature(start=hit.hit_start, end=hit.hit_end,
+                       frame=Orientation.orientation_from_blast(hit.hit_frame),
+                       contig=self.get_contig_by_id(contig_id))
+
+    def define_target_trnas(self):
+        for trna in self.trnas:
+            for att in self.atts:
+                if att.contig.contig_id == trna.contig.contig_id:
+                    if self._is_overlapping(feature1=att, feature2=trna):
+                        self.target_trnas.append(trna)
+
     def is_single_contig(self):
         return len(self.contigs) == 1
 
@@ -139,6 +152,12 @@ class GQuery:
                 return atts[0].start - 50, atts[1].end + 50
             else:
                 return atts[1].start - 50, atts[2].end + 50
+
+    @staticmethod
+    def _is_overlapping(feature1, feature2):
+        max_start = max(feature1.start, feature2.start)
+        min_end = min(feature1.end, feature2.end)
+        return max_start <= min_end
 
     @staticmethod
     def _is_polymerase_inside(atts, polymerases):
@@ -264,9 +283,13 @@ def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
     return roary_groups
 
 
+def define_gquery_id(genome):
+    return os.path.splitext(os.path.basename(genome))[0]
+
+
 def blast_genome_against_seq(genome, seq, output_dir):
     os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, f'{os.path.splitext(os.path.basename(genome))[0]}.fmt5'), 'w') as ouf:
+    with open(os.path.join(output_dir, define_gquery_id(genome=genome) + '.fmt5'), 'w') as ouf:
         subprocess.run(['blastn', '-query', seq, '-subject', genome, '-outfmt', '5'], stdout=ouf)
 
 
@@ -284,7 +307,7 @@ def read_seqio_records(file, file_format) -> SeqIORecords:
 
 def run_aragorn(genome, aragorn_results):
     os.makedirs(aragorn_results, exist_ok=True)
-    with open(os.path.join(aragorn_results, f'{os.path.splitext(os.path.basename(genome))[0]}.batch'), 'w') as ouf:
+    with open(os.path.join(aragorn_results, define_gquery_id(genome=genome) + '.batch'), 'w') as ouf:
         subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
 
 
@@ -323,7 +346,21 @@ def read_from_prokka_dir(prokka_dir, ext):
     return records
 
 
-def feature_from_blasthit(hit, gquery, contig_id):
-    return Feature(start=hit.hit_start, end=hit.hit_end,
-                   frame=Orientation.orientation_from_blast(hit.hit_frame),
-                   contig=gquery.get_contig_by_id(contig_id))
+def read_aragorn_batch(aragorn_batch):
+    entries = defaultdict(list)
+    with open(aragorn_batch) as inf:
+        for line in inf:
+            if line[0] == '>':
+                entry = line.strip().split(sep=' ')[0][1:]
+            else:
+                hit = line.split(sep='\t')
+                if len(hit) > 1:
+                    coordinates = hit[0].split(sep=' ')[-1]
+                    if coordinates[0] == 'c':
+                        start, end = (int(i) for i in coordinates[2:-1].split(sep=','))
+                        entries[entry].append((start, end, Orientation.REVERSE))
+                    else:
+                        start, end = (int(i) for i in coordinates[1:-1].split(sep=','))
+                        entries[entry].append((start, end, Orientation.FORWARD))
+
+    return entries

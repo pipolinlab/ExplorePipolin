@@ -7,20 +7,20 @@ import prefect
 from prefect import task
 from Bio import SeqIO
 import subprocess
-from collections import defaultdict
 from utilities import CONTEXT_SETTINGS
+from utilities import read_aragorn_batch
 from utilities import blast_genome_against_seq
 from utilities import Orientation, Feature, Contig, GQuery
 from utilities import save_to_shelve
 from utilities import read_blastxml
 from utilities import run_aragorn
 from utilities import read_seqio_records
-from utilities import feature_from_blasthit
+from utilities import define_gquery_id
 
 
 @task
 def create_gquery(genome):
-    gquery = GQuery(gquery_id=os.path.splitext(os.path.basename(genome))[0])
+    gquery = GQuery(gquery_id=define_gquery_id(genome=genome))
     genome_dict = read_seqio_records(file=genome, file_format='fasta')
     for key, value in genome_dict.items():
         contig = Contig(contig_id=key, contig_length=len(value.seq))
@@ -41,7 +41,7 @@ def add_features_from_blast(gquery, blast_dir, feature_type):
     entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.gquery_id}.fmt5'))
     for entry in entries:
         for hit in entry:
-            feature = feature_from_blasthit(hit=hit, gquery=gquery, contig_id=entry.id)
+            feature = gquery.feature_from_blasthit(hit=hit, contig_id=entry.id)
             gquery.get_features_by_type(feature_type).append(feature)
 
 
@@ -52,41 +52,15 @@ def detect_trnas_with_aragorn(genome, root_dir):
     return aragorn_results
 
 
-def read_aragorn_batch(aragorn_batch):
-    entries = defaultdict(list)
-    with open(aragorn_batch) as inf:
-        for line in inf:
-            if line[0] == '>':
-                entry = line.strip().split(sep=' ')[0][1:]
-            else:
-                hit = line.split(sep='\t')
-                if len(hit) < 2:
-                    continue
-                else:
-                    coordinates = hit[0].split(sep=' ')[-1]
-                    if coordinates[0] == 'c':
-                        start, end = (int(i) for i in coordinates[2:-1].split(sep=','))
-                        entries[entry].append((start, end, Orientation.REVERSE))
-                    else:
-                        start, end = (int(i) for i in coordinates[1:-1].split(sep=','))
-                        entries[entry].append((start, end, Orientation.FORWARD))
-
-    return entries
-
-
 @task
 def add_features_from_aragorn(gquery, aragorn_dir):
     entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.gquery_id}.batch'))
-    for contig, hits in entries.items():
+    for contig_id, hits in entries.items():
         for hit in hits:
-            feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig=gquery.get_contig_by_id(contig))
+            feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig=gquery.get_contig_by_id(contig_id))
             gquery.trnas.append(feature)
 
-    for trna in gquery.trnas:
-        for att in gquery.atts:
-            if att.contig.contig_id == trna.contig.contig_id:
-                if is_overlapping(range1=(att.start, att.end), range2=(trna.start, trna.end)):
-                    gquery.target_trnas.append(trna)
+    gquery.define_target_trnas()
 
 
 def save_left_right_subsequences(genome_dict, gquery, repeats_dir):
@@ -116,15 +90,6 @@ def get_proper_location(repeats, gquery):
             srepeats_location.append((hit.hit_start + right_window[0], hit.hit_end + right_window[0]))
 
     return qrepeats_location, srepeats_location
-
-
-def is_overlapping(range1, range2):
-    max_start = max(range1[0], range2[0])
-    min_end = min(range1[1], range2[1])
-    if max_start <= min_end:
-        return True
-    else:
-        return False
 
 
 def remove_overlapping_atts(gquery, qrepeats_location, srepeats_location):

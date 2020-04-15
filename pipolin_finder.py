@@ -3,7 +3,7 @@
 
 import click
 from prefect import Flow, Parameter, unmapped
-# from prefect.tasks.core.constants import Constant
+from prefect.tasks.core.constants import Constant
 from utilities import CONTEXT_SETTINGS
 from identify_pipolins_roughly import create_gquery
 from identify_pipolins_roughly import run_blast_against_ref
@@ -19,10 +19,10 @@ from annotate_pipolins import annotate_pipolins
 from include_atts_into_annotation import include_atts_into_annotation
 from easyfig_add_colours import easyfig_add_colours
 
-REF_POLB = './data/pi-polB.fa'
-REF_ATT = './data/attL.fa'
-PROTEINS = './data/HHpred_proteins.faa'
-ATT_HMM = './data/att.hmm'
+REF_POLB = Constant('./data/pi-polB.fa')
+REF_ATT = Constant('./data/attL.fa')
+PROTEINS = Constant('./data/HHpred_proteins.faa')
+ATT_HMM = Constant('./data/att.hmm')
 
 
 def get_flow():
@@ -33,18 +33,23 @@ def get_flow():
         gquery = create_gquery.map(genome=genomes)
 
         polbs_blast = run_blast_against_ref.map(genome=genomes, root_dir=unmapped(out_dir),
-                                                reference=unmapped(REF_POLB), dir_name=unmapped('polb_blast'))
-        t1 = add_features_from_blast.map(gquery=gquery, blast_dir=polbs_blast, feature_type=unmapped('polymerases'))
+                                                reference=unmapped(REF_POLB),
+                                                dir_name=unmapped(Constant('polb_blast')))
+        t_add_polbs = add_features_from_blast.map(gquery=gquery, blast_dir=polbs_blast,
+                                                  feature_type=unmapped(Constant('polbs')))
 
         atts_blast = run_blast_against_ref.map(genome=genomes, root_dir=unmapped(out_dir),
-                                               reference=unmapped(REF_ATT), dir_name=unmapped('att_blast'))
-        t2 = add_features_from_blast.map(gquery=gquery, blast_dir=atts_blast, feature_type=unmapped('atts'))
+                                               reference=unmapped(REF_ATT),
+                                               dir_name=unmapped(Constant('att_blast')))
+        t_add_atts = add_features_from_blast.map(gquery=gquery, blast_dir=atts_blast,
+                                                 feature_type=unmapped(Constant('atts')))
 
         aragorn_results = detect_trnas_with_aragorn.map(genome=genomes, root_dir=unmapped(out_dir))
-        t3 = add_features_from_aragorn.map(gquery=gquery, aragorn_dir=aragorn_results, upstream_tasks=[t1, t2])
+        t_add_trnas = add_features_from_aragorn.map(gquery=gquery, aragorn_dir=aragorn_results,
+                                                    upstream_tasks=[t_add_polbs, t_add_atts])
 
         atts_denovo = find_atts_denovo.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
-                                           upstream_tasks=[t3])
+                                           upstream_tasks=[t_add_trnas])
         t4 = add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
 
         t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t4])
@@ -56,7 +61,7 @@ def get_flow():
                                        proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
         prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
                                                        root_dir=unmapped(out_dir))
-        easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, abricate_dir=unmapped(None))
+        easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, abricate_dir=unmapped(Constant(None)))
 
     return flow
 
