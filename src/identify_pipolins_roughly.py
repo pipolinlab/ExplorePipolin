@@ -5,6 +5,7 @@ import os
 import click
 import prefect
 from prefect import task
+from prefect.engine import signals
 from utilities import CONTEXT_SETTINGS
 from utilities import save_left_right_subsequences
 from utilities import blast_for_identical
@@ -71,7 +72,7 @@ def find_atts_denovo(genome, gquery, root_dir):
 
     if not gquery.is_single_contig():
         logger.warning('This step is only for complete genomes. Pass...')
-        return
+        raise signals.SKIP()
 
     repeats_dir = os.path.join(root_dir, 'atts_denovo')
 
@@ -95,19 +96,16 @@ def find_atts_denovo(genome, gquery, root_dir):
 
 @task
 def add_features_atts_denovo(gquery, atts_denovo_dir):
-    try:
-        with open(os.path.join(atts_denovo_dir, gquery.gquery_id + '.atts')) as inf:
-            _ = inf.readline()
-            for line in inf:
-                att_pair = line.strip().split(sep='\t')
-                gquery.denovo_atts.append(Feature(start=att_pair[0], end=att_pair[1],
-                                                  frame=Orientation.FORWARD, contig=gquery.contigs[0]))
-                gquery.denovo_atts.append(Feature(start=att_pair[2], end=att_pair[3],
-                                                  frame=Orientation.FORWARD, contig=gquery.contigs[0]))
+    with open(os.path.join(atts_denovo_dir, gquery.gquery_id + '.atts')) as inf:
+        _ = inf.readline()
+        for line in inf:
+            att_pair = line.strip().split(sep='\t')
+            gquery.denovo_atts.append(Feature(start=att_pair[0], end=att_pair[1],
+                                              frame=Orientation.FORWARD, contig=gquery.contigs[0]))
+            gquery.denovo_atts.append(Feature(start=att_pair[2], end=att_pair[3],
+                                              frame=Orientation.FORWARD, contig=gquery.contigs[0]))
 
-        # TODO: add overlapping tRNAs to target_trnas!!!
-    except TypeError:
-        pass
+    # TODO: add overlapping tRNAs to target_trnas!!!
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):

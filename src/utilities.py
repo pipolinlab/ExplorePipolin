@@ -3,7 +3,7 @@ import os
 import shelve
 from collections import defaultdict
 from enum import Enum, auto
-from typing import Sequence, MutableSequence, Mapping, MutableMapping, Optional
+from typing import Sequence, MutableSequence, Mapping, MutableMapping
 from itertools import groupby
 import subprocess
 
@@ -116,10 +116,13 @@ class GQuery:
 
     def get_left_right_windows(self):
         # `find_atts_denovo()`
-        # TODO: how to be with several polymerases?
-        #  * some check for polymerase integrity?
-        #  * some check of how far polymerases are from each other?
         polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
+
+        if polymerases[-1].start - polymerases[0].start > 10000:   # TODO: is it small/big enough?
+            raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
+                                 f'within the region ({polymerases[0].start}, {polymerases[-1].end}). It might be, '
+                                 f'that you have two or more pipolins per genome, but we are expecting only one.')
+
         if self.is_single_contig():
             length = self.contigs[0].contig_length
             left_edge = polymerases[0].start - 100000

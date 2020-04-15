@@ -50,9 +50,8 @@ def get_flow():
 
         atts_denovo = find_atts_denovo.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
                                            upstream_tasks=[t_add_trnas])
-        # HERE
         t4 = add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
-
+        # TODO: devono_atts are not used at the moment!
         t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t4])
         t6 = is_scaffolding_required.map(gquery=gquery, upstream_tasks=[t5])
 

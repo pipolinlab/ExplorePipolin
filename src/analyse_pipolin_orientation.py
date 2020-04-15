@@ -4,7 +4,6 @@
 import click
 from prefect import task
 from utilities import CONTEXT_SETTINGS
-from identify_pipolins_roughly import is_overlapping
 
 
 @task
