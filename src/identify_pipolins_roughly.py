@@ -5,9 +5,11 @@ import os
 import click
 import prefect
 from prefect import task
-from Bio import SeqIO
-import subprocess
 from utilities import CONTEXT_SETTINGS
+from utilities import save_left_right_subsequences
+from utilities import blast_for_identical
+from utilities import extract_repeats
+from utilities import set_proper_location
 from utilities import read_aragorn_batch
 from utilities import blast_genome_against_seq
 from utilities import Orientation, Feature, Contig, GQuery
@@ -63,65 +65,6 @@ def add_features_from_aragorn(gquery, aragorn_dir):
     gquery.define_target_trnas()
 
 
-def save_left_right_subsequences(genome_dict, gquery, repeats_dir):
-    contig_id = next(iter(genome_dict.keys()))
-    left_window, right_window = gquery.get_left_right_windows()
-    left_seq = genome_dict[contig_id][left_window[0]:left_window[1]]
-    SeqIO.write(sequences=left_seq, handle=os.path.join(repeats_dir, gquery.gquery_id + '.left'), format='fasta')
-    right_seq = genome_dict[contig_id][right_window[0]:right_window[1]]
-    SeqIO.write(sequences=right_seq, handle=os.path.join(repeats_dir, gquery.gquery_id + '.right'), format='fasta')
-
-
-def blast_for_identical(gquery_id, repeats_dir):
-    with open(os.path.join(repeats_dir, gquery_id + '.fmt5'), 'w') as ouf:
-        subprocess.run(['blastn', '-query', os.path.join(repeats_dir, gquery_id + '.left'),
-                        '-subject', os.path.join(repeats_dir, gquery_id + '.right'),
-                        '-outfmt', '5', '-perc_identity', '100', '-word_size', '12',
-                        '-strand', 'plus'], stdout=ouf)
-
-
-def get_proper_location(repeats, gquery):
-    left_window, right_window = gquery.get_left_right_windows()
-    qrepeats_location = []
-    srepeats_location = []
-    for entry in repeats:
-        for hit in entry:
-            qrepeats_location.append((hit.query_start + left_window[0], hit.query_end + left_window[0]))
-            srepeats_location.append((hit.hit_start + right_window[0], hit.hit_end + right_window[0]))
-
-    return qrepeats_location, srepeats_location
-
-
-def remove_overlapping_atts(gquery, qrepeats_location, srepeats_location):
-    atts_location = [(i.start, i.end) for i in gquery.atts]
-    remove_this = set()
-    for i, i_rep in enumerate(qrepeats_location):
-        for i_att in atts_location:
-            if is_overlapping(i_rep, i_att):
-                remove_this.add(i)
-
-    q_filtered = []
-    s_filtered = []
-    for i in range(len(qrepeats_location)):
-        if i not in remove_this:
-            q_filtered.append(qrepeats_location[i])
-            s_filtered.append(srepeats_location[i])
-    return q_filtered, s_filtered
-
-
-def leave_overlapping_trnas(gquery, qrepeats_location, srepeats_location):
-    trnas_location = [(i.start, i.end) for i in gquery.trnas]
-    leave_this = set()
-    for i, i_rep in enumerate(zip(qrepeats_location, srepeats_location)):
-        for i_trna in trnas_location:
-            if is_overlapping(i_rep[0], i_trna) or is_overlapping(i_rep[1], i_trna):
-                leave_this.add(i)
-
-    q_filtered = [qrepeats_location[i] for i in leave_this]
-    s_filtered = [srepeats_location[i] for i in leave_this]
-    return q_filtered, s_filtered
-
-
 @task
 def find_atts_denovo(genome, gquery, root_dir):
     logger = prefect.context.get('logger')
@@ -131,24 +74,21 @@ def find_atts_denovo(genome, gquery, root_dir):
         return
 
     repeats_dir = os.path.join(root_dir, 'atts_denovo')
-    os.makedirs(repeats_dir, exist_ok=True)
 
-    genome_dict = read_seqio_records(file=genome, file_format='fasta')
-    save_left_right_subsequences(genome_dict=genome_dict, gquery=gquery, repeats_dir=repeats_dir)
+    left_window, right_window = gquery.get_left_right_windows()
+    save_left_right_subsequences(genome=genome, left_window=left_window, right_window=right_window,
+                                 repeats_dir=repeats_dir)
 
     blast_for_identical(gquery_id=gquery.gquery_id, repeats_dir=repeats_dir)
-    repeats = read_blastxml(os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
-    qrepeats_location, srepeats_location = get_proper_location(repeats=repeats, gquery=gquery)
-    qrepeats_filtered, srepeats_filtered = remove_overlapping_atts(gquery=gquery,
-                                                                   qrepeats_location=qrepeats_location,
-                                                                   srepeats_location=srepeats_location)
-    qrepeats_filtered, srepeats_filtered = leave_overlapping_trnas(gquery=gquery,
-                                                                   qrepeats_location=qrepeats_filtered,
-                                                                   srepeats_location=srepeats_filtered)
-    with open(os.path.join(repeats_dir, gquery.gquery_id + '.loc'), 'w') as ouf:
-        print('lrepeat_start', 'lrepeat_end', 'rrepeat_start', 'rrepeat_end', sep='\t', file=ouf)
-        for q, s in zip(qrepeats_filtered, srepeats_filtered):
-            print(q[0], q[1], s[0], s[1], sep='\t', file=ouf)
+    left_repeats, right_repeats = extract_repeats(file=os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
+    left_repeats = [set_proper_location(seq_range=i, shift=left_window[0]) for i in left_repeats]
+    right_repeats = [set_proper_location(seq_range=i, shift=right_window[0]) for i in right_repeats]
+    atts_denovo = [(i, j) for i, j in zip(left_repeats, right_repeats) if gquery.is_att_denovo(i, j)]
+
+    with open(os.path.join(repeats_dir, gquery.gquery_id + '.atts'), 'w') as ouf:
+        print('attL_start', 'attL_end', 'attR_start', 'attR_end', sep='\t', file=ouf)
+        for att_pair in atts_denovo:
+            print(att_pair[0][0], att_pair[0][1], att_pair[1][0], att_pair[1][1], sep='\t', file=ouf)
 
     return repeats_dir
 
@@ -156,13 +96,13 @@ def find_atts_denovo(genome, gquery, root_dir):
 @task
 def add_features_atts_denovo(gquery, atts_denovo_dir):
     try:
-        with open(os.path.join(atts_denovo_dir, gquery.gquery_id + '.loc')) as inf:
+        with open(os.path.join(atts_denovo_dir, gquery.gquery_id + '.atts')) as inf:
             _ = inf.readline()
             for line in inf:
-                repeats_locations = line.strip().split(sep='\t')
-                gquery.denovo_atts.append(Feature(start=repeats_locations[0], end=repeats_locations[1],
+                att_pair = line.strip().split(sep='\t')
+                gquery.denovo_atts.append(Feature(start=att_pair[0], end=att_pair[1],
                                                   frame=Orientation.FORWARD, contig=gquery.contigs[0]))
-                gquery.denovo_atts.append(Feature(start=repeats_locations[2], end=repeats_locations[3],
+                gquery.denovo_atts.append(Feature(start=att_pair[2], end=att_pair[3],
                                                   frame=Orientation.FORWARD, contig=gquery.contigs[0]))
 
         # TODO: add overlapping tRNAs to target_trnas!!!

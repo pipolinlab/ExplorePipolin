@@ -101,7 +101,7 @@ class GQuery:
         for trna in self.trnas:
             for att in self.atts:
                 if att.contig.contig_id == trna.contig.contig_id:
-                    if self._is_overlapping(feature1=att, feature2=trna):
+                    if self._is_overlapping(range1=(att.start, att.end), range2=(trna.start, trna.end)):
                         self.target_trnas.append(trna)
 
     def is_single_contig(self):
@@ -121,15 +121,38 @@ class GQuery:
         #  * some check of how far polymerases are from each other?
         polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
         if self.is_single_contig():
-            contig_length = self.contigs[0].contig_length
+            length = self.contigs[0].contig_length
             left_edge = polymerases[0].start - 100000
             left_window = (left_edge if left_edge >= 0 else 0, polymerases[0].start)
             right_edge = polymerases[-1].end + 100000
-            right_window = (polymerases[-1].end, right_edge if right_edge <= contig_length else contig_length)
+            right_window = (polymerases[-1].end, right_edge if right_edge <= length else length)
 
             return left_window, right_window
         else:
             raise AssertionError('This method is only for complete genomes!')
+
+    def is_att_denovo(self, left_repeat, right_repeat):
+        # `find_atts_denovo()`
+        if self._is_overlapping_att(left_repeat=left_repeat):
+            return False
+        return self._is_overlapping_trna(left_repeat=left_repeat, right_repeat=right_repeat)
+
+    def _is_overlapping_att(self, left_repeat):
+        # `find_atts_denovo()`
+        for att in self.atts:
+            if self._is_overlapping(left_repeat, (att.start, att.end)):
+                return True
+
+        return False
+
+    def _is_overlapping_trna(self, left_repeat, right_repeat):
+        # `find_atts_denovo()`
+        for trna in self.trnas:
+            trna_range = (trna.start, trna.end)
+            if self._is_overlapping(left_repeat, trna_range) or self._is_overlapping(right_repeat, trna_range):
+                return True
+
+        return False
 
     def get_pipolin_bounds(self, long):
         # When scaffolding is not required
@@ -154,9 +177,9 @@ class GQuery:
                 return atts[1].start - 50, atts[2].end + 50
 
     @staticmethod
-    def _is_overlapping(feature1, feature2):
-        max_start = max(feature1.start, feature2.start)
-        min_end = min(feature1.end, feature2.end)
+    def _is_overlapping(range1, range2):
+        max_start = max(range1[0], range2[0])
+        min_end = min(range1[1], range2[1])
         return max_start <= min_end
 
     @staticmethod
@@ -364,3 +387,39 @@ def read_aragorn_batch(aragorn_batch):
                         entries[entry].append((start, end, Orientation.FORWARD))
 
     return entries
+
+
+def save_left_right_subsequences(genome, left_window, right_window, repeats_dir):
+    os.makedirs(repeats_dir, exist_ok=True)
+    genome_seq = SeqIO.read(handle=genome, format='fasta')
+
+    left_seq = genome_seq[left_window[0]:left_window[1]]
+    right_seq = genome_seq[right_window[0]:right_window[1]]
+    SeqIO.write(sequences=left_seq, format='fasta',
+                handle=os.path.join(repeats_dir, define_gquery_id(genome=genome) + '.left'))
+    SeqIO.write(sequences=right_seq, format='fasta',
+                handle=os.path.join(repeats_dir, define_gquery_id(genome=genome) + '.right'))
+
+
+def blast_for_identical(gquery_id, repeats_dir):
+    with open(os.path.join(repeats_dir, gquery_id + '.fmt5'), 'w') as ouf:
+        subprocess.run(['blastn', '-query', os.path.join(repeats_dir, gquery_id + '.left'),
+                        '-subject', os.path.join(repeats_dir, gquery_id + '.right'),
+                        '-outfmt', '5', '-perc_identity', '100', '-word_size', '12',   # TODO: try smaller word_size!
+                        '-strand', 'plus'], stdout=ouf)
+
+
+def extract_repeats(file):
+    repeats = read_blastxml(file)
+    left_repeats = []
+    right_repeats = []
+    for entry in repeats:
+        for hit in entry:
+            left_repeats.append((hit.query_start, hit.query_end))
+            right_repeats.append((hit.hit_start, hit.hit_end))
+
+    return left_repeats, right_repeats
+
+
+def set_proper_location(seq_range, shift):
+    return seq_range[0] + shift, seq_range[1] + shift
