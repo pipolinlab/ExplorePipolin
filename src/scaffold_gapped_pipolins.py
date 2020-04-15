@@ -47,15 +47,15 @@ def get_unchangeable_contig(gquery: GQuery) -> Contig:
     """
     If there are a polB and an att, the whole contig is included into the assembly.
     """
-    polb_contigs = [i.contig.contig_id for i in gquery.polymerases]
+    polb_contigs = [i.contig.contig_id for i in gquery.polbs]
     if len(set(polb_contigs)) != 1:
         raise AssertionError('Only a single pipolin region is expected per genome!')
 
-    atts_next_polb = gquery.get_features_of_contig(contig_id=gquery.polymerases[0].contig.contig_id,
+    atts_next_polb = gquery.get_features_of_contig(contig_id=gquery.polbs[0].contig.contig_id,
                                                    feature_type='atts')
 
     if len(atts_next_polb) != 0:
-        return gquery.polymerases[0].contig
+        return gquery.polbs[0].contig
 
 
 def create_assembly_gap_record(record):
@@ -89,7 +89,7 @@ def add_assembly_gap_to_unchangeable(record):
 def get_att_only_contigs(gquery):
     att_only_contigs = []
     for att in gquery.atts:
-        polbs_next_att = gquery.get_features_of_contig(contig_id=att.contig.contig_id, feature_type='polymerases')
+        polbs_next_att = gquery.get_features_of_contig(contig_id=att.contig.contig_id, feature_type='polbs')
         if len(polbs_next_att) == 0:
             att_only_contigs.append(att.contig)
 
@@ -282,13 +282,13 @@ def is_scaffolding_required(gquery: GQuery):
     if gquery.is_single_contig() or gquery.is_on_the_same_contig():
         print('>>>Scaffolding is not required!')
         start, end = gquery.get_pipolin_bounds(long=False)
-        pipolin = PipolinFragment(contig=gquery.polymerases[0].contig, start=start, end=end)
+        pipolin = PipolinFragment(contig=gquery.polbs[0].contig, start=start, end=end)
 
         for att in gquery.atts:
             if is_inside_fragment(feature=att, fragment_start=start, fragment_end=end):
                 pipolin.atts.append(att)
 
-        gquery.pipolin_fragment = pipolin
+        gquery.pipolin_fragments = pipolin
     else:
         # TODO
         print('>>>Scaffolding is required! Pass...')

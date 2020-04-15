@@ -40,7 +40,7 @@ def analyse_pipolin_orientation(gquery):
             contig.contig_orientation = contig_atts[0].frame
 
     for contig in gquery.contigs:
-        contig_polbs = gquery.get_features_of_contig(contig_id=contig.contig_id, feature_type='polymerases')
+        contig_polbs = gquery.get_features_of_contig(contig_id=contig.contig_id, feature_type='polbs')
         if len(contig_polbs) != 0:
             contig_polb_frames = [polb.frame for polb in contig_polbs]
             if len(set(contig_polb_frames)) != 1:   # an ambiguous case

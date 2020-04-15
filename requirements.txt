@@ -1,6 +1,7 @@
 -- python packages --
 click
 Biopython
+bcbio-gff
 prefect
 
 -- other packages --

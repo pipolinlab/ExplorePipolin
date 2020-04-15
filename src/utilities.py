@@ -18,7 +18,10 @@ class Orientation(Enum):
 
     @staticmethod
     def orientation_from_blast(hit_frame):
-        return Orientation.FORWARD if hit_frame == 1 else Orientation.REVERSE
+        if hit_frame == 1:
+            return Orientation.FORWARD
+        elif hit_frame == -1:
+            return Orientation.REVERSE
 
     def to_pm_one_encoding(self):
         return +1 if self.FORWARD else -1
@@ -57,12 +60,17 @@ class GQuery:
     def __init__(self, gquery_id):
         self.gquery_id: str = gquery_id
         self.contigs: MutableSequence[Contig] = []
-        self.polymerases: MutableSequence[Feature] = []
+        self.polbs: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
         self.trnas: MutableSequence[Feature] = []
         self.target_trnas: MutableSequence[Feature] = []
-        self.atts_denovo: MutableSequence[Feature] = []
-        self.pipolin_fragment: Optional[PipolinFragment] = None
+        self.denovo_atts: MutableSequence[Feature] = []
+        self.pipolin_fragments: MutableSequence[PipolinFragment] = []
+
+    def get_contig_by_id(self, contig_id) -> Contig:
+        for contig in self.contigs:
+            if contig.contig_id == contig_id:
+                return contig
 
     def get_features_of_contig(self, contig_id, feature_type: str) -> MutableSequence[Feature]:
         features_to_return = []
@@ -73,27 +81,22 @@ class GQuery:
 
         return features_to_return
 
-    def get_contig_by_id(self, contig_id) -> Contig:
-        for contig in self.contigs:
-            if contig.contig_id == contig_id:
-                return contig
-
     def get_features_by_type(self, feature_type: str) -> MutableSequence[Feature]:
-        if feature_type == 'polymerases':
-            return self.polymerases
+        if feature_type == 'polbs':
+            return self.polbs
         elif feature_type == 'atts':
             return self.atts
         elif feature_type == 'trnas':
             return self.trnas
         else:
-            raise AssertionError('Feature type can be: "polymerases", "atts" or "trnas"!')
+            raise AssertionError('Feature type can be: "polbs", "atts" or "trnas"!')
 
     def is_single_contig(self):
         return len(self.contigs) == 1
 
     def is_on_the_same_contig(self):
         target_contigs = []
-        target_contigs.extend(i.contig.contig_id for i in self.polymerases)
+        target_contigs.extend(i.contig.contig_id for i in self.polbs)
         target_contigs.extend(i.contig.contig_id for i in self.atts)
         target_contigs.extend(i.contig.contig_id for i in self.target_trnas)
         return len(set(target_contigs)) == 1
@@ -103,7 +106,7 @@ class GQuery:
         # TODO: how to be with several polymerases?
         #  * some check for polymerase integrity?
         #  * some check of how far polymerases are from each other?
-        polymerases = sorted((i for i in self.polymerases), key=lambda p: p.start)
+        polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
         if self.is_single_contig():
             contig_length = self.contigs[0].contig_length
             left_edge = polymerases[0].start - 100000
@@ -116,8 +119,8 @@ class GQuery:
             raise AssertionError('This method is only for complete genomes!')
 
     def get_pipolin_bounds(self, long):
-        # Scaffolding is not required
-        polymerases = sorted((i for i in self.polymerases), key=lambda p: p.start)
+        # When scaffolding is not required
+        polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
         atts = sorted((i for i in self.atts), key=lambda p: p.start)
 
         if not self._is_polymerase_inside(atts, polymerases):
@@ -141,6 +144,7 @@ class GQuery:
     def _is_polymerase_inside(atts, polymerases):
         return atts[0].start < polymerases[0].start and polymerases[-1].end < atts[-1].end
 
+    # OLD FUNCTIONS!!!
     @staticmethod
     def _dict_by_node_normalized(features):
         return {node: sorted(list(ps), key=lambda p: p.start) for node, ps
@@ -189,7 +193,7 @@ class GQuery:
     def get_contigs_with_bounds(self, length_by_contig, long):
         # TODO: check boarders when +/-50 nt !
         # TODO: check indexes carefully: 0-based and 1-based !!!
-        polymerases = self._dict_by_node_normalized(self.polymerases)
+        polymerases = self._dict_by_node_normalized(self.polbs)
         atts = self._dict_by_node_normalized(self.atts)
 
         things_to_return = {}

@@ -26,8 +26,8 @@ def read_gff_records(file):
 
 
 def create_att_feature(att: Feature, gquery: GQuery, records_format: str):
-    f_start = att.start - gquery.pipolin_fragment.start
-    f_end = att.end - gquery.pipolin_fragment.start
+    f_start = att.start - gquery.pipolin_fragments.start
+    f_end = att.end - gquery.pipolin_fragments.start
     random_number = randrange(10000, 99999)
     gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{gquery.gquery_id}_{random_number}'],
                      'rpt_family': ['Att'], 'rpt_type': ['direct']}
@@ -54,9 +54,9 @@ def add_new_gb_feature(new_feature, record):
 
 
 def add_atts(records, records_format, gquery: GQuery):
-    for att in gquery.pipolin_fragment.atts:
+    for att in gquery.pipolin_fragments.atts:
         att_feature = create_att_feature(att=att, gquery=gquery, records_format=records_format)
-        add_new_gb_feature(att_feature, records[gquery.pipolin_fragment.contig.contig_id])
+        add_new_gb_feature(att_feature, records[gquery.pipolin_fragments.contig.contig_id])
 
 
 @task

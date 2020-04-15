@@ -15,7 +15,7 @@ from utilities import read_seqio_records
 @task
 def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
     # TODO
-    if gquery.pipolin_fragment is None:
+    if gquery.pipolin_fragments is None:
         pass
     genome_dict = read_seqio_records(file=genome, file_format='fasta')
 
@@ -23,8 +23,8 @@ def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
     os.makedirs(pipolins_dir, exist_ok=True)
 
     with open(os.path.join(pipolins_dir, gquery.gquery_id + '.fa'), 'w') as ouf:
-        seq = genome_dict[gquery.pipolin_fragment.contig.contig_id]
-        SeqIO.write(seq[gquery.pipolin_fragment.start:gquery.pipolin_fragment.end], ouf, 'fasta')
+        seq = genome_dict[gquery.pipolin_fragments.contig.contig_id]
+        SeqIO.write(seq[gquery.pipolin_fragments.start:gquery.pipolin_fragments.end], ouf, 'fasta')
 
     # for pipolin in pipolins:
     #     if pipolin.is_single_contig():

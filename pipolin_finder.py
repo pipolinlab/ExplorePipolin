@@ -13,10 +13,10 @@ from identify_pipolins_roughly import add_features_from_aragorn
 from identify_pipolins_roughly import find_atts_denovo
 from identify_pipolins_roughly import add_features_atts_denovo
 from analyse_pipolin_orientation import analyse_pipolin_orientation
+from scaffold_gapped_pipolins import is_scaffolding_required
 from extract_pipolin_regions import extract_pipolin_regions
 from annotate_pipolins import annotate_pipolins
 from include_atts_into_annotation import include_atts_into_annotation
-from scaffold_gapped_pipolins import is_scaffolding_required
 from easyfig_add_colours import easyfig_add_colours
 
 REF_POLB = './data/pi-polB.fa'

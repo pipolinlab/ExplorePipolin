@@ -195,9 +195,9 @@ def add_features_atts_denovo(gquery, atts_denovo_dir):
             _ = inf.readline()
             for line in inf:
                 repeats_locations = line.strip().split(sep='\t')
-                gquery.atts_denovo.append(Feature(start=repeats_locations[0], end=repeats_locations[1],
+                gquery.denovo_atts.append(Feature(start=repeats_locations[0], end=repeats_locations[1],
                                                   frame=Orientation.FORWARD, contig=gquery.contigs[0]))
-                gquery.atts_denovo.append(Feature(start=repeats_locations[2], end=repeats_locations[3],
+                gquery.denovo_atts.append(Feature(start=repeats_locations[2], end=repeats_locations[3],
                                                   frame=Orientation.FORWARD, contig=gquery.contigs[0]))
 
         # TODO: add overlapping tRNAs to target_trnas!!!
