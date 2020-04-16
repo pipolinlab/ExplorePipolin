@@ -15,7 +15,7 @@ from identify_pipolins_roughly import find_atts_denovo
 from identify_pipolins_roughly import add_features_atts_denovo
 from identify_pipolins_roughly import are_atts_present
 from analyse_pipolin_orientation import analyse_pipolin_orientation
-from scaffold_gapped_pipolins import is_scaffolding_required
+from scaffold_gapped_pipolins import scaffold_pipolins
 from extract_pipolin_regions import extract_pipolin_regions
 from annotate_pipolins import annotate_pipolins
 from include_atts_into_annotation import include_atts_into_annotation
@@ -59,10 +59,10 @@ def get_flow():
         t_check_features = are_atts_present.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts, t_check_polbs])
 
         t_set_orientations = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t_check_features])
-        t6 = is_scaffolding_required.map(gquery=gquery, upstream_tasks=[t_set_orientations])
+        t_scaffolding = scaffold_pipolins.map(gquery=gquery, upstream_tasks=[t_set_orientations])
 
         pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery,
-                                                        root_dir=unmapped(out_dir), upstream_tasks=[t6])
+                                                        root_dir=unmapped(out_dir), upstream_tasks=[t_scaffolding])
         prokka = annotate_pipolins.map(gquery=gquery, pipolins_dir=pipolin_sequences,
                                        proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
         prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
