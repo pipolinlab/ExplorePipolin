@@ -43,19 +43,6 @@ def get_trna_end(trna_record):
                 return feature.location.end
 
 
-def get_unchangeable_contig(gquery: GQuery) -> Contig:
-    """
-    If there are a polB and an att, the whole contig is included into the assembly.
-    """
-    polb_contigs = [i.contig.contig_id for i in gquery.polbs]
-    if len(set(polb_contigs)) != 1:
-        raise AssertionError('Only a single pipolin region is expected per genome!')
-
-    atts_next_polb = gquery.get_features_of_contig(contig_id=gquery.polbs[0].contig.contig_id,
-                                                   feature_type='atts')
-
-    if len(atts_next_polb) != 0:
-        return gquery.polbs[0].contig
 
 
 def create_assembly_gap_record(record):
@@ -86,14 +73,6 @@ def add_assembly_gap_to_unchangeable(record):
     return modified_record
 
 
-def get_att_only_contigs(gquery):
-    att_only_contigs = []
-    for att in gquery.atts:
-        polbs_next_att = gquery.get_features_of_contig(contig_id=att.contig.contig_id, feature_type='polbs')
-        if len(polbs_next_att) == 0:
-            att_only_contigs.append(att.contig)
-
-    return att_only_contigs
 
 
 def get_polb_only_contigs(record_set):
@@ -217,21 +196,6 @@ def modify_polb_only_record(polb_contigs, record_set):
         record_set[polb_contigs[0]] = assembly_gap + record_set[polb_contigs[0]] + assembly_gap
 
 
-def try_creating_single_record(gquery, long):
-    unchangeable_contig = get_unchangeable_contig(gquery)
-    print(f'The unchangeable contigs: {unchangeable_contig}!')
-
-    if unchangeable_contig is not None:
-        try_finish_unchangeable(gquery, unchangeable_contig, long)
-    else:
-        try_finish_separate(gquery, long)
-
-
-def try_finish_unchangeable(gquery: GQuery, unchangeable_contig: Contig, long):
-    att_only_contigs = get_att_only_contigs(gquery)
-
-    if len(att_only_contigs) == 1:
-        print('The single record was inspected!!!\n')
         # start, end = gquery.get_unchangeable_bounds(unchangeable_contig.contig_id)
     # else:
     #     gap_position = get_assembly_gap_position(record_set[unchangeable_contig[0]])
@@ -265,14 +229,6 @@ def try_finish_unchangeable(gquery: GQuery, unchangeable_contig: Contig, long):
     #             raise NotImplementedError
 
 
-def inspect_gapped_pipolin(gquery: GQuery, long):
-        print(f'Inspecting {gquery.gquery_id}...')
-        try:
-            try_creating_single_record(gquery, long)
-        except NotImplementedError:
-            print(f'FAILED: {gquery.gquery_id}')
-
-
 def is_inside_fragment(feature, fragment_start, fragment_end):
     return feature.start >= fragment_start and feature.end <= fragment_end
 
@@ -281,19 +237,14 @@ def is_inside_fragment(feature, fragment_start, fragment_end):
 def is_scaffolding_required(gquery: GQuery):
     if gquery.is_single_contig() or gquery.is_on_the_same_contig():
         print('>>>Scaffolding is not required!')
-        start, end = gquery.get_pipolin_bounds(long=False)
+        start, end = gquery.get_pipolin_bounds()
         pipolin = PipolinFragment(contig=gquery.polbs[0].contig, start=start, end=end)
 
-        for att in gquery.atts:
-            if is_inside_fragment(feature=att, fragment_start=start, fragment_end=end):
-                pipolin.atts.append(att)
-
-        gquery.pipolin_fragments = pipolin
+        pipolin.atts.extend(gquery.atts)
+        gquery.pipolin_fragments.append(pipolin)
     else:
-        # TODO
-        print('>>>Scaffolding is required! Pass...')
-        raise NotImplementedError
-        # inspect_gapped_pipolin(gquery, long)
+        print('>>>Scaffolding is required!')
+        gquery.try_creating_single_record()
 
 
 # def scaffold_gapped_pipolins_(in_dir, out_dir, long):

@@ -135,6 +135,7 @@ def are_atts_present(gquery):
     if len(gquery.atts) == 0:
         logger.warning(f'No usual atts were found, but some atts were found by denovo search!'
                        f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!')
+        # TODO: check that it's only one repeat!
         gquery.atts.extend(gquery.denovo_atts)
         gquery.target_trnas.extend(gquery.target_trnas_denovo)
     else:

@@ -162,28 +162,6 @@ class GQuery:
 
         return False
 
-    # `is_scaffolding_required`
-    def get_pipolin_bounds(self, long):
-        polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
-        atts = sorted((i for i in self.atts), key=lambda p: p.start)
-
-        if not self._is_polymerase_inside(atts=atts, polymerases=polymerases):
-            raise AssertionError('The piPolBs are not within att bounds!')
-
-        if len(atts) > 3:
-            raise AssertionError('There are more than 3 atts!')
-
-        if long:
-            if len(atts) == 3:
-                return atts[0].start - 50, atts[2].end + 50
-            else:
-                return atts[0].start - 50, atts[1].end + 50
-        else:
-            if polymerases[-1].end < atts[1].end:
-                return atts[0].start - 50, atts[1].end + 50
-            else:
-                return atts[1].start - 50, atts[2].end + 50
-
     # `analyse_pipolin_orientation`
     def is_single_target_trna_per_contig(self):
         # there was one case with two target trnas per genome, although usually only one
@@ -215,6 +193,112 @@ class GQuery:
             if len(set(polbs_frames)) != 1:  # an ambiguous case
                 return
             contig.contig_orientation = polbs[0].frame
+
+    # scaffolding is not required
+    def get_pipolin_bounds(self):
+        polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
+        atts = sorted((i for i in self.atts), key=lambda p: p.start)
+
+        if not self._is_polymerase_inside(atts=atts, polymerases=polymerases):
+            raise AssertionError('The piPolBs are not within att bounds!')
+
+        length = polymerases[0].contig.contig_length
+        left_edge = atts[0].start - 50
+        right_edge = atts[-1].end + 50
+        return left_edge if left_edge >= 0 else 0, right_edge if right_edge <= length else length
+
+    # scaffolding is required
+    def try_creating_single_record(self):
+        unchangeable_contig = self._get_unchangeable_contig()
+
+        if unchangeable_contig is not None:
+            print(f'The unchangeable contig is {unchangeable_contig}!')
+            att_only_contig = self._try_finish_unchangeable()
+            direction, polbs_sorted, atts_sorted = \
+                self._get_direction_of_unchangeable(unchangeable=unchangeable_contig)
+            length = unchangeable_contig.contig_length
+
+            att_contig_length = att_only_contig.contig_length
+            single_att = self.get_features_of_contig(contig_id=att_only_contig.contig_id, feature_type='atts')[0]
+
+            if direction == 'none':
+                left_edge = atts_sorted[0].start - 50
+                right_edge = atts_sorted[-1].end + 50
+                pipolin = PipolinFragment(contig=unchangeable_contig,
+                                          start=left_edge if left_edge >= 0 else 0,
+                                          end=right_edge if right_edge <= length else length)
+                pipolin.atts.extend(atts_sorted)
+                self.pipolin_fragments.append(pipolin)
+            elif direction == 'right':
+                left_edge = atts_sorted[0].start - 50
+                fragment1 = PipolinFragment(contig=unchangeable_contig,
+                                            start=left_edge if left_edge >= 0 else 0, end=length)
+                fragment1.atts.extend(atts_sorted)
+                self.pipolin_fragments.append(fragment1)
+
+                right_edge = single_att.end + 50
+                fragment2 = PipolinFragment(contig=att_only_contig, start=0,
+                                            end=right_edge if right_edge <= att_contig_length else att_contig_length)
+                fragment2.atts.append(single_att)
+                self.pipolin_fragments.append(fragment2)
+            elif direction == 'left':
+                left_edge = single_att.start - 50
+                fragment1 = PipolinFragment(contig=att_only_contig,
+                                            start=left_edge if left_edge >= 0 else 0, end=att_contig_length)
+                fragment1.atts.append(single_att)
+                self.pipolin_fragments.append(fragment1)
+
+                right_edge = atts_sorted[-1].end + 50
+                fragment2 = PipolinFragment(contig=unchangeable_contig, start=0,
+                                            end=right_edge if right_edge <= length else length)
+                fragment2.atts.extend(atts_sorted)
+                self.pipolin_fragments.append(fragment2)
+        else:
+            # TODO
+            try_finish_separate(gquery)
+
+    def _get_direction_of_unchangeable(self, unchangeable: Contig):
+        polbs = self.get_features_of_contig(contig_id=unchangeable.contig_id, feature_type='polbs')
+        atts = self.get_features_of_contig(contig_id=unchangeable.contig_id, feature_type='atts')
+        polbs_sorted = sorted((i for i in polbs), key=lambda p: p.start)
+        atts_sorted = sorted((i for i in atts), key=lambda p: p.start)
+
+        if not self._is_polymerase_inside(atts=atts_sorted, polymerases=polbs_sorted):
+            raise AssertionError('The piPolBs are not within att bounds!')
+
+        if polbs_sorted[0].start > atts_sorted[-1].end:
+            return 'right', polbs_sorted, atts_sorted
+        elif polbs_sorted[-1].end < atts_sorted[0].start:
+            return 'left', polbs_sorted, atts_sorted
+        else:
+            return 'none', polbs_sorted, atts_sorted
+
+    def _get_unchangeable_contig(self) -> Contig:
+        polbs_contigs = [i.contig.contig_id for i in self.polbs]
+        if len(set(polbs_contigs)) != 1:
+            raise NotImplementedError
+
+        atts_next_polbs = self.get_features_of_contig(contig_id=self.polbs[0].contig.contig_id, feature_type='atts')
+        if len(atts_next_polbs) != 0:
+            return self.polbs[0].contig
+
+    def _try_finish_unchangeable(self) -> Contig:
+        att_only_contigs = self._get_att_only_contigs()
+
+        if len(att_only_contigs) == 1:
+            print('The single record can be created!!!\n')
+            return att_only_contigs[0]
+        else:
+            raise NotImplementedError
+
+    def _get_att_only_contigs(self) -> MutableSequence[Contig]:
+        att_only_contigs = []
+        for att in self.atts:
+            polbs_next_att = self.get_features_of_contig(contig_id=att.contig.contig_id, feature_type='polbs')
+            if len(polbs_next_att) == 0:
+                att_only_contigs.append(att.contig)
+
+        return att_only_contigs
 
     @staticmethod
     def _is_overlapping(range1, range2):
