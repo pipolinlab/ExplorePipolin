@@ -73,20 +73,6 @@ def add_assembly_gap_to_unchangeable(record):
     return modified_record
 
 
-
-
-def get_polb_only_contigs(record_set):
-    polb_only_contigs = []
-    for record_id, record in record_set.items():
-        atts = get_atts_from_record(record)
-        polbs = get_polbs_from_record(record)
-
-        if len(polbs) != 0 and len(atts) == 0:
-            polb_only_contigs.append(record_id)
-
-    return polb_only_contigs
-
-
 def get_assembly_gap_position(unchangeable_record):
     for i_f, feature in enumerate(unchangeable_record.features):
         if feature.type == 'assembly_gap':
@@ -120,14 +106,6 @@ def check_trna(att_record):
                     return True
 
 
-def get_trna_contig(record_set, att_only_contigs):
-    for att_contig in att_only_contigs:
-        is_trna = check_trna(record_set[att_contig])
-        if is_trna:
-            return att_contig
-    return None
-
-
 def cut_att_contig(att_record, direction, long):
     atts = get_atts_from_record(att_record)
     if direction == 'right':
@@ -156,32 +134,6 @@ def cut_trna_contig(trna_record):
     new_trna_record.features.insert(0, source_feature)
 
     return new_trna_record
-
-
-def try_finish_separate(gquery: GQuery, long):
-    pass
-    # TODO
-    # polb_contigs = get_polb_only_contigs(record_set)
-    # modify_polb_only_record(polb_contigs, record_set)
-    #
-    # att_contigs = get_att_only_contigs(record_set)
-    # right_atts = []
-    # left_atts = []
-    # trna_contig = get_trna_contig(record_set, att_contigs)
-    # if trna_contig is None:
-    #     raise NotImplementedError
-    # else:
-    #     att_contigs.remove(trna_contig)
-    #     right_atts.append(trna_contig)
-    #
-    # if len(att_contigs) == 1:
-    #     print('>>>The only right and left atts are found!')
-    #     left_atts.append(att_contigs[0])
-    #     right_contig = cut_att_contig(record_set[right_atts[0]], 'right', long)
-    #     left_contig = cut_att_contig(record_set[left_atts[0]], 'left', long)
-    #     return left_contig + record_set[polb_contigs[0]] + right_contig
-    # else:
-    #     assert False
 
 
 def modify_polb_only_record(polb_contigs, record_set):

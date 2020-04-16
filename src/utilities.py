@@ -254,8 +254,41 @@ class GQuery:
                 fragment2.atts.extend(atts_sorted)
                 self.pipolin_fragments.append(fragment2)
         else:
-            # TODO
-            try_finish_separate(gquery)
+            self._try_finish_separate()
+
+    def _try_finish_separate(self):
+        polbs_contigs = [i.contig.contig_id for i in self.polbs]
+        if len(set(polbs_contigs)) != 1:
+            raise NotImplementedError
+        polbs_fragment = PipolinFragment(contig=self.polbs[0].contig,
+                                         start=0, end=self.polbs[0].contig.contig_length)
+
+        if len(self.target_trnas) > 1 or len(self.target_trnas) == 0:
+            raise NotImplementedError
+        right_edge = self.target_trnas[0].end + 50
+        length = self.target_trnas[0].contig.contig_length
+        right_fragment = PipolinFragment(contig=self.target_trnas[0].contig, start=0,
+                                         end=right_edge if right_edge <= length else length)
+
+        if len(self.atts) == 2:
+            print('The single record can be created!!!\n')
+
+            if self.atts[0].contig.contig_id == self.target_trnas[0].contig.contig_id:
+                right_att = self.atts[0]
+                left_att = self.atts[1]
+            else:
+                right_att = self.atts[1]
+                left_att = self.atts[0]
+
+            left_edge = left_att.start - 50
+            left_fragment = PipolinFragment(contig=left_att.contig, start=left_edge if left_edge >= 0 else 0,
+                                            end=left_att.contig.contig_length)
+        else:
+            raise NotImplementedError
+
+        right_fragment.atts.append(right_att)
+        left_fragment.atts.append(left_att)
+        self.pipolin_fragments.extend([left_fragment, polbs_fragment, right_fragment])
 
     def _get_direction_of_unchangeable(self, unchangeable: Contig):
         polbs = self.get_features_of_contig(contig_id=unchangeable.contig_id, feature_type='polbs')
