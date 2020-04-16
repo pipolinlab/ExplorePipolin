@@ -411,7 +411,7 @@ def blast_for_identical(gquery_id, repeats_dir):
     with open(os.path.join(repeats_dir, gquery_id + '.fmt5'), 'w') as ouf:
         subprocess.run(['blastn', '-query', os.path.join(repeats_dir, gquery_id + '.left'),
                         '-subject', os.path.join(repeats_dir, gquery_id + '.right'),
-                        '-outfmt', '5', '-perc_identity', '100', '-word_size', '12',   # TODO: try smaller word_size!
+                        '-outfmt', '5', '-perc_identity', '100', '-word_size', '6',
                         '-strand', 'plus'], stdout=ouf)
 
 

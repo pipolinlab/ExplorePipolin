@@ -129,8 +129,17 @@ def are_atts_present(gquery):
 
     if len(gquery.atts) == 0 and len(gquery.denovo_atts) == 0:
         logger.warning('There is piPolB, but no atts were found! Not able to define pipolin bounds!')
-        # TODO: probably, it makes sense to output piPolB alone in a table
+        # TODO: probably, it makes sense to output piPolB alone
         raise signals.SKIP()
+
+    if len(gquery.atts) == 0:
+        logger.warning(f'No usual atts were found, but some atts were found by denovo search!'
+                       f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!')
+        gquery.atts.extend(gquery.denovo_atts)
+        gquery.target_trnas.extend(gquery.target_trnas_denovo)
+    else:
+        logger.warning(f'Some atts were found by denovo search, but we are not going to use them!'
+                       f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!')
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):

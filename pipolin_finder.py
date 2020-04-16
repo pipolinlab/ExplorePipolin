@@ -58,7 +58,6 @@ def get_flow():
 
         t_check_features = are_atts_present.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts, t_check_polbs])
 
-        # TODO: devono_atts are not used at the moment!
         t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t_check_polbs, t_check_features])
         t6 = is_scaffolding_required.map(gquery=gquery, upstream_tasks=[t5])
 
