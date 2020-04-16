@@ -66,6 +66,7 @@ class GQuery:
         self.trnas: MutableSequence[Feature] = []
         self.target_trnas: MutableSequence[Feature] = []
         self.denovo_atts: MutableSequence[Feature] = []
+        self.target_trnas_denovo: MutableSequence[Feature] = []
         self.pipolin_fragments: MutableSequence[PipolinFragment] = []
 
     def get_contig_by_id(self, contig_id) -> Contig:
@@ -97,12 +98,12 @@ class GQuery:
                        frame=Orientation.orientation_from_blast(hit.hit_frame),
                        contig=self.get_contig_by_id(contig_id))
 
-    def define_target_trnas(self):   # `add_features_from_aragorn`
+    # `add_features_from_aragorn` and `add_features_atts_denovo`
+    def define_target_trna(self, att: Feature):
         for trna in self.trnas:
-            for att in self.atts:
-                if att.contig.contig_id == trna.contig.contig_id:
-                    if self._is_overlapping(range1=(att.start, att.end), range2=(trna.start, trna.end)):
-                        self.target_trnas.append(trna)
+            if att.contig.contig_id == trna.contig.contig_id:
+                if self._is_overlapping(range1=(att.start, att.end), range2=(trna.start, trna.end)):
+                    return trna
 
     def is_single_contig(self):
         return len(self.contigs) == 1
@@ -114,38 +115,44 @@ class GQuery:
         target_contigs.extend(i.contig.contig_id for i in self.target_trnas)
         return len(set(target_contigs)) == 1
 
-    def get_left_right_windows(self):   # `find_atts_denovo()`
+    # `find_atts_denovo`
+    def get_left_right_windows(self):
         polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
+        atts = sorted((i for i in self.atts), key=lambda p: p.start)
 
-        if polymerases[-1].start - polymerases[0].start > 10000:   # TODO: is it small/big enough?
-            raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
-                                 f'within the region ({polymerases[0].start}, {polymerases[-1].end}). It might be, '
-                                 f'that you have two or more pipolins per genome, but we are expecting only one.')
-
-        if self.is_single_contig():
-            length = self.contigs[0].contig_length
-            left_edge = polymerases[0].start - 100000
-            left_window = (left_edge if left_edge >= 0 else 0, polymerases[0].start)
-            right_edge = polymerases[-1].end + 100000
-            right_window = (polymerases[-1].end, right_edge if right_edge <= length else length)
-
-            return left_window, right_window
+        if len(atts) != 0:
+            if not self._is_polymerase_inside(atts=atts, polymerases=polymerases):
+                raise AssertionError('The piPolBs are not within att bounds!')
         else:
-            raise AssertionError('This method is only for complete genomes!')
+            if polymerases[-1].start - polymerases[0].start > 10000:   # TODO: is it small/big enough?
+                raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
+                                     f'within the region ({polymerases[0].start}, {polymerases[-1].end}). It might be, '
+                                     f'that you have two or more pipolins per genome, but we are expecting only one.')
 
-    def is_att_denovo(self, left_repeat, right_repeat):   # `find_atts_denovo()`
+        length = self.contigs[0].contig_length
+        left_edge = polymerases[0].start - 100000
+        left_window = (left_edge if left_edge >= 0 else 0, polymerases[0].start)
+        right_edge = polymerases[-1].end + 100000
+        right_window = (polymerases[-1].end, right_edge if right_edge <= length else length)
+
+        return left_window, right_window
+
+    # `find_atts_denovo`
+    def is_att_denovo(self, left_repeat, right_repeat):
         if self._is_overlapping_att(left_repeat=left_repeat):
             return False
         return self._is_overlapping_trna(left_repeat=left_repeat, right_repeat=right_repeat)
 
-    def _is_overlapping_att(self, left_repeat):   # `find_atts_denovo()`
+    # `find_atts_denovo`
+    def _is_overlapping_att(self, left_repeat):
         for att in self.atts:
             if self._is_overlapping(left_repeat, (att.start, att.end)):
                 return True
 
         return False
 
-    def _is_overlapping_trna(self, left_repeat, right_repeat):   # `find_atts_denovo()`
+    # `find_atts_denovo`
+    def _is_overlapping_trna(self, left_repeat, right_repeat):
         for trna in self.trnas:
             trna_range = (trna.start, trna.end)
             if self._is_overlapping(left_repeat, trna_range) or self._is_overlapping(right_repeat, trna_range):
@@ -153,12 +160,13 @@ class GQuery:
 
         return False
 
-    def get_pipolin_bounds(self, long):   # When scaffolding is not required
+    # `is_scaffolding_required`
+    def get_pipolin_bounds(self, long):
         polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
         atts = sorted((i for i in self.atts), key=lambda p: p.start)
 
-        if not self._is_polymerase_inside(atts, polymerases):
-            raise AssertionError('The polymerase are not within att bounds!')
+        if not self._is_polymerase_inside(atts=atts, polymerases=polymerases):
+            raise AssertionError('The piPolBs are not within att bounds!')
 
         if len(atts) > 3:
             raise AssertionError('There are more than 3 atts!')

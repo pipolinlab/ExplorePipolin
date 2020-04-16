@@ -31,7 +31,7 @@ Options:
  1. The task `find_atts_denovo` works only for complete genomes (SKIPPED for 
  incomplete genomes).
  1. We are expecting a single pipolin per genome, just because we haven't 
- seen genomes with two or more pipolins so far (raised an ERROR otherwise).
+ seen genomes with two or more pipolins so far (raised an ERROR).
  1. From the above, we are expecting a single piPolB or several piPolBs 
  (the gene might be disrupted or duplicated) within some restricted area
  flanked by att repeats.

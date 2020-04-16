@@ -63,7 +63,10 @@ def add_features_from_aragorn(gquery, aragorn_dir):
             feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig=gquery.get_contig_by_id(contig_id))
             gquery.trnas.append(feature)
 
-    gquery.define_target_trnas()
+    for att in gquery.atts:
+        target_trna = gquery.define_target_trna(att)
+        if target_trna is not None:
+            gquery.target_trnas.append(target_trna)
 
 
 @task
@@ -105,7 +108,10 @@ def add_features_atts_denovo(gquery, atts_denovo_dir):
             gquery.denovo_atts.append(Feature(start=att_pair[2], end=att_pair[3],
                                               frame=Orientation.FORWARD, contig=gquery.contigs[0]))
 
-    # TODO: add overlapping tRNAs to target_trnas!!!
+    for att in gquery.denovo_atts:
+        target_trna = gquery.define_target_trna(att)
+        if target_trna is not None:
+            gquery.target_trnas_denovo.append(target_trna)
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
