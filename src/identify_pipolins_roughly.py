@@ -69,7 +69,7 @@ def add_features_from_aragorn(gquery, aragorn_dir):
             gquery.target_trnas.append(target_trna)
 
 
-@task
+@task()
 def find_atts_denovo(genome, gquery, root_dir):
     logger = prefect.context.get('logger')
 
@@ -112,6 +112,25 @@ def add_features_atts_denovo(gquery, atts_denovo_dir):
         target_trna = gquery.define_target_trna(att)
         if target_trna is not None:
             gquery.target_trnas_denovo.append(target_trna)
+
+
+@task
+def are_polbs_present(gquery):
+    logger = prefect.context.get('logger')
+
+    if len(gquery.polbs) == 0:
+        logger.warning('No piPolB! => No pipolin!')
+        raise signals.FAIL()
+
+
+@task(skip_on_upstream_skip=False)
+def are_atts_present(gquery):
+    logger = prefect.context.get('logger')
+
+    if len(gquery.atts) == 0 and len(gquery.denovo_atts) == 0:
+        logger.warning('There is piPolB, but no atts were found! Not able to define pipolin bounds!')
+        # TODO: probably, it makes sense to output piPolB alone in a table
+        raise signals.SKIP()
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):

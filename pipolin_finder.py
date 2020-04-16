@@ -10,8 +10,10 @@ from identify_pipolins_roughly import run_blast_against_ref
 from identify_pipolins_roughly import add_features_from_blast
 from identify_pipolins_roughly import detect_trnas_with_aragorn
 from identify_pipolins_roughly import add_features_from_aragorn
+from identify_pipolins_roughly import are_polbs_present
 from identify_pipolins_roughly import find_atts_denovo
 from identify_pipolins_roughly import add_features_atts_denovo
+from identify_pipolins_roughly import are_atts_present
 from analyse_pipolin_orientation import analyse_pipolin_orientation
 from scaffold_gapped_pipolins import is_scaffolding_required
 from extract_pipolin_regions import extract_pipolin_regions
@@ -47,12 +49,17 @@ def get_flow():
         aragorn_results = detect_trnas_with_aragorn.map(genome=genomes, root_dir=unmapped(out_dir))
         t_add_trnas = add_features_from_aragorn.map(gquery=gquery, aragorn_dir=aragorn_results,
                                                     upstream_tasks=[t_add_polbs, t_add_atts])
+        # TODO: replace FAIL signal with something better
+        t_check_polbs = are_polbs_present.map(gquery=gquery, upstream_tasks=[t_add_trnas])
 
         atts_denovo = find_atts_denovo.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
-                                           upstream_tasks=[t_add_trnas])
+                                           upstream_tasks=[t_check_polbs])
         t_add_denovo_atts = add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
+
+        t_check_features = are_atts_present.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts])
+
         # TODO: devono_atts are not used at the moment!
-        t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts])
+        t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t_check_polbs, t_check_features])
         t6 = is_scaffolding_required.map(gquery=gquery, upstream_tasks=[t5])
 
         pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery,
