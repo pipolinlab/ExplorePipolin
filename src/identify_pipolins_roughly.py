@@ -120,10 +120,10 @@ def are_polbs_present(gquery):
 
     if len(gquery.polbs) == 0:
         logger.warning('No piPolB! => No pipolin!')
-        raise signals.FAIL()
+        raise signals.SKIP()
 
 
-@task(skip_on_upstream_skip=False)
+@task(trigger=prefect.triggers.any_successful)
 def are_atts_present(gquery):
     logger = prefect.context.get('logger')
 

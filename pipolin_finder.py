@@ -49,14 +49,14 @@ def get_flow():
         aragorn_results = detect_trnas_with_aragorn.map(genome=genomes, root_dir=unmapped(out_dir))
         t_add_trnas = add_features_from_aragorn.map(gquery=gquery, aragorn_dir=aragorn_results,
                                                     upstream_tasks=[t_add_polbs, t_add_atts])
-        # TODO: replace FAIL signal with something better
+
         t_check_polbs = are_polbs_present.map(gquery=gquery, upstream_tasks=[t_add_trnas])
 
         atts_denovo = find_atts_denovo.map(genome=genomes, gquery=gquery, root_dir=unmapped(out_dir),
                                            upstream_tasks=[t_check_polbs])
         t_add_denovo_atts = add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
 
-        t_check_features = are_atts_present.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts])
+        t_check_features = are_atts_present.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts, t_check_polbs])
 
         # TODO: devono_atts are not used at the moment!
         t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t_check_polbs, t_check_features])
