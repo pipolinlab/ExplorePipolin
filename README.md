@@ -26,6 +26,16 @@ Options:
   --out-dir PATH
   -h, --help      Show this message and exit.
 ```
+#### Restrictions of the pipeline (to discuss)
+
+ 1. The task `find_atts_denovo` works only for complete genomes (SKIPPED for 
+ incomplete genomes).
+ 1. We are expecting a single pipolin per genome, just because we haven't 
+ seen genomes with two or more pipolins so far (raised an ERROR otherwise).
+ 1. From the above, we are expecting a single piPolB or several piPolBs 
+ (the gene might be disrupted or duplicated) within some restricted area
+ flanked by att repeats.
+ 1. TODO: scaffolding restrictions!
 
 ## Background
 
@@ -57,13 +67,13 @@ The total number of atts is 198
 > Maximum att length is 132
 > Minimum att length is 121
 ```
- 2. Built a MSA with att sequences using MAFFT, MUSCLE
+ 1. Built a MSA with att sequences using MAFFT, MUSCLE
  and T-Coffee (https://www.ebi.ac.uk/Tools/msa). 
  The output format -- Pearson FASTA, otherwise long
  sequence names might be truncated.
- 3. Compared the alignments. Modified them, using 
+ 1. Compared the alignments. Modified them, using 
  Jalview: deleted not conserved regions from both ends.
- 4. Created HMM profile with `hmmbuild` and `hmmpress`.
+ 1. Created HMM profile with `hmmbuild` and `hmmpress`.
 
 
 To extract the subsequence from a genome:

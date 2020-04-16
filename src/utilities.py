@@ -97,7 +97,7 @@ class GQuery:
                        frame=Orientation.orientation_from_blast(hit.hit_frame),
                        contig=self.get_contig_by_id(contig_id))
 
-    def define_target_trnas(self):
+    def define_target_trnas(self):   # `add_features_from_aragorn`
         for trna in self.trnas:
             for att in self.atts:
                 if att.contig.contig_id == trna.contig.contig_id:
@@ -114,8 +114,7 @@ class GQuery:
         target_contigs.extend(i.contig.contig_id for i in self.target_trnas)
         return len(set(target_contigs)) == 1
 
-    def get_left_right_windows(self):
-        # `find_atts_denovo()`
+    def get_left_right_windows(self):   # `find_atts_denovo()`
         polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
 
         if polymerases[-1].start - polymerases[0].start > 10000:   # TODO: is it small/big enough?
@@ -134,22 +133,19 @@ class GQuery:
         else:
             raise AssertionError('This method is only for complete genomes!')
 
-    def is_att_denovo(self, left_repeat, right_repeat):
-        # `find_atts_denovo()`
+    def is_att_denovo(self, left_repeat, right_repeat):   # `find_atts_denovo()`
         if self._is_overlapping_att(left_repeat=left_repeat):
             return False
         return self._is_overlapping_trna(left_repeat=left_repeat, right_repeat=right_repeat)
 
-    def _is_overlapping_att(self, left_repeat):
-        # `find_atts_denovo()`
+    def _is_overlapping_att(self, left_repeat):   # `find_atts_denovo()`
         for att in self.atts:
             if self._is_overlapping(left_repeat, (att.start, att.end)):
                 return True
 
         return False
 
-    def _is_overlapping_trna(self, left_repeat, right_repeat):
-        # `find_atts_denovo()`
+    def _is_overlapping_trna(self, left_repeat, right_repeat):   # `find_atts_denovo()`
         for trna in self.trnas:
             trna_range = (trna.start, trna.end)
             if self._is_overlapping(left_repeat, trna_range) or self._is_overlapping(right_repeat, trna_range):
@@ -157,8 +153,7 @@ class GQuery:
 
         return False
 
-    def get_pipolin_bounds(self, long):
-        # When scaffolding is not required
+    def get_pipolin_bounds(self, long):   # When scaffolding is not required
         polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
         atts = sorted((i for i in self.atts), key=lambda p: p.start)
 

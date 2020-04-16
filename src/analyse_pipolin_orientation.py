@@ -8,33 +8,26 @@ from utilities import CONTEXT_SETTINGS
 
 @task
 def analyse_pipolin_orientation(gquery):
-    # TODO: do we expect a single pipolin per genome?
-    # TODO: how to be with atts_denovo if they are?
-    anchor_trnas = []
-    for trna in gquery.trnas:
-        for att in gquery.atts:
-            if att.contig.contig_id == trna.contig.contig_id:
-                if is_overlapping(range1=(att.start, att.end), range2=(trna.start, trna.end)):
-                    anchor_trnas.append(trna)
+    target_trnas = gquery.target_trnas
 
-    anchor_contigs = [trna.contig.contig_id for trna in anchor_trnas]
-    if len(anchor_trnas) != len(anchor_contigs):
+    targeted_contigs = [trna.contig.contig_id for trna in target_trnas]
+    if len(target_trnas) != len(targeted_contigs):
         raise AssertionError("I am expecting a single tRNA to overlap with a single att (per contig)!")
 
-    for anchor_trna in anchor_trnas:
-        anchor_atts = gquery.get_features_of_contig(contig_id=anchor_trna.contig.contig_id, feature_type='atts')
-        anchor_att_frames = [att.frame for att in anchor_atts]
-        if len(set(anchor_att_frames)) != 1:
-            raise AssertionError('ATTs are expected to be located in the same frame, as they are direct repeats!')
-        if set(anchor_att_frames).pop() == anchor_trna.frame:
-            raise AssertionError('ATT and tRNA should be on the different strands!')
-        anchor_trna.contig.contig_orientation = - anchor_trna.frame
+    for target_trna in target_trnas:
+        targeted_atts = gquery.get_features_of_contig(contig_id=target_trna.contig.contig_id, feature_type='atts')
+        atts_frames = [att.frame for att in targeted_atts]
+        if len(set(atts_frames)) != 1:
+            raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
+        if set(atts_frames).pop() == target_trna.frame:
+            raise AssertionError('ATT and tRNA are expected to be on the different strands!')
+        target_trna.contig.contig_orientation = - target_trna.frame
 
     for contig in gquery.contigs:
         contig_atts = gquery.get_features_of_contig(contig_id=contig.contig_id, feature_type='atts')
         if len(contig_atts) != 0:
-            contig_att_frames = [att.frame for att in contig_atts]
-            if len(set(contig_att_frames)) != 1:
+            atts_frames = [att.frame for att in contig_atts]
+            if len(set(atts_frames)) != 1:
                 raise AssertionError('ATTs are expected to be located in the same frame, as they are direct repeats!')
             contig.contig_orientation = contig_atts[0].frame
 
