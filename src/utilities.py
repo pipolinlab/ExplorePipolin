@@ -90,8 +90,10 @@ class GQuery:
             return self.atts
         elif feature_type == 'trnas':
             return self.trnas
+        elif feature_type == 'target_trnas':
+            return self.target_trnas
         else:
-            raise AssertionError('Feature type can be: "polbs", "atts" or "trnas"!')
+            raise AssertionError('Feature type can be: "polbs", "atts", "trnas" or "target_trnas"!')
 
     def feature_from_blasthit(self, hit, contig_id):
         return Feature(start=hit.hit_start, end=hit.hit_end,
@@ -181,6 +183,38 @@ class GQuery:
                 return atts[0].start - 50, atts[1].end + 50
             else:
                 return atts[1].start - 50, atts[2].end + 50
+
+    # `analyse_pipolin_orientation`
+    def is_single_target_trna_per_contig(self):
+        # there was one case with two target trnas per genome, although usually only one
+        targeted_contigs = [trna.contig.contig_id for trna in self.target_trnas]
+        if len(self.target_trnas) != len(targeted_contigs):
+            raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
+
+    # `analyse_pipolin_orientation`
+    def set_contig_orientation(self, contig: Contig):
+        target_trnas = self.get_features_of_contig(contig_id=contig.contig_id, feature_type='target_trnas')
+        atts = self.get_features_of_contig(contig_id=contig.contig_id, feature_type='atts')
+        atts_frames = [att.frame for att in atts]
+        polbs = self.get_features_of_contig(contig_id=contig.contig_id, feature_type='polbs')
+        polbs_frames = [polb.frame for polb in polbs]
+
+        if len(target_trnas) != 0:
+            if len(set(atts_frames)) != 1:
+                raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
+            if set(atts_frames).pop() == target_trnas[0].frame:
+                raise AssertionError('ATT and tRNA are expected to be on the different strands!')
+            contig.contig_orientation = - target_trnas[0].frame
+
+        elif len(atts) != 0:
+            if len(set(atts_frames)) != 1:
+                raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
+            contig.contig_orientation = atts[0].frame
+
+        if len(polbs) != 0:
+            if len(set(polbs_frames)) != 1:  # an ambiguous case
+                return
+            contig.contig_orientation = polbs[0].frame
 
     @staticmethod
     def _is_overlapping(range1, range2):

@@ -58,8 +58,8 @@ def get_flow():
 
         t_check_features = are_atts_present.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts, t_check_polbs])
 
-        t5 = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t_check_polbs, t_check_features])
-        t6 = is_scaffolding_required.map(gquery=gquery, upstream_tasks=[t5])
+        t_set_orientations = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t_check_features])
+        t6 = is_scaffolding_required.map(gquery=gquery, upstream_tasks=[t_set_orientations])
 
         pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery,
                                                         root_dir=unmapped(out_dir), upstream_tasks=[t6])

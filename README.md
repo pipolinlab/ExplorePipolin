@@ -30,8 +30,13 @@ Options:
 
  1. The task `find_atts_denovo` works only for complete genomes (SKIPPED for 
  incomplete genomes).
+ 1. For our dataset of *E. coli* genomes, no "devono" atts were found with a 
+ minimal word size of 6. So, it seems unlikely to find some other att repeats. 
+ For that reason, only "standard" atts will be used as pipolin boundaries, But,
+ if no "standard" atts were found, "denovo" atts will be used instead. For 
+ more details, check `are_atts_present` task.
  1. We are expecting a single pipolin per genome, just because we haven't 
- seen genomes with two or more pipolins so far (raised an ERROR).
+ seen genomes with two or more pipolins so far (ERROR?).
  1. From the above, we are expecting a single piPolB or several piPolBs 
  (the gene might be disrupted or duplicated) within some restricted area
  flanked by att repeats.
