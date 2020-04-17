@@ -62,8 +62,8 @@ def get_flow():
         t_set_orientations = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t_check_features])
         t_scaffolding = scaffold_pipolins.map(gquery=gquery, upstream_tasks=[t_set_orientations])
 
-        # pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery,
-        #                                                 root_dir=unmapped(out_dir), upstream_tasks=[t_scaffolding])
+        pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery,
+                                                        root_dir=unmapped(out_dir), upstream_tasks=[t_scaffolding])
         # prokka = annotate_pipolins.map(gquery=gquery, pipolins_dir=pipolin_sequences,
         #                                proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
         # prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,

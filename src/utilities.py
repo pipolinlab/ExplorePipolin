@@ -138,13 +138,11 @@ class GQuery:
 
         return left_window, right_window
 
-    # `find_atts_denovo`
     def is_att_denovo(self, left_repeat, right_repeat):
         if self._is_overlapping_att(left_repeat=left_repeat):
             return False
         return self._is_overlapping_trna(left_repeat=left_repeat, right_repeat=right_repeat)
 
-    # `find_atts_denovo`
     def _is_overlapping_att(self, left_repeat):
         for att in self.atts:
             if self._is_overlapping(left_repeat, (att.start, att.end)):
@@ -152,7 +150,6 @@ class GQuery:
 
         return False
 
-    # `find_atts_denovo`
     def _is_overlapping_trna(self, left_repeat, right_repeat):
         for trna in self.trnas:
             trna_range = (trna.start, trna.end)
