@@ -219,37 +219,38 @@ class GQuery:
                 if direction == 'none':
                     left_edge = atts_sorted[0].start - 50
                     right_edge = atts_sorted[-1].end + 50
-                    pipolin = PipolinFragment(contig=unchangeable_contig,
+                    pipolin = PipolinFragment(contig=self.get_contig_by_id(unchangeable_contig.contig_id),
                                               start=left_edge if left_edge >= 0 else 0,
                                               end=right_edge if right_edge <= length else length)
                     pipolin.atts.extend(atts_sorted)
                     self.pipolin_fragments.append(pipolin)
                 elif direction == 'right':
                     left_edge = atts_sorted[0].start - 50
-                    fragment1 = PipolinFragment(contig=unchangeable_contig,
+                    fragment1 = PipolinFragment(contig=self.get_contig_by_id(unchangeable_contig.contig_id),
                                                 start=left_edge if left_edge >= 0 else 0, end=length)
                     fragment1.atts.extend(atts_sorted)
                     self.pipolin_fragments.append(fragment1)
 
+                    # TODO: check HERE!!!
                     right_edge = single_att.end + 50
-                    fragment2 = PipolinFragment(contig=att_only_contigs[0], start=0,
+                    fragment2 = PipolinFragment(contig=self.get_contig_by_id(att_only_contigs[0].contig_id), start=0,
                                                 end=right_edge if right_edge <= att_contig_length else att_contig_length)
                     fragment2.atts.append(single_att)
                     self.pipolin_fragments.append(fragment2)
                 elif direction == 'left':
                     left_edge = single_att.start - 50
-                    fragment1 = PipolinFragment(contig=att_only_contigs[0],
+                    fragment1 = PipolinFragment(contig=self.get_contig_by_id(att_only_contigs[0].contig_id),
                                                 start=left_edge if left_edge >= 0 else 0, end=att_contig_length)
                     fragment1.atts.append(single_att)
                     self.pipolin_fragments.append(fragment1)
 
                     right_edge = atts_sorted[-1].end + 50
-                    fragment2 = PipolinFragment(contig=unchangeable_contig, start=0,
+                    fragment2 = PipolinFragment(contig=self.get_contig_by_id(unchangeable_contig.contig_id), start=0,
                                                 end=right_edge if right_edge <= length else length)
                     fragment2.atts.extend(atts_sorted)
                     self.pipolin_fragments.append(fragment2)
             elif len(att_only_contigs) == 2:
-                middle_fragment = PipolinFragment(contig=unchangeable_contig, start=0,
+                middle_fragment = PipolinFragment(contig=self.get_contig_by_id(unchangeable_contig.contig_id), start=0,
                                                   end=unchangeable_contig.contig_length)
                 middle_fragment.atts.extend(self.get_features_of_contig(contig_id=unchangeable_contig.contig_id,
                                                                         feature_type='atts'))
@@ -258,7 +259,7 @@ class GQuery:
                                                         feature_type='atts')
                 left_atts_sorted = sorted((i for i in left_atts), key=lambda p: p.start)
                 left_edge = left_atts_sorted[0].start - 50
-                left_fragment = PipolinFragment(contig=att_only_contigs[0],
+                left_fragment = PipolinFragment(contig=self.get_contig_by_id(att_only_contigs[0].contig_id),
                                                 start=left_edge if left_edge >= 0 else 0,
                                                 end=att_only_contigs[0].contig_length)
                 left_fragment.atts.extend(left_atts)
@@ -268,7 +269,7 @@ class GQuery:
                 right_atts_sorted = sorted((i for i in right_atts), key=lambda p: p.start)
                 right_edge = right_atts_sorted[-1].end + 50
                 length = att_only_contigs[1].contig_length
-                right_fragment = PipolinFragment(contig=att_only_contigs[1], start=0,
+                right_fragment = PipolinFragment(contig=self.get_contig_by_id(att_only_contigs[1].contig_id), start=0,
                                                  end=right_edge if right_edge <= length else length)
                 right_fragment.atts.extend(right_atts)
 
@@ -290,15 +291,15 @@ class GQuery:
             left_atts = self.get_features_of_contig(contig_id=left_contig.contig_id, feature_type='atts')
             left_atts_sorted = sorted((i for i in left_atts), key=lambda p: p.start)
             left_edge = left_atts_sorted[0].start - 50
-            left_fragment = PipolinFragment(contig=left_contig,
-                                            start= left_edge if left_edge >= 0 else 0, end=left_contig.contig_length)
+            left_fragment = PipolinFragment(contig=self.get_contig_by_id(left_contig.contig_id),
+                                            start=left_edge if left_edge >= 0 else 0, end=left_contig.contig_length)
             left_fragment.atts.extend(left_atts)
 
             right_atts = self.get_features_of_contig(contig_id=right_contig.contig_id, feature_type='atts')
             right_atts_sorted = sorted((i for i in right_atts), key=lambda p: p.start)
             right_edge = right_atts_sorted[-1].end + 50
             length = right_contig.contig_length
-            right_fragment = PipolinFragment(contig=right_contig, start=0,
+            right_fragment = PipolinFragment(contig=self.get_contig_by_id(right_contig.contig_id), start=0,
                                              end=right_edge if right_edge <= length else length)
             right_fragment.atts.extend(right_atts)
 
@@ -315,9 +316,9 @@ class GQuery:
                 print(f'HERE! {polbs_contigs[0].contig_id} with orientation {polbs_contigs[0].contig_orientation}')
                 print(f'HERE! {polbs_contigs[1].contig_id} with orientation {polbs_contigs[1].contig_orientation}')
                 if polbs_contigs[0].contig_length + polbs_contigs[1].contig_length < 15000:
-                    polb0_fragment = PipolinFragment(contig=polbs_contigs[0], start=0,
+                    polb0_fragment = PipolinFragment(contig=self.get_contig_by_id(polbs_contigs[0].contig_id), start=0,
                                                      end=polbs_contigs[0].contig_length)
-                    polb1_fragment = PipolinFragment(contig=polbs_contigs[1], start=0,
+                    polb1_fragment = PipolinFragment(contig=self.get_contig_by_id(polbs_contigs[1].contig_id), start=0,
                                                      end=polbs_contigs[1].contig_length)
 
                     polb0_length = sum((i.end - i.start) for i in self.get_features_of_contig(
@@ -336,14 +337,14 @@ class GQuery:
             else:
                 raise NotImplementedError
         else:
-            polbs_fragments = [PipolinFragment(contig=self.polbs[0].contig,
+            polbs_fragments = [PipolinFragment(contig=self.get_contig_by_id(self.polbs[0].contig.contig_id),
                                                start=0, end=self.polbs[0].contig.contig_length)]
 
         if len(self.target_trnas) > 1 or len(self.target_trnas) == 0:
             raise NotImplementedError
         right_edge = self.target_trnas[0].end + 50
         length = self.target_trnas[0].contig.contig_length
-        right_fragment = PipolinFragment(contig=self.target_trnas[0].contig, start=0,
+        right_fragment = PipolinFragment(contig=self.get_contig_by_id(self.target_trnas[0].contig.contig_id), start=0,
                                          end=right_edge if right_edge <= length else length)
 
         atts_contigs = set([i.contig for i in self.atts])
@@ -363,8 +364,8 @@ class GQuery:
                 left_atts = self.get_features_of_contig(contig_id=left_contig.contig_id, feature_type='atts')
 
             left_edge = left_atts[0].start - 50
-            left_fragment = PipolinFragment(contig=left_contig, start=left_edge if left_edge >= 0 else 0,
-                                            end=left_contig.contig_length)
+            left_fragment = PipolinFragment(contig=self.get_contig_by_id(left_contig.contig_id),
+                                            start=left_edge if left_edge >= 0 else 0, end=left_contig.contig_length)
         else:
             raise NotImplementedError
 
@@ -380,9 +381,9 @@ class GQuery:
         polbs_sorted = sorted((i for i in polbs), key=lambda p: p.start)
         atts_sorted = sorted((i for i in atts), key=lambda p: p.start)
 
-        if polbs_sorted[0].start > atts_sorted[-1].end:
+        if polbs_sorted[0].start > atts_sorted[0].end:
             return 'right', polbs_sorted, atts_sorted
-        elif polbs_sorted[-1].end < atts_sorted[0].start:
+        elif polbs_sorted[-1].end < atts_sorted[-1].start:
             return 'left', polbs_sorted, atts_sorted
         else:
             return 'none', polbs_sorted, atts_sorted

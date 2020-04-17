@@ -4,7 +4,6 @@
 import click
 from prefect import Flow, Parameter, unmapped
 from prefect.tasks.core.constants import Constant
-from prefect.triggers import any_successful
 from utilities import CONTEXT_SETTINGS
 from identify_pipolins_roughly import create_gquery
 from identify_pipolins_roughly import run_blast_against_ref

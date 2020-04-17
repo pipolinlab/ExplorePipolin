@@ -3,7 +3,6 @@
 
 import os
 import click
-from prefect import task
 from utilities import CONTEXT_SETTINGS
 from utilities import Feature, GQuery
 from utilities import read_from_shelve
@@ -22,7 +21,6 @@ def parse_hmmer_tbl(file):
     return hit_names, hit_bounds
 
 
-@task
 def store_new_att_bounds(shelve_in_dir, object_name, att_hmm_dir):
     pipolins = read_from_shelve(os.path.join(shelve_in_dir, 'shelve.db'), 'pipolins')
     for pipolin in pipolins:

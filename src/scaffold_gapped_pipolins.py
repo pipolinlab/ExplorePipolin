@@ -38,7 +38,8 @@ def scaffold_pipolins(gquery: GQuery):
     if gquery.is_single_contig() or gquery.is_on_the_same_contig():
         print('>>>Scaffolding is not required!')
         start, end = gquery.get_pipolin_bounds()
-        pipolin = PipolinFragment(contig=gquery.polbs[0].contig, start=start, end=end)
+        pipolin = PipolinFragment(contig=gquery.get_contig_by_id(gquery.polbs[0].contig.contig_id),
+                                  start=start, end=end)
 
         pipolin.atts.extend(gquery.atts)
         gquery.pipolin_fragments.append(pipolin)
