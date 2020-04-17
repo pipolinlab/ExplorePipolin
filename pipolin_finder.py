@@ -4,6 +4,7 @@
 import click
 from prefect import Flow, Parameter, unmapped
 from prefect.tasks.core.constants import Constant
+from prefect.triggers import any_successful
 from utilities import CONTEXT_SETTINGS
 from identify_pipolins_roughly import create_gquery
 from identify_pipolins_roughly import run_blast_against_ref
@@ -56,18 +57,18 @@ def get_flow():
                                            upstream_tasks=[t_check_polbs])
         t_add_denovo_atts = add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
 
-        t_check_features = are_atts_present.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts, t_check_polbs])
+        t_check_features = are_atts_present.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts])
 
         t_set_orientations = analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t_check_features])
         t_scaffolding = scaffold_pipolins.map(gquery=gquery, upstream_tasks=[t_set_orientations])
 
-        pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery,
-                                                        root_dir=unmapped(out_dir), upstream_tasks=[t_scaffolding])
-        prokka = annotate_pipolins.map(gquery=gquery, pipolins_dir=pipolin_sequences,
-                                       proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
-        prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
-                                                       root_dir=unmapped(out_dir))
-        easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, abricate_dir=unmapped(Constant(None)))
+        # pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery,
+        #                                                 root_dir=unmapped(out_dir), upstream_tasks=[t_scaffolding])
+        # prokka = annotate_pipolins.map(gquery=gquery, pipolins_dir=pipolin_sequences,
+        #                                proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
+        # prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
+        #                                                root_dir=unmapped(out_dir))
+        # easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, abricate_dir=unmapped(Constant(None)))
 
     return flow
 

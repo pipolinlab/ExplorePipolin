@@ -3,14 +3,11 @@
 
 import os
 from prefect import task
-from typing import Mapping
 import click
 from random import randrange
-from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from BCBio import GFF
 from utilities import CONTEXT_SETTINGS
-from utilities import read_from_shelve
 from utilities import read_seqio_records, write_genbank_records
 from utilities import write_gff_records
 from utilities import GQuery, Feature

@@ -1,6 +1,5 @@
 import csv
 import os
-import shelve
 from collections import defaultdict
 from enum import Enum, auto
 from typing import Sequence, MutableSequence, Mapping, MutableMapping
@@ -318,6 +317,7 @@ class GQuery:
     def _try_finish_unchangeable(self) -> Contig:
         att_only_contigs = self._get_att_only_contigs()
 
+        # TODO: fix here!
         if len(att_only_contigs) == 1:
             print('The single record can be created!!!\n')
             return att_only_contigs[0]

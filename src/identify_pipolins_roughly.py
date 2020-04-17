@@ -14,7 +14,6 @@ from utilities import set_proper_location
 from utilities import read_aragorn_batch
 from utilities import blast_genome_against_seq
 from utilities import Orientation, Feature, Contig, GQuery
-from utilities import save_to_shelve
 from utilities import read_blastxml
 from utilities import run_aragorn
 from utilities import read_seqio_records
@@ -120,10 +119,10 @@ def are_polbs_present(gquery):
 
     if len(gquery.polbs) == 0:
         logger.warning('No piPolB! => No pipolin!')
-        raise signals.SKIP()
+        raise signals.FAIL()
 
 
-@task(trigger=prefect.triggers.any_successful)
+@task(skip_on_upstream_skip=False)
 def are_atts_present(gquery):
     logger = prefect.context.get('logger')
 
@@ -138,7 +137,7 @@ def are_atts_present(gquery):
         # TODO: check that it's only one repeat!
         gquery.atts.extend(gquery.denovo_atts)
         gquery.target_trnas.extend(gquery.target_trnas_denovo)
-    else:
+    if len(gquery.denovo_atts) != 0:
         logger.warning(f'Some atts were found by denovo search, but we are not going to use them!'
                        f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!')
 
