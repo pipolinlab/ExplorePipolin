@@ -234,24 +234,25 @@ class GQuery:
                     left_fragment = self._create_unchangeable_fragment(atts_dict, unchangeable_contig, direction)
                     self.pipolin_fragments.append(left_fragment)
 
-                    right_fragment = self._create_att_contig_fragment(direction='right', atts=orphan_atts)
+                    right_fragment = self._create_att_contig_fragment(direction=direction, atts=orphan_atts)
                     self.pipolin_fragments.append(right_fragment)
                 elif direction == 'left':
-                    left_fragment = self._create_att_contig_fragment(direction='left', atts=orphan_atts)
+                    left_fragment = self._create_att_contig_fragment(direction=direction, atts=orphan_atts)
                     self.pipolin_fragments.append(left_fragment)
 
                     right_fragment = self._create_unchangeable_fragment(atts_dict, unchangeable_contig, direction)
                     self.pipolin_fragments.append(right_fragment)
             elif len(att_only_contigs) == 2:
+                # TODO: the order can be also [middle_fragment, left_fragment, right_fragment]
                 middle_fragment = PipolinFragment(contig=self.get_contig_by_id(unchangeable_contig.contig_id),
                                                   start=0, end=unchangeable_contig.contig_length)
                 middle_fragment.atts.extend(atts_dict[unchangeable_contig.contig_id])
 
                 left_atts = atts_dict[att_only_contigs[0].contig_id]
-                left_fragment = self._create_att_contig_fragment(direction='left', atts=left_atts)
+                left_fragment = self._create_att_contig_fragment(direction='right', atts=left_atts)
 
                 right_atts = atts_dict[att_only_contigs[1].contig_id]
-                right_fragment = self._create_att_contig_fragment(direction='right', atts=right_atts)
+                right_fragment = self._create_att_contig_fragment(direction='left', atts=right_atts)
 
                 self.pipolin_fragments.extend([left_fragment, middle_fragment, right_fragment])
         elif len(unchangeable_contigs) == 2:
@@ -300,18 +301,18 @@ class GQuery:
         contig_length = atts[0].contig.contig_length
         if direction == 'left':
             if atts[0].contig.contig_orientation == Orientation.FORWARD:
+                left_edge = 0
+                right_edge = atts[-1].end + 50
+            else:
                 left_edge = atts[0].start - 50
                 right_edge = atts[0].contig.contig_length
-            else:
-                left_edge = 0
-                right_edge = atts[-1].end + 50
         else:
             if atts[0].contig.contig_orientation == Orientation.FORWARD:
-                left_edge = 0
-                right_edge = atts[-1].end + 50
-            else:
                 left_edge = atts[0].start - 50
                 right_edge = contig_length
+            else:
+                left_edge = 0
+                right_edge = atts[-1].end + 50
 
         fragment = PipolinFragment(contig=atts[0].contig, start=left_edge if left_edge >= 0 else 0,
                                    end=right_edge if right_edge <= contig_length else contig_length)
@@ -324,7 +325,7 @@ class GQuery:
         if len(self.target_trnas) > 1 or len(self.target_trnas) == 0:
             raise NotImplementedError
 
-        right_fragment = self._create_att_contig_fragment(direction='right',
+        right_fragment = self._create_att_contig_fragment(direction='left',
                                                           atts=atts_dict[self.target_trnas[0].contig.contig_id])
 
         atts_contigs = set([i.contig for i in self.atts])
@@ -337,7 +338,7 @@ class GQuery:
             else:
                 left_contig = atts_contigs[0]
 
-            left_fragment = self._create_att_contig_fragment(direction='left',
+            left_fragment = self._create_att_contig_fragment(direction='right',
                                                              atts=atts_dict[left_contig.contig_id])
         else:
             raise NotImplementedError
@@ -381,9 +382,9 @@ class GQuery:
 
     @staticmethod
     def _get_direction_of_unchangeable(polbs_sorted, atts_sorted):
-        if polbs_sorted[0].start > atts_sorted[0].end:
+        if polbs_sorted[0].start > atts_sorted[-1].end:
             return 'right'
-        elif polbs_sorted[-1].end < atts_sorted[-1].start:
+        elif polbs_sorted[-1].end < atts_sorted[0].start:
             return 'left'
         else:
             return 'none'
@@ -443,7 +444,7 @@ class GQuery:
     @staticmethod
     def _dict_by_contig_normalized(features):
         return {contig: sorted(list(ps), key=lambda p: p.start) for contig, ps
-                in groupby((i.normalize() for i in features), key=lambda x: x.contig)}
+                in groupby((i for i in features), key=lambda x: x.contig.contig_id)}
 
 
 def read_blastxml(blast_xml):

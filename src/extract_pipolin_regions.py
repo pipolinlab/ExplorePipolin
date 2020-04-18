@@ -33,12 +33,12 @@ def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
 
         for fragment in gquery.pipolin_fragments[:-1]:
             fragment_record = create_fragment_record(fragment=fragment, genome_dict=genome_dict)
-            print(f'@fragment length {len(fragment_record)}')
+            print(f'@fragment length {len(fragment_record)} from {fragment.contig.contig_id}')
             record += fragment_record
             record += sep_record
 
         last_record = create_fragment_record(fragment=gquery.pipolin_fragments[-1], genome_dict=genome_dict)
-        print(f'@fragment length {len(last_record)}')
+        print(f'@fragment length {len(last_record)} from {gquery.pipolin_fragments[-1].contig.contig_id}')
         record += last_record
 
         print(f'@@@ record length {len(record)}')
