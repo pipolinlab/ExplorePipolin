@@ -24,7 +24,6 @@ from easyfig_add_colours import easyfig_add_colours
 REF_POLB = Constant('./data/pi-polB.fa')
 REF_ATT = Constant('./data/attL.fa')
 PROTEINS = Constant('./data/HHpred_proteins.faa')
-ATT_HMM = Constant('./data/att.hmm')
 
 
 def get_flow():

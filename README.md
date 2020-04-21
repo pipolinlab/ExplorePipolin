@@ -29,14 +29,17 @@ Options:
 #### Restrictions of the pipeline (to discuss)
 
  1. The task `find_atts_denovo` works only for complete genomes (SKIPPED for 
- incomplete genomes).
- 1. For our dataset of *E. coli* genomes, no "devono" atts were found with a 
- minimal word size of 6. So, it seems unlikely to find some other att repeats. 
- For that reason, only "standard" atts will be used as pipolin boundaries, But,
- if no "standard" atts were found, "denovo" atts will be used instead. For 
- more details, check `are_atts_present` task.
- 1. We are expecting a single pipolin per genome, just because we haven't 
- seen genomes with two or more pipolins so far (ERROR?).
+ incomplete genomes). It looks for direct repeats of minimal length 6
+ around piPolB(s) with a 100 kbp window.
+ 1. For our dataset of *E. coli* genomes, no "denovo" atts were found. For that
+ reason, only "usual" atts will be used as pipolin boundaries. But, if no 
+ "usual" atts were found, "denovo" atts will be used instead. For more details, 
+ check `are_atts_present` task.
+ 1. If no "usual" or "denovo" atts were found, the pipeline is not going to
+ continue the analysis (FAIL).
+ 1. The pipeline is expecting a single pipolin per genome, just because 
+ we haven't seen genomes with two or more pipolins so far 
+ (`NotImplementedError`).
  1. From the above, we are expecting a single piPolB or several piPolBs 
  (the gene might be disrupted or duplicated) within some restricted area
  flanked by att repeats.
@@ -44,7 +47,7 @@ Options:
 
 ## Background
 
-The main modules (scripts):
+The main modules (scripts): (TODO: some of them not working, REMOVE or FIX)
  * `download_metadata_ncbi.py` -- downloads the metadata for the analysed 
  genomes, such as accessions, organism and strain names
  * `download_genomes_ncbi.py` -- downloads genome (chromosome) sequences 
@@ -63,8 +66,6 @@ The main modules (scripts):
  * `easyfig_add_colours.py`
  
 Prediction of ATTs:
-
-TODO: write a script for de-novo search of direct repeats!!!
 
  1. Prepared ATT sequences with `prepare_atts_for_msa.py`
  ```

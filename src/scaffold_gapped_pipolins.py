@@ -59,7 +59,6 @@ def main(in_dir, out_dir, long):
     The script takes IN_DIR with *.gbk files (generated after annotation and with included atts),
     detects not assembled pipolins and tries to order the contigs into one sequence,
     filling in gaps with NNs and adding the /assembly_gap feature to the *.gbk files.
-    TODO: also learn how to scaffold long pipolins!
     """
     scaffold_pipolins(in_dir, out_dir, long)
 

@@ -73,6 +73,7 @@ class GQuery:
             if contig.contig_id == contig_id:
                 return contig
 
+    # TODO: replace it with _dict_by_contig_normalized()!
     def get_features_of_contig(self, contig_id, feature_type: str) -> MutableSequence[Feature]:
         features_to_return = []
         features = self.get_features_by_type(feature_type=feature_type)
@@ -87,12 +88,10 @@ class GQuery:
             return self.polbs
         elif feature_type == 'atts':
             return self.atts
-        elif feature_type == 'trnas':
-            return self.trnas
         elif feature_type == 'target_trnas':
             return self.target_trnas
         else:
-            raise AssertionError('Feature type can be: "polbs", "atts", "trnas" or "target_trnas"!')
+            raise AssertionError('Feature type can be: "polbs", "atts" or "target_trnas"!')
 
     def feature_from_blasthit(self, hit, contig_id):
         return Feature(start=hit.hit_start, end=hit.hit_end,
@@ -451,6 +450,7 @@ def read_blastxml(blast_xml):
     return SearchIO.read(blast_xml, 'blast-xml')
 
 
+# CHECK
 def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
     roary_groups = {}
     with open(os.path.join(roary_dir, 'gene_presence_absence.csv')) as csv_file:
@@ -491,12 +491,14 @@ def run_aragorn(genome, aragorn_results):
         subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
 
 
+# CHEKC
 def write_genbank_records(gb_records: SeqIORecords, out_dir, gquery):
     records = [record for record in gb_records.values()]
     with open(os.path.join(out_dir, f'{gquery.gquery_id}.gbk'), 'w') as ouf:
         SeqIO.write(records, ouf, 'genbank')
 
 
+# CHECK
 def write_gff_records(in_records, out_dir, gquery):
     records = [record for record in in_records.values()]
     with open(os.path.join(out_dir, f'{gquery.gquery_id}.gff'), 'w') as ouf:
@@ -505,6 +507,7 @@ def write_gff_records(in_records, out_dir, gquery):
         SeqIO.write(records, ouf, format='fasta')
 
 
+# CHECK
 def write_fna_records(gb_records, out_dir):
     for key, value in gb_records.items():
         if len(value) > 1:
@@ -515,6 +518,7 @@ def write_fna_records(gb_records, out_dir):
             SeqIO.write(record, ouf, format='fasta')
 
 
+# CHECK
 def read_from_prokka_dir(prokka_dir, ext):
     files = []
     for file in os.listdir(prokka_dir):

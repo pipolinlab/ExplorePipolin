@@ -41,7 +41,7 @@ def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
         print(f'@fragment length {len(last_record)} from {gquery.pipolin_fragments[-1].contig.contig_id}')
         record += last_record
 
-        print(f'@@@ record length {len(record)}')
+        print(f'@@@ total record length {len(record)}')
 
         record.id = gquery.gquery_id
         record.name = gquery.gquery_id
