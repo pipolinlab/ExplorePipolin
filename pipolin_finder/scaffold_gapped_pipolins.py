@@ -7,8 +7,8 @@ from Bio.Seq import Seq
 from Bio.Alphabet.IUPAC import IUPACAmbiguousDNA
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
-from utilities import CONTEXT_SETTINGS
-from utilities import PipolinFragment, GQuery
+from pipolin_finder.utilities import CONTEXT_SETTINGS
+from pipolin_finder.utilities import PipolinFragment, GQuery
 
 # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
 # https://github.com/biopython/biopython/issues/1755

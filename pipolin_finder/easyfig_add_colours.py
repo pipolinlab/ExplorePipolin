@@ -4,10 +4,10 @@
 import os
 import click
 from prefect import task
-from utilities import CONTEXT_SETTINGS, SeqIORecords
-from utilities import read_seqio_records, write_genbank_records
+from pipolin_finder.utilities import CONTEXT_SETTINGS, SeqIORecords
+from pipolin_finder.utilities import read_seqio_records, write_genbank_records
 from Bio.SeqIO import SeqRecord
-from utilities import GQuery
+from pipolin_finder.utilities import GQuery
 
 red = '255 0 0'   # Primer-independent DNA polymerase PolB
 brick_red = '139 58 58'   # Tyrosine recombinase XerC

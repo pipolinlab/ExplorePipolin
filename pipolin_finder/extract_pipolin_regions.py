@@ -6,9 +6,9 @@ import click
 from Bio.SeqRecord import SeqRecord
 from prefect import task
 from Bio import SeqIO
-from utilities import CONTEXT_SETTINGS, Orientation
-from utilities import GQuery
-from utilities import read_seqio_records
+from pipolin_finder.utilities import CONTEXT_SETTINGS, Orientation
+from pipolin_finder.utilities import GQuery
+from pipolin_finder.utilities import read_seqio_records
 
 
 def create_fragment_record(fragment, genome_dict):

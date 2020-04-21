@@ -3,7 +3,7 @@
 
 import click
 from Bio import SeqIO
-from utilities import CONTEXT_SETTINGS
+from pipolin_finder.utilities import CONTEXT_SETTINGS
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

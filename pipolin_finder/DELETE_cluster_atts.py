@@ -9,7 +9,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
 from Bio.Phylo.TreeConstruction import DistanceCalculator
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
-from utilities import CONTEXT_SETTINGS
+from pipolin_finder.utilities import CONTEXT_SETTINGS
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

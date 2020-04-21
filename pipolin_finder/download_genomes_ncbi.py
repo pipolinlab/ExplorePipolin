@@ -4,7 +4,7 @@
 import os
 import click
 import subprocess
-from utilities import CONTEXT_SETTINGS
+from pipolin_finder.utilities import CONTEXT_SETTINGS
 from Bio import SeqIO
 from io import StringIO
 

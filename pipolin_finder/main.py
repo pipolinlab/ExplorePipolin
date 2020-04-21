@@ -1,25 +1,22 @@
-#!/usr/bin/env -S PYTHONPATH=${PWD}/src python3
-# -*- encoding: utf-8 -*-
-
 import click
 from prefect import Flow, Parameter, unmapped
 from prefect.tasks.core.constants import Constant
-from utilities import CONTEXT_SETTINGS
-from identify_pipolins_roughly import create_gquery
-from identify_pipolins_roughly import run_blast_against_ref
-from identify_pipolins_roughly import add_features_from_blast
-from identify_pipolins_roughly import detect_trnas_with_aragorn
-from identify_pipolins_roughly import add_features_from_aragorn
-from identify_pipolins_roughly import are_polbs_present
-from identify_pipolins_roughly import find_atts_denovo
-from identify_pipolins_roughly import add_features_atts_denovo
-from identify_pipolins_roughly import are_atts_present
-from analyse_pipolin_orientation import analyse_pipolin_orientation
-from scaffold_gapped_pipolins import scaffold_pipolins
-from extract_pipolin_regions import extract_pipolin_regions
-from annotate_pipolins import annotate_pipolins
-from include_atts_into_annotation import include_atts_into_annotation
-from easyfig_add_colours import easyfig_add_colours
+from pipolin_finder.utilities import CONTEXT_SETTINGS
+from pipolin_finder.identify_pipolins_roughly import create_gquery
+from pipolin_finder.identify_pipolins_roughly import run_blast_against_ref
+from pipolin_finder.identify_pipolins_roughly import add_features_from_blast
+from pipolin_finder.identify_pipolins_roughly import detect_trnas_with_aragorn
+from pipolin_finder.identify_pipolins_roughly import add_features_from_aragorn
+from pipolin_finder.identify_pipolins_roughly import are_polbs_present
+from pipolin_finder.identify_pipolins_roughly import find_atts_denovo
+from pipolin_finder.identify_pipolins_roughly import add_features_atts_denovo
+from pipolin_finder.identify_pipolins_roughly import are_atts_present
+from pipolin_finder.analyse_pipolin_orientation import analyse_pipolin_orientation
+from pipolin_finder.scaffold_gapped_pipolins import scaffold_pipolins
+from pipolin_finder.extract_pipolin_regions import extract_pipolin_regions
+from pipolin_finder.annotate_pipolins import annotate_pipolins
+from pipolin_finder.include_atts_into_annotation import include_atts_into_annotation
+from pipolin_finder.easyfig_add_colours import easyfig_add_colours
 
 REF_POLB = Constant('./data/pi-polB.fa')
 REF_ATT = Constant('./data/attL.fa')

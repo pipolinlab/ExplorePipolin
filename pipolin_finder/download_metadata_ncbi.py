@@ -5,7 +5,7 @@ import click
 import subprocess
 from collections import namedtuple
 from Bio import SearchIO
-from utilities import CONTEXT_SETTINGS
+from pipolin_finder.utilities import CONTEXT_SETTINGS
 
 
 def get_assembly_info(acc_id):

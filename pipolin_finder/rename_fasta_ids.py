@@ -2,8 +2,8 @@
 # -*- encoding: utf-8 -*-
 
 import click
-from utilities import CONTEXT_SETTINGS
-from rename_files import create_dict_w_strainnames
+from pipolin_finder.utilities import CONTEXT_SETTINGS
+from pipolin_finder.rename_files import create_dict_w_strainnames
 from Bio import AlignIO
 
 

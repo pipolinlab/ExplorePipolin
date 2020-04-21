@@ -6,18 +6,18 @@ import click
 import prefect
 from prefect import task
 from prefect.engine import signals
-from utilities import CONTEXT_SETTINGS
-from utilities import save_left_right_subsequences
-from utilities import blast_for_identical
-from utilities import extract_repeats
-from utilities import set_proper_location
-from utilities import read_aragorn_batch
-from utilities import blast_genome_against_seq
-from utilities import Orientation, Feature, Contig, GQuery
-from utilities import read_blastxml
-from utilities import run_aragorn
-from utilities import read_seqio_records
-from utilities import define_gquery_id
+from pipolin_finder.utilities import CONTEXT_SETTINGS
+from pipolin_finder.utilities import save_left_right_subsequences
+from pipolin_finder.utilities import blast_for_identical
+from pipolin_finder.utilities import extract_repeats
+from pipolin_finder.utilities import set_proper_location
+from pipolin_finder.utilities import read_aragorn_batch
+from pipolin_finder.utilities import blast_genome_against_seq
+from pipolin_finder.utilities import Orientation, Feature, Contig, GQuery
+from pipolin_finder.utilities import read_blastxml
+from pipolin_finder.utilities import run_aragorn
+from pipolin_finder.utilities import read_seqio_records
+from pipolin_finder.utilities import define_gquery_id
 
 
 @task

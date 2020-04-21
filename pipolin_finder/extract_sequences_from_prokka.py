@@ -3,7 +3,7 @@
 
 import click
 from Bio import SeqIO
-from utilities import CONTEXT_SETTINGS, read_from_prokka_dir
+from pipolin_finder.utilities import CONTEXT_SETTINGS, read_from_prokka_dir
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

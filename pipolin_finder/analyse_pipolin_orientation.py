@@ -3,7 +3,7 @@
 
 import click
 from prefect import task
-from utilities import CONTEXT_SETTINGS
+from pipolin_finder.utilities import CONTEXT_SETTINGS
 
 
 @task

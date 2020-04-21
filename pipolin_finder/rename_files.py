@@ -4,7 +4,7 @@
 import os
 import shutil
 import click
-from utilities import CONTEXT_SETTINGS
+from pipolin_finder.utilities import CONTEXT_SETTINGS
 
 
 def create_dict_w_strainnames(names_file):

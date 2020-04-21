@@ -9,12 +9,12 @@ from prefect import task
 import click
 from typing import MutableSequence
 
-from utilities import CONTEXT_SETTINGS, Orientation
-from utilities import read_gff_records
-from utilities import read_seqio_records
-from utilities import write_genbank_records
-from utilities import write_gff_records
-from utilities import GQuery
+from pipolin_finder.utilities import CONTEXT_SETTINGS, Orientation
+from pipolin_finder.utilities import read_gff_records
+from pipolin_finder.utilities import read_seqio_records
+from pipolin_finder.utilities import write_genbank_records
+from pipolin_finder.utilities import write_gff_records
+from pipolin_finder.utilities import GQuery
 
 
 def add_new_gb_feature(new_feature: SeqFeature, record: SeqRecord):

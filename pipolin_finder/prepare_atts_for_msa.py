@@ -5,9 +5,9 @@ import os
 import click
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-from utilities import CONTEXT_SETTINGS
-from utilities import Feature, GQuery
-from utilities import read_from_shelve
+from pipolin_finder.utilities import CONTEXT_SETTINGS
+from pipolin_finder.utilities import Feature, GQuery
+from pipolin_finder.utilities import read_from_shelve
 
 
 def read_fasta_records(genomes_dir):

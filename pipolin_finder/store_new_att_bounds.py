@@ -3,10 +3,10 @@
 
 import os
 import click
-from utilities import CONTEXT_SETTINGS
-from utilities import Feature, GQuery
-from utilities import read_from_shelve
-from utilities import save_to_shelve
+from pipolin_finder.utilities import CONTEXT_SETTINGS
+from pipolin_finder.utilities import Feature, GQuery
+from pipolin_finder.utilities import read_from_shelve
+from pipolin_finder.utilities import save_to_shelve
 
 
 def parse_hmmer_tbl(file):
