@@ -14,23 +14,23 @@ from utilities import PipolinFragment, GQuery
 # https://github.com/biopython/biopython/issues/1755
 
 
-def create_assembly_gap_record(record):
-    source_feature = SeqFeature(type='source', location=FeatureLocation(1, 100, strand=+1),
-                                qualifiers={'mol_type': record.features[0].qualifiers['mol_type'],
-                                            'organism': record.features[0].qualifiers['organism'],
-                                            'strain': record.features[0].qualifiers['strain']})
-    assembly_gap_seq = Seq('N' * 100, alphabet=IUPACAmbiguousDNA())
-    assembly_gap_qualifiers = {'estimated_length': ['unknown'],
-                               'gap_type': ['within_scaffolds'],
-                               'linkage_evidence': ['pipolin_structure']}
-    assembly_gap_feature = SeqFeature(type='assembly_gap',
-                                      location=FeatureLocation(1, 100, strand=+1),
-                                      qualifiers=assembly_gap_qualifiers)
-    assembly_gap_record = SeqRecord(seq=assembly_gap_seq, id=record.id, name=record.name,
-                                    description=record.description, features=[source_feature, assembly_gap_feature],
-                                    annotations=record.annotations)
-
-    return assembly_gap_record
+# def create_assembly_gap_record(record):
+#     source_feature = SeqFeature(type='source', location=FeatureLocation(1, 100, strand=+1),
+#                                 qualifiers={'mol_type': record.features[0].qualifiers['mol_type'],
+#                                             'organism': record.features[0].qualifiers['organism'],
+#                                             'strain': record.features[0].qualifiers['strain']})
+#     assembly_gap_seq = Seq('N' * 100, alphabet=IUPACAmbiguousDNA())
+#     assembly_gap_qualifiers = {'estimated_length': ['unknown'],
+#                                'gap_type': ['within_scaffolds'],
+#                                'linkage_evidence': ['pipolin_structure']}
+#     assembly_gap_feature = SeqFeature(type='assembly_gap',
+#                                       location=FeatureLocation(1, 100, strand=+1),
+#                                       qualifiers=assembly_gap_qualifiers)
+#     assembly_gap_record = SeqRecord(seq=assembly_gap_seq, id=record.id, name=record.name,
+#                                     description=record.description, features=[source_feature, assembly_gap_feature],
+#                                     annotations=record.annotations)
+#
+#     return assembly_gap_record
 
 
 @task

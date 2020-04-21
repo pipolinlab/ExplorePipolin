@@ -13,7 +13,7 @@ def annotate_pipolins(gquery, pipolins_dir, proteins, root_dir):
     prokka_dir = os.path.join(root_dir, 'prokka')
     os.makedirs(prokka_dir, exist_ok=True)
 
-    subprocess.run(['/home/liubov/repos/prokka/bin/prokka', '--outdir', prokka_dir,
+    subprocess.run(['prokka', '--outdir', prokka_dir,
                     '--prefix', gquery.gquery_id, '--rawproduct', '--cdsrnaolap', '--cpus', '4',
                     '--rfam', '--proteins', proteins, '--force',
                     '--locustag', gquery.gquery_id,

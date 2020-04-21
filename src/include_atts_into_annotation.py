@@ -2,58 +2,39 @@
 # -*- encoding: utf-8 -*-
 
 import os
+
+from Bio.SeqFeature import SeqFeature
+from Bio.SeqRecord import SeqRecord
 from prefect import task
 import click
-from random import randrange
-from Bio.SeqFeature import SeqFeature, FeatureLocation
-from BCBio import GFF
+from typing import MutableSequence
+
 from utilities import CONTEXT_SETTINGS
-from utilities import read_seqio_records, write_genbank_records
+from utilities import read_gff_records
+from utilities import read_seqio_records
+from utilities import write_genbank_records
 from utilities import write_gff_records
-from utilities import GQuery, Feature
+from utilities import GQuery
 
 
-def read_gff_records(file):
-    gff_records = {}
-    with open(file) as inf:
-        for entry in GFF.parse(inf):
-            gff_records[entry.id] = entry
-
-    return gff_records
+def add_new_gb_feature(new_feature: SeqFeature, record: SeqRecord):
+    record.features.append(new_feature)
+    record.features.sort(key=lambda x: x.location.start)
 
 
-def create_att_feature(att: Feature, gquery: GQuery, records_format: str):
-    f_start = att.start - gquery.pipolin_fragments.start
-    f_end = att.end - gquery.pipolin_fragments.start
-    random_number = randrange(10000, 99999)
-    gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{gquery.gquery_id}_{random_number}'],
-                     'rpt_family': ['Att'], 'rpt_type': ['direct']}
-    gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
-                      'ID': [f'{gquery.gquery_id}_{random_number}'], 'inference': ['HMM:custom'],
-                      'locus_tag': [f'{gquery.gquery_id}_{random_number}'],
-                      'rpt_family': ['Att'], 'rpt_type': ['direct']}
-    att_feature = SeqFeature(type='repeat_region',
-                             location=FeatureLocation(start=f_start, end=f_end, strand=att.frame.to_pm_one_encoding()),
-                             qualifiers=gb_qualifiers if records_format == 'gb' else gff_qualifiers)
-    return att_feature
+def create_att_seqfeatures(record_format: str, gquery: GQuery) -> MutableSequence[SeqFeature]:
+    att_seqfeatures = []
+    in_start = 0
+    for fragment in gquery.pipolin_fragments:
+        for att in fragment.atts:
+            att_start = att.start - fragment.start + in_start
+            att_end = att.end - fragment.start + in_start
+            att_feature = gquery.create_att_feature(start=att_start, end=att_end, frame=att.frame,
+                                                    records_format=record_format)
+            att_seqfeatures.append(att_feature)
+        in_start += (fragment.end - fragment.start) + 100
 
-
-def add_new_gb_feature(new_feature, record):
-    new_feature_index = None
-    for i_f, feature in enumerate(record.features):
-        if new_feature.location.start < feature.location.start:
-            new_feature_index = i_f
-            break
-
-    if new_feature_index is None:
-        new_feature_index = len(record.features)
-    record.features.insert(new_feature_index, new_feature)
-
-
-def add_atts(records, records_format, gquery: GQuery):
-    for att in gquery.pipolin_fragments.atts:
-        att_feature = create_att_feature(att=att, gquery=gquery, records_format=records_format)
-        add_new_gb_feature(att_feature, records[gquery.pipolin_fragments.contig.contig_id])
+    return att_seqfeatures
 
 
 @task
@@ -61,14 +42,18 @@ def include_atts_into_annotation(gquery, prokka_dir, root_dir):
     gb_records = read_seqio_records(file=os.path.join(prokka_dir, gquery.gquery_id + '.gbk'), file_format='genbank')
     gff_records = read_gff_records(file=os.path.join(prokka_dir, gquery.gquery_id + '.gff'))
 
-    add_atts(gb_records, 'gb', gquery)
-    add_atts(gff_records, 'gff', gquery)
+    att_seqfeatures = create_att_seqfeatures(record_format='gb', gquery=gquery)
+    for att in att_seqfeatures:
+        add_new_gb_feature(new_feature=att, record=gb_records[gquery.gquery_id])
+    att_seqfeatures = create_att_seqfeatures(record_format='gff', gquery=gquery)
+    for att in att_seqfeatures:
+        add_new_gb_feature(new_feature=att, record=gff_records[gquery.gquery_id])
 
     prokka_atts_dir = os.path.join(root_dir, 'prokka_atts')
     os.makedirs(prokka_atts_dir, exist_ok=True)
 
     write_genbank_records(gb_records=gb_records, out_dir=prokka_atts_dir, gquery=gquery)
-    write_gff_records(in_records=gff_records, out_dir=prokka_atts_dir, gquery=gquery)
+    write_gff_records(gff_records=gff_records, out_dir=prokka_atts_dir, gquery=gquery)
 
     return prokka_atts_dir
 

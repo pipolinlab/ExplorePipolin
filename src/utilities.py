@@ -5,9 +5,11 @@ from enum import Enum, auto
 from typing import Sequence, MutableSequence, Mapping, MutableMapping, Set
 from itertools import groupby
 import subprocess
+from random import randrange
 
 from BCBio import GFF
 from Bio import SearchIO, SeqIO
+from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -445,6 +447,19 @@ class GQuery:
         return {contig: sorted(list(ps), key=lambda p: p.start) for contig, ps
                 in groupby((i for i in features), key=lambda x: x.contig.contig_id)}
 
+    def create_att_feature(self, start: int, end: int, frame: Orientation, records_format: str) -> SeqFeature:
+        random_number = randrange(10000, 99999)
+        gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{self.gquery_id}_{random_number}'],
+                         'rpt_family': ['Att'], 'rpt_type': ['direct']}
+        gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
+                          'ID': [f'{self.gquery_id}_{random_number}'], 'inference': ['HMM:custom'],
+                          'locus_tag': [f'{self.gquery_id}_{random_number}'],
+                          'rpt_family': ['Att'], 'rpt_type': ['direct']}
+        att_feature = SeqFeature(type='repeat_region',
+                                 location=FeatureLocation(start=start, end=end, strand=frame.to_pm_one_encoding()),
+                                 qualifiers=gb_qualifiers if records_format == 'gb' else gff_qualifiers)
+        return att_feature
+
 
 def read_blastxml(blast_xml):
     return SearchIO.read(blast_xml, 'blast-xml')
@@ -485,22 +500,29 @@ def read_seqio_records(file, file_format) -> SeqIORecords:
     return records
 
 
+def read_gff_records(file) -> SeqIORecords:
+    gff_records = {}
+    with open(file) as inf:
+        for entry in GFF.parse(inf):
+            gff_records[entry.id] = entry
+
+    return gff_records
+
+
 def run_aragorn(genome, aragorn_results):
     os.makedirs(aragorn_results, exist_ok=True)
     with open(os.path.join(aragorn_results, define_gquery_id(genome=genome) + '.batch'), 'w') as ouf:
         subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
 
 
-# CHEKC
 def write_genbank_records(gb_records: SeqIORecords, out_dir, gquery):
     records = [record for record in gb_records.values()]
     with open(os.path.join(out_dir, f'{gquery.gquery_id}.gbk'), 'w') as ouf:
         SeqIO.write(records, ouf, 'genbank')
 
 
-# CHECK
-def write_gff_records(in_records, out_dir, gquery):
-    records = [record for record in in_records.values()]
+def write_gff_records(gff_records: SeqIORecords, out_dir, gquery):
+    records = [record for record in gff_records.values()]
     with open(os.path.join(out_dir, f'{gquery.gquery_id}.gff'), 'w') as ouf:
         GFF.write(records, ouf)
         print('##FASTA', file=ouf)

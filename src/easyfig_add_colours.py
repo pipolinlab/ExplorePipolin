@@ -49,23 +49,26 @@ def colour_feature(qualifiers):
                 qualifiers['colour'] = [products_to_colours[product]]
             else:
                 qualifiers['colour'] = [products_to_colours['other']]
-    if 'linkage_evidence' in qualifiers:
-        for evidence in qualifiers['linkage_evidence']:
-            if evidence in products_to_colours:
-                qualifiers['colour'] = [products_to_colours[evidence]]
-            else:
-                qualifiers['colour'] = [products_to_colours['other']]
+    elif 'linkage_evidence' in qualifiers:
+        if qualifiers['estimated_length'] == ['100']:
+            qualifiers['linkage_evidence'] = ['pipolin_structure']
+            qualifiers['estimated_length'] = ['unknown']
+            qualifiers['colour'] = [products_to_colours['pipolin_structure']]
+        else:
+            qualifiers['color'] = [products_to_colours[qualifiers['linkage_evidence'][0]]]
+    else:
+        qualifiers['colour'] = [products_to_colours['other']]
 
 
-def add_colours(gb_records: SeqIORecords):
-    for record in gb_records.values():
-        for feature in record.features:
-            if feature.type in products_to_colours:
-                feature.qualifiers['colour'] = products_to_colours[feature.type]
-            else:
-                colour_feature(feature.qualifiers)
+def add_colours(record: SeqRecord):
+    for feature in record.features:
+        if feature.type in products_to_colours:
+            feature.qualifiers['colour'] = products_to_colours[feature.type]
+        else:
+            colour_feature(feature.qualifiers)
 
 
+# CHECK
 def read_record_ranges(record: SeqRecord):
     ranges = []
     for feature in record.features:
@@ -74,6 +77,7 @@ def read_record_ranges(record: SeqRecord):
     return ranges
 
 
+# CHECK
 def find_feature_position(s_ranges, q_range):
     all_ranges = s_ranges + [q_range]
     all_ranges.sort(key=lambda x: (x[0], x[1]))
@@ -92,6 +96,7 @@ def find_feature_position(s_ranges, q_range):
     return None
 
 
+# CHECK
 def color_feature(record: SeqRecord, feature_position, db_type):
     if record.features[feature_position].qualifiers['colour'] == ['255 250 240']:
         if db_type == 'vir':
@@ -102,6 +107,7 @@ def color_feature(record: SeqRecord, feature_position, db_type):
             raise AssertionError('Something is wrong here!')
 
 
+# CHECK
 def add_info_from_summary(gb_records: SeqIORecords, summary_path, db_type):
     with open(summary_path) as inf:
         _ = inf.readline()   # skip header
@@ -120,6 +126,7 @@ def add_info_from_summary(gb_records: SeqIORecords, summary_path, db_type):
                 gb_records[os.path.basename(summary_path)[:-4]][q_id] = record
 
 
+# CHECK
 def find_and_color_amr_and_virulence(gb_records: SeqIORecords, abricate_dir):
     contents = os.listdir(abricate_dir)
     for content in contents:
@@ -134,7 +141,7 @@ def find_and_color_amr_and_virulence(gb_records: SeqIORecords, abricate_dir):
 @task
 def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
     gb_records = read_seqio_records(file=os.path.join(in_dir, gquery.gquery_id + '.gbk'), file_format='genbank')
-    add_colours(gb_records)
+    add_colours(gb_records[gquery.gquery_id])
     if abricate_dir is not None:
         find_and_color_amr_and_virulence(gb_records, abricate_dir)
     write_genbank_records(gb_records=gb_records, out_dir=in_dir, gquery=gquery)
