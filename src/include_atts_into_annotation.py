@@ -9,7 +9,7 @@ from prefect import task
 import click
 from typing import MutableSequence
 
-from utilities import CONTEXT_SETTINGS
+from utilities import CONTEXT_SETTINGS, Orientation
 from utilities import read_gff_records
 from utilities import read_seqio_records
 from utilities import write_genbank_records
@@ -26,11 +26,11 @@ def create_att_seqfeatures(record_format: str, gquery: GQuery) -> MutableSequenc
     att_seqfeatures = []
     in_start = 0
     for fragment in gquery.pipolin_fragments:
+        fragment_shift = fragment.start if fragment.contig.contig_orientation == Orientation.FORWARD else fragment.end
         for att in fragment.atts:
-            att_start = att.start - fragment.start + in_start
-            att_end = att.end - fragment.start + in_start
-            att_feature = gquery.create_att_feature(start=att_start, end=att_end, frame=att.frame,
-                                                    records_format=record_format)
+            att_start, att_end = sorted([abs(att.start - fragment_shift), abs(att.end - fragment_shift)])
+            att_feature = gquery.create_att_feature(start=att_start + in_start, end=att_end + in_start,
+                                                    frame=att.frame, records_format=record_format)
             att_seqfeatures.append(att_feature)
         in_start += (fragment.end - fragment.start) + 100
 
