@@ -13,8 +13,8 @@ phyla and mitochondria.
 
 ## Installation
 
- 1. `wget https://github.com/liubovch/ExplorePipolin.git`
- 1. `cd ExplorePipolin`
+ 1. Click green button on the right "Clone or Download" => "Download zip"
+ 1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master`
  1. `python3 setup.py install --user` (install in user site-package)
  1. `rehash` (make the new command available)
  
