@@ -12,6 +12,21 @@ phyla and mitochondria.
  elements within bacterial genome.
 
 ## Installation
+First, install the required dependencies:
+
+**python packages**
+ * click
+ * Biopython
+ * bcbio-gff
+ * prefect
+
+**other packages**
+ * ncbi-entrez-direct
+ * ncbi-blast+
+ * aragorn
+ * prokka
+ 
+ Then:
 
  1. Click green button on the right "Clone or Download" => "Download zip"
  1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master`
@@ -21,6 +36,8 @@ phyla and mitochondria.
 #### How to uninstall:
 
 `pip3 uninstall PipolinFinder`
+
+TODO: the binary `find_pipolins` needs to be deleted manually at the moment.
 
 ## Quick usage
 

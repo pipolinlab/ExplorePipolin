@@ -1,7 +1,6 @@
 .idea
 venv/
-data/in_database/
-data/new_analysis/
+data/
 dist/
 build/
 *.egg-info/

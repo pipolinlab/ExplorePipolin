@@ -1,4 +1,5 @@
 import click
+import pkg_resources
 from prefect import Flow, Parameter, unmapped
 from prefect.tasks.core.constants import Constant
 from pipolin_finder.utilities import CONTEXT_SETTINGS
@@ -18,9 +19,9 @@ from pipolin_finder.annotate_pipolins import annotate_pipolins
 from pipolin_finder.include_atts_into_annotation import include_atts_into_annotation
 from pipolin_finder.easyfig_add_colours import easyfig_add_colours
 
-REF_POLB = Constant('./data/pi-polB.fa')
-REF_ATT = Constant('./data/attL.fa')
-PROTEINS = Constant('./data/HHpred_proteins.faa')
+REF_POLB = Constant(pkg_resources.resource_filename('pipolin_finder', 'data/pi-polB.fa'))
+REF_ATT = Constant(pkg_resources.resource_filename('pipolin_finder', 'data/attL.fa'))
+PROTEINS = Constant(pkg_resources.resource_filename('pipolin_finder', '/data/HHpred_proteins.faa'))
 
 
 def get_flow():
