@@ -11,6 +11,17 @@ phyla and mitochondria.
  **PipolinFinder** is a search tool that identifies and annotates pipolin 
  elements within bacterial genome.
 
+## Installation
+
+ 1. `wget https://github.com/liubovch/ExplorePipolin.git`
+ 1. `cd ExplorePipolin`
+ 1. `python3 setup.py install --user` (install in user site-package)
+ 1. `rehash` (make the new command available)
+ 
+#### How to uninstall:
+
+`pip3 uninstall PipolinFinder`
+
 ## Quick usage
 
 As input, PipolinFinder takes FASTA file(s) with genome sequence(s). 
@@ -18,7 +29,7 @@ A genome sequence can be either a single complete chromosome (preferred)
 or contigs (in a single multiFASTA file):
 
 ```bash
-Usage: pipolin_finder.py [OPTIONS] [GENOMES]...
+Usage: find_pipolins [OPTIONS] [GENOMES]...
 
   TODO
 
