@@ -485,7 +485,11 @@ def define_gquery_id(genome):
 def blast_genome_against_seq(genome, seq, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     with open(os.path.join(output_dir, define_gquery_id(genome=genome) + '.fmt5'), 'w') as ouf:
-        subprocess.run(['blastn', '-query', seq, '-subject', genome, '-outfmt', '5'], stdout=ouf)
+        if os.path.basename(output_dir) == 'polb_blast':
+            subprocess.run(['tblastn', '-query', seq, '-subject', genome, '-evalue', '0.1', '-outfmt', '5'],
+                           stdout=ouf)
+        else:
+            subprocess.run(['blastn', '-query', seq, '-subject', genome, '-outfmt', '5'], stdout=ouf)
 
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]

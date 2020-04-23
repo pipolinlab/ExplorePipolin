@@ -19,7 +19,7 @@ from pipolin_finder.annotate_pipolins import annotate_pipolins
 from pipolin_finder.include_atts_into_annotation import include_atts_into_annotation
 from pipolin_finder.easyfig_add_colours import easyfig_add_colours
 
-REF_POLB = Constant(pkg_resources.resource_filename('pipolin_finder', 'data/pi-polB.fa'))
+REF_POLB = Constant(pkg_resources.resource_filename('pipolin_finder', 'data/pi-polB.faa'))
 REF_ATT = Constant(pkg_resources.resource_filename('pipolin_finder', 'data/attL.fa'))
 PROTEINS = Constant(pkg_resources.resource_filename('pipolin_finder', '/data/HHpred_proteins.faa'))
 
@@ -76,6 +76,8 @@ def explore_pipolins(genomes, out_dir):
     """
     TODO
     """
+    # get_flow().visualize()
+
     state = get_flow().run(genomes=genomes, out_dir=out_dir)
     assert state.is_successful()
 
