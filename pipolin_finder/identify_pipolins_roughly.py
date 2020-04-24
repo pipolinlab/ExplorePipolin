@@ -86,6 +86,13 @@ def find_atts_denovo(genome, gquery, root_dir):
     left_repeats, right_repeats = extract_repeats(file=os.path.join(repeats_dir, gquery.gquery_id + '.fmt5'))
     left_repeats = [set_proper_location(seq_range=i, shift=left_window[0]) for i in left_repeats]
     right_repeats = [set_proper_location(seq_range=i, shift=right_window[0]) for i in right_repeats]
+
+    with open(os.path.join(repeats_dir, gquery.gquery_id + '.repeats'), 'w') as ouf:
+        print('left_start', 'left_end', 'right_start', 'right_end', 'length', sep='\t', file=ouf)
+        for repeat_pair in zip(left_repeats, right_repeats):
+            print(repeat_pair[0][0], repeat_pair[0][1], repeat_pair[1][0], repeat_pair[1][1],
+                  repeat_pair[0][1] - repeat_pair[0][0], sep='\t', file=ouf)
+
     atts_denovo = [(i, j) for i, j in zip(left_repeats, right_repeats) if gquery.is_att_denovo(i, j)]
 
     with open(os.path.join(repeats_dir, gquery.gquery_id + '.atts'), 'w') as ouf:
