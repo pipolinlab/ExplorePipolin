@@ -203,9 +203,9 @@ class GQuery:
 
     # scaffolding is required
     def try_creating_single_record(self):
-        polbs_dict = self._dict_by_contig_normalized(self.polbs)
-        atts_dict = self._dict_by_contig_normalized(self.atts)
-        target_trnas_dict = self._dict_by_contig_normalized(self.target_trnas)
+        polbs_dict = self.dict_by_contig_normalized(self.polbs)
+        atts_dict = self.dict_by_contig_normalized(self.atts)
+        target_trnas_dict = self.dict_by_contig_normalized(self.target_trnas)
 
         unchangeable_contigs = self._get_unchangeable_contigs()
 
@@ -443,7 +443,7 @@ class GQuery:
         return atts[0].start < polymerases[0].start and polymerases[-1].end < atts[-1].end
 
     @staticmethod
-    def _dict_by_contig_normalized(features):
+    def dict_by_contig_normalized(features):
         return {contig: sorted(list(ps), key=lambda p: p.start) for contig, ps
                 in groupby((i for i in features), key=lambda x: x.contig.contig_id)}
 

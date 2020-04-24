@@ -134,19 +134,19 @@ def are_atts_present(gquery):
     logger = prefect.context.get('logger')
 
     if len(gquery.atts) == 0 and len(gquery.denovo_atts) == 0:
-        logger.warning('There is piPolB, but no atts were found! Not able to define pipolin bounds!')
+        logger.warning('\n\n>>>There is piPolB, but no atts were found! Not able to define pipolin bounds!\n')
         # TODO: probably, it makes sense to output piPolB(s) alone
-        raise signals.SKIP()
+        # raise signals.SKIP() # let's try cutting from both sides and proceed with annotation
 
-    if len(gquery.atts) == 0:
-        logger.warning(f'No "usual" atts were found, but some atts were found by denovo search!'
-                       f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!')
+    elif len(gquery.atts) == 0:
+        logger.warning(f'\n\n>>>No "usual" atts were found, but some atts were found by denovo search!'
+                       f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!\n')
         # TODO: check that it's only one repeat!
         gquery.atts.extend(gquery.denovo_atts)
         gquery.target_trnas.extend(gquery.target_trnas_denovo)
-    if len(gquery.denovo_atts) != 0:
-        logger.warning(f'Some atts were found by denovo search, but we are not going to use them!'
-                       f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!')
+    elif len(gquery.denovo_atts) != 0:
+        logger.warning(f'\n\n>>>Some atts were found by denovo search, but we are not going to use them!'
+                       f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!\n')
 
 
 def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
