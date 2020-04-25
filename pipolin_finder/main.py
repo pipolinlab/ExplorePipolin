@@ -70,12 +70,13 @@ def get_flow():
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('genomes', type=click.Path(exists=True), nargs=-1)
-@click.option('--out-dir', type=click.Path())
+@click.argument('genomes', type=click.Path(exists=True), nargs=-1, required=True)
+@click.option('--out-dir', type=click.Path(), required=True)
 def explore_pipolins(genomes, out_dir):
     """
     TODO
     """
+
     # get_flow().visualize()
 
     state = get_flow().run(genomes=genomes, out_dir=out_dir)
