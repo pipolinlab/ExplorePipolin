@@ -600,12 +600,13 @@ def extract_repeats(file):
     repeats = read_blastxml(file)
     left_repeats = []
     right_repeats = []
+    sequences = []
     for entry in repeats:
         for hit in entry:
             left_repeats.append((hit.query_start, hit.query_end))
             right_repeats.append((hit.hit_start, hit.hit_end))
-
-    return left_repeats, right_repeats
+            sequences.append(str(hit.hit.seq))
+    return left_repeats, right_repeats, sequences
 
 
 def set_proper_location(seq_range, shift):
