@@ -61,6 +61,20 @@ Options:
 
 TODO: test run.
 
+## Running using Docker
+
+See https://docs.docker.com/install/ to install Docker.
+
+NOTE: you will need superuser privileges and around 3GB of disk space to build 
+the container.
+
+ 1. Click green button on the right "Clone or Download" => "Download zip"
+ 1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master/docker`
+ 1. `sudo docker build -t pipolin_finder .`
+ 1. `sudo docker run --rm pipolin_finder --help` (test)
+ 1. `sudo docker run --rm -v $(pwd):/output -w /output pipolin_finder 
+ --out-dir output ./input_genomes/*.fa` (example run)
+
 #### Restrictions of the pipeline (to discuss)
 
  1. The task `find_atts_denovo` works only for complete genomes (SKIPPED for 
