@@ -1,4 +1,3 @@
-# sudo docker pull debian:buster
 FROM debian:buster
 
 RUN apt-get update && apt-get install -y \
@@ -16,7 +15,6 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install click biopython bcbio-gff prefect
 
 # install prokka
-#RUN cpan Bio::Perl
 RUN wget -O /prokka.zip https://github.com/tseemann/prokka/archive/v1.14.6.zip; \
     unzip -d / /prokka.zip; rm /prokka.zip; \
     # remove some unused databases
@@ -36,4 +34,3 @@ RUN unzip -d / /ExplorePipolin-master.zip; rm /ExplorePipolin-master.zip; \
     pip3 install /ExplorePipolin-master; rm -r /ExplorePipolin-master
 
 ENTRYPOINT ["pipolin_finder"]
-
