@@ -8,52 +8,58 @@ phyla and mitochondria.
 >by a family B DNA polymerase from self-replicating Mobile genetic elements." 
 >Cell reports 21.6 (2017): 1574-1587.](https://doi.org/10.1016/j.celrep.2017.10.039)
 
- **PipolinFinder** is a search tool that identifies and annotates pipolin 
- elements within bacterial genome.
+ **PipolinFinder** is a search tool that identifies, extracts and annotates 
+ pipolin elements within bacterial genome.
 
 ## Installation
-First, install the required dependencies:
+**Install the required dependencies:**
 
-**python packages**
+python packages:
+ * pip
  * click
- * Biopython
+ * biopython
  * bcbio-gff
  * prefect
 
-**other packages**
- * ncbi-entrez-direct
- * ncbi-blast+
- * aragorn
- * prokka
- 
- Then:
+other packages:
+ * [Entrez Direct](https://www.ncbi.nlm.nih.gov/books/NBK179288/) 
+ (not strictly required)
+ * [BLAST+](https://www.ncbi.nlm.nih.gov/books/NBK279690/)
+ * [ARAGORN](https://github.com/TheSEED/aragorn)
+ * [Prokka](https://github.com/tseemann/prokka)
+
+**To install PipolinFinder:**
 
  1. Click green button on the right "Clone or Download" => "Download zip"
  1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master`
- 1. `python3 setup.py install --user` (install in user site-package)
- 1. `rehash` (make the new command available)
+ 1. `pip install .` (install in user site-package) or
+ `sudo pip install .` (requires superuser privileges)
  
 #### How to uninstall:
 
-`pip3 uninstall PipolinFinder`
-
-TODO: the binary `find_pipolins` needs to be deleted manually at the moment.
+`(sudo) pip uninstall PipolinFinder`
 
 ## Quick usage
 
 As input, PipolinFinder takes FASTA file(s) with genome sequence(s). 
 A genome sequence can be either a single complete chromosome (preferred) 
-or contigs (in a single multiFASTA file):
+or contigs (in a single multiFASTA file).
+
+**Test**
 
 ```bash
-Usage: find_pipolins [OPTIONS] [GENOMES]...
+--> pipolin_finder -h
+Usage: pipolin_finder [OPTIONS] [GENOMES]...
 
   TODO
 
 Options:
-  --out-dir PATH
+ --out-dir PATH  [required]
   -h, --help      Show this message and exit.
 ```
+
+TODO: test run.
+
 #### Restrictions of the pipeline (to discuss)
 
  1. The task `find_atts_denovo` works only for complete genomes (SKIPPED for 
