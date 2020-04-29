@@ -74,7 +74,7 @@ def get_flow():
 @click.option('--out-dir', type=click.Path(), required=True)
 def explore_pipolins(genomes, out_dir):
     """
-    TODO
+    PipolinFinder is a search tool that identifies, extracts and annotates pipolin elements within bacterial genome(s).
     """
 
     # get_flow().visualize()

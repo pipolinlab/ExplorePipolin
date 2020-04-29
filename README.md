@@ -49,12 +49,13 @@ or contigs (in a single multiFASTA file).
 
 ```bash
 --> pipolin_finder -h
-Usage: pipolin_finder [OPTIONS] [GENOMES]...
+Usage: pipolin_finder [OPTIONS] GENOMES...
 
-  TODO
+  PipolinFinder is a search tool that identifies, extracts and annotates
+  pipolin elements  within bacterial genome(s).
 
 Options:
- --out-dir PATH  [required]
+  --out-dir PATH  [required]
   -h, --help      Show this message and exit.
 ```
 
