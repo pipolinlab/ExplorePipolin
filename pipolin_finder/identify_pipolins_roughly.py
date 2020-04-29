@@ -1,12 +1,8 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
-
 import os
-import click
 import prefect
 from prefect import task
 from prefect.engine import signals
-from pipolin_finder.utilities import CONTEXT_SETTINGS
+
 from pipolin_finder.utilities import save_left_right_subsequences
 from pipolin_finder.utilities import blast_for_identical
 from pipolin_finder.utilities import extract_repeats
@@ -21,7 +17,7 @@ from pipolin_finder.utilities import define_gquery_id
 
 
 @task
-def create_gquery(genome):
+def create_gquery(genome) -> GQuery:
     gquery = GQuery(gquery_id=define_gquery_id(genome=genome))
     genome_dict = read_seqio_records(file=genome, file_format='fasta')
     for key, value in genome_dict.items():
@@ -32,14 +28,21 @@ def create_gquery(genome):
 
 
 @task
-def run_blast_against_ref(genome, root_dir, reference, dir_name):
-    blast_path = os.path.join(root_dir, dir_name)
-    blast_genome_against_seq(genome=genome, seq=reference, output_dir=blast_path)
+def run_blast_against_polb(genome, root_dir, reference):
+    blast_path = os.path.join(root_dir, 'polb_blast')
+    blast_genome_against_seq(genome=genome, seq=reference, seq_type='protein', output_dir=blast_path)
     return blast_path
 
 
 @task
-def add_features_from_blast(gquery, blast_dir, feature_type):
+def run_blast_against_att(genome, root_dir, reference):
+    blast_path = os.path.join(root_dir, 'att_blast')
+    blast_genome_against_seq(genome=genome, seq=reference, seq_type='nucleotide', output_dir=blast_path)
+    return blast_path
+
+
+@task
+def add_features_from_blast(gquery: GQuery, blast_dir, feature_type):
     entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.gquery_id}.fmt5'))
     for entry in entries:
         for hit in entry:
@@ -55,7 +58,7 @@ def detect_trnas_with_aragorn(genome, root_dir):
 
 
 @task
-def add_features_from_aragorn(gquery, aragorn_dir):
+def add_features_from_aragorn(gquery: GQuery, aragorn_dir):
     entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.gquery_id}.batch'))
     for contig_id, hits in entries.items():
         for hit in hits:
@@ -63,13 +66,13 @@ def add_features_from_aragorn(gquery, aragorn_dir):
             gquery.trnas.append(feature)
 
     for att in gquery.atts:
-        target_trna = gquery.define_target_trna(att)
+        target_trna = gquery.find_target_trna(att)
         if target_trna is not None:
             gquery.target_trnas.append(target_trna)
 
 
 @task()
-def find_atts_denovo(genome, gquery, root_dir):
+def find_atts_denovo(genome, gquery: GQuery, root_dir):
     logger = prefect.context.get('logger')
 
     if not gquery.is_single_contig():
@@ -107,7 +110,7 @@ def find_atts_denovo(genome, gquery, root_dir):
 
 
 @task
-def add_features_atts_denovo(gquery, atts_denovo_dir):
+def add_features_atts_denovo(gquery: GQuery, atts_denovo_dir):
     with open(os.path.join(atts_denovo_dir, gquery.gquery_id + '.atts')) as inf:
         _ = inf.readline()
         for line in inf:
@@ -118,17 +121,17 @@ def add_features_atts_denovo(gquery, atts_denovo_dir):
                                               frame=Orientation.FORWARD, contig=gquery.contigs[0]))
 
     for att in gquery.denovo_atts:
-        target_trna = gquery.define_target_trna(att)
+        target_trna = gquery.find_target_trna(att)
         if target_trna is not None:
             gquery.target_trnas_denovo.append(target_trna)
 
 
 @task
-def are_polbs_present(gquery):
+def are_polbs_present(gquery: GQuery):
     logger = prefect.context.get('logger')
 
     if len(gquery.polbs) == 0:
-        logger.warning('No piPolB! => No pipolin!')
+        logger.warning('No piPolB! => No pipolins!')
         raise signals.FAIL()
 
 
@@ -144,34 +147,10 @@ def are_atts_present(gquery):
     elif len(gquery.atts) == 0:
         logger.warning(f'\n\n>>>No "usual" atts were found, but some atts were found by denovo search!'
                        f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!\n')
-        # TODO: check that it's only one repeat!
+        # TODO: check that it's only one repeat! Although, this shouldn't be a problem.
         gquery.atts.extend(gquery.denovo_atts)
         gquery.target_trnas.extend(gquery.target_trnas_denovo)
+
     elif len(gquery.denovo_atts) != 0:
         logger.warning(f'\n\n>>>Some atts were found by denovo search, but we are not going to use them!'
                        f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!\n')
-
-
-def identify_pipolins_roughly(genomes, out_dir, polbs_blast, atts_blast):
-    out_file = os.path.join(out_dir, 'shelve.db')
-    save_to_shelve(out_file, pipolins, 'pipolins')
-    return 'pipolins'
-
-
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('ref-polb', type=click.Path(exists=True))
-@click.argument('ref-att', type=click.Path(exists=True))
-@click.argument('ref-trna', type=click.Path(exists=True))
-@click.argument('genomes', nargs=-1, type=click.Path(exists=True))
-@click.argument('out-dir')
-def main(ref_polb, ref_att, ref_trna, genomes, out_dir):
-    """
-    GENOMES_DIR contains each genome in a separate FASTA file (strain_id.fa).
-    If there are several contigs in the genome, each contig should have unique name.
-    If OUT_DIR exists, it should be empty.
-    """
-    identify_pipolins_roughly(genomes, out_dir, ref_polb, ref_att, ref_trna)
-
-
-if __name__ == '__main__':
-    main()

@@ -10,6 +10,6 @@ setuptools.setup(
         'pipolin_finder': ['data/attL.fa', 'data/HHpred_proteins.faa', 'data/pi-polB.faa']
     },
     entry_points={
-        'console_scripts': ['pipolin_finder=pipolin_finder.main:explore_pipolins']
+        'console_scripts': ['pipolin_finder=pipolin_finder.main:find_pipolins']
     }
 )

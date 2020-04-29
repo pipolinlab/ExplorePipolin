@@ -2,7 +2,7 @@ import csv
 import os
 from collections import defaultdict
 from enum import Enum, auto
-from typing import Sequence, MutableSequence, Mapping, MutableMapping, Set
+from typing import Sequence, MutableSequence, Mapping, MutableMapping, Set, Optional, Tuple
 from itertools import groupby
 import subprocess
 from random import randrange
@@ -70,10 +70,15 @@ class GQuery:
         self.target_trnas_denovo: MutableSequence[Feature] = []
         self.pipolin_fragments: MutableSequence[PipolinFragment] = []
 
-    def get_contig_by_id(self, contig_id) -> Contig:
+    def get_contig_by_id(self, contig_id: str) -> Contig:
         for contig in self.contigs:
             if contig.contig_id == contig_id:
                 return contig
+
+    @staticmethod
+    def dict_by_contig_normalized(features):
+        return {contig: sorted(list(ps), key=lambda p: p.start) for contig, ps
+                in groupby((i for i in features), key=lambda x: x.contig.contig_id)}
 
     # TODO: replace it with _dict_by_contig_normalized()!
     def get_features_of_contig(self, contig_id, feature_type: str) -> MutableSequence[Feature]:
@@ -95,15 +100,18 @@ class GQuery:
         else:
             raise AssertionError('Feature type can be: "polbs", "atts" or "target_trnas"!')
 
-    def feature_from_blasthit(self, hit, contig_id):
+    def feature_from_blasthit(self, hit, contig_id) -> Feature:
         return Feature(start=hit.hit_start, end=hit.hit_end,
                        frame=Orientation.orientation_from_blast(hit.hit_frame),
                        contig=self.get_contig_by_id(contig_id))
 
     # `add_features_from_aragorn` and `add_features_atts_denovo`
-    def define_target_trna(self, att: Feature):
-        for trna in self.trnas:
-            if att.contig.contig_id == trna.contig.contig_id:
+    def find_target_trna(self, att: Feature) -> Optional[Feature]:
+        trna_dict = self.dict_by_contig_normalized(self.trnas)
+
+        if att.contig.contig_id in trna_dict:
+            trnas = trna_dict[att.contig.contig_id]
+            for trna in trnas:
                 if self._is_overlapping(range1=(att.start, att.end), range2=(trna.start, trna.end)):
                     return trna
 
@@ -120,16 +128,11 @@ class GQuery:
     # `find_atts_denovo`
     def get_left_right_windows(self):
         polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
-        atts = sorted((i for i in self.atts), key=lambda p: p.start)
 
-        if len(atts) != 0:
-            if not self._is_polymerase_inside(atts=atts, polymerases=polymerases):
-                raise AssertionError('The piPolBs are not within att bounds!')
-        else:
-            if polymerases[-1].start - polymerases[0].start > 10000:   # TODO: is it small/big enough?
-                raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
-                                     f'within the region ({polymerases[0].start}, {polymerases[-1].end}). It might be, '
-                                     f'that you have two or more pipolins per genome, but we are expecting only one.')
+        if polymerases[-1].start - polymerases[0].start > 10000:   # TODO: is it small/big enough?
+            raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
+                                 f'within the region ({polymerases[0].start}, {polymerases[-1].end}). It might be, '
+                                 f'that you have two or more pipolins per genome, but we are expecting only one.')
 
         length = self.contigs[0].contig_length
         left_edge = polymerases[0].start - 100000
@@ -442,11 +445,6 @@ class GQuery:
     def _is_polymerase_inside(atts, polymerases):
         return atts[0].start < polymerases[0].start and polymerases[-1].end < atts[-1].end
 
-    @staticmethod
-    def dict_by_contig_normalized(features):
-        return {contig: sorted(list(ps), key=lambda p: p.start) for contig, ps
-                in groupby((i for i in features), key=lambda x: x.contig.contig_id)}
-
     def create_att_feature(self, start: int, end: int, frame: Orientation, records_format: str) -> SeqFeature:
         random_number = randrange(10000, 99999)
         gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{self.gquery_id}_{random_number}'],
@@ -482,14 +480,15 @@ def define_gquery_id(genome):
     return os.path.splitext(os.path.basename(genome))[0]
 
 
-def blast_genome_against_seq(genome, seq, output_dir):
+def blast_genome_against_seq(genome, seq, seq_type, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     with open(os.path.join(output_dir, define_gquery_id(genome=genome) + '.fmt5'), 'w') as ouf:
-        if os.path.basename(output_dir) == 'polb_blast':
+        if seq_type == 'protein':
             subprocess.run(['tblastn', '-query', seq, '-subject', genome, '-evalue', '0.1', '-outfmt', '5'],
                            stdout=ouf)
-        else:
-            subprocess.run(['blastn', '-query', seq, '-subject', genome, '-outfmt', '5'], stdout=ouf)
+        elif seq_type == 'nucleotide':
+            subprocess.run(['blastn', '-query', seq, '-subject', genome, '-evalue', '0.1', '-outfmt', '5'],
+                           stdout=ouf)
 
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
@@ -556,7 +555,7 @@ def read_from_prokka_dir(prokka_dir, ext):
     return records
 
 
-def read_aragorn_batch(aragorn_batch):
+def read_aragorn_batch(aragorn_batch) -> MutableMapping[str, MutableSequence]:
     entries = defaultdict(list)
     with open(aragorn_batch) as inf:
         for line in inf:

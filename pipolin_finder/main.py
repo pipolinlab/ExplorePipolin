@@ -4,7 +4,8 @@ from prefect import Flow, Parameter, unmapped
 from prefect.tasks.core.constants import Constant
 from pipolin_finder.utilities import CONTEXT_SETTINGS
 from pipolin_finder.identify_pipolins_roughly import create_gquery
-from pipolin_finder.identify_pipolins_roughly import run_blast_against_ref
+from pipolin_finder.identify_pipolins_roughly import run_blast_against_polb
+from pipolin_finder.identify_pipolins_roughly import run_blast_against_att
 from pipolin_finder.identify_pipolins_roughly import add_features_from_blast
 from pipolin_finder.identify_pipolins_roughly import detect_trnas_with_aragorn
 from pipolin_finder.identify_pipolins_roughly import add_features_from_aragorn
@@ -31,15 +32,13 @@ def get_flow():
 
         gquery = create_gquery.map(genome=genomes)
 
-        polbs_blast = run_blast_against_ref.map(genome=genomes, root_dir=unmapped(out_dir),
-                                                reference=unmapped(REF_POLB),
-                                                dir_name=unmapped(Constant('polb_blast')))
+        polbs_blast = run_blast_against_polb.map(genome=genomes, root_dir=unmapped(out_dir),
+                                                 reference=unmapped(REF_POLB))
         t_add_polbs = add_features_from_blast.map(gquery=gquery, blast_dir=polbs_blast,
                                                   feature_type=unmapped(Constant('polbs')))
 
-        atts_blast = run_blast_against_ref.map(genome=genomes, root_dir=unmapped(out_dir),
-                                               reference=unmapped(REF_ATT),
-                                               dir_name=unmapped(Constant('att_blast')))
+        atts_blast = run_blast_against_att.map(genome=genomes, root_dir=unmapped(out_dir),
+                                               reference=unmapped(REF_ATT))
         t_add_atts = add_features_from_blast.map(gquery=gquery, blast_dir=atts_blast,
                                                  feature_type=unmapped(Constant('atts')))
 
@@ -72,7 +71,7 @@ def get_flow():
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1, required=True)
 @click.option('--out-dir', type=click.Path(), required=True)
-def explore_pipolins(genomes, out_dir):
+def find_pipolins(genomes, out_dir):
     """
     PipolinFinder is a search tool that identifies, extracts and annotates pipolin elements within bacterial genome(s).
     """
@@ -84,4 +83,4 @@ def explore_pipolins(genomes, out_dir):
 
 
 if __name__ == '__main__':
-    explore_pipolins()
+    find_pipolins()
