@@ -61,12 +61,12 @@ Options:
 
 TODO: test run.
 
-## Running using Docker
+## Running with Docker
 
 See https://docs.docker.com/install/ to install Docker.
 
-NOTE: you will need superuser privileges and around 3GB of disk space to build 
-the container.
+NOTE: superuser privileges and around 3GB of disk space are required
+to build image and run the analysis.
 
  1. Click green button on the right "Clone or Download" => "Download zip"
  1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master/docker`
