@@ -1,13 +1,8 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
-
 import os
-import click
 from Bio.SeqRecord import SeqRecord
 from prefect import task
 from Bio import SeqIO
-from pipolin_finder.utilities import CONTEXT_SETTINGS, Orientation
-from pipolin_finder.utilities import GQuery
+from pipolin_finder.utilities import GQuery, Orientation
 from pipolin_finder.utilities import read_seqio_records
 
 
@@ -49,22 +44,3 @@ def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
         SeqIO.write(sequences=record, handle=ouf, format='fasta')
 
     return pipolins_dir
-
-
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('genomes', type=click.Path(exists=True))
-@click.argument('shelve-in-dir', type=click.Path(exists=True))
-@click.argument('out-dir', type=click.Path())
-@click.option('--long', is_flag=True, help='If long, pipolin regions are identified by leftmost and rightmost '
-                                           'atts. If it is not specified, the closest atts to pi-polB will determine '
-                                           'the pipolin bounds.')
-def main(genomes, shelve_in_dir, out_dir, long):
-    """
-    This script retrieves the information about pipolins from SHELVE_FILE
-    and creates FASTA files with pipolin regions for their further annotation.
-    """
-    extract_pipolin_regions(genomes, shelve_in_dir, out_dir, long)
-
-
-if __name__ == '__main__':
-    main()

@@ -1,20 +1,14 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
-
 import os
-
 from Bio.SeqFeature import SeqFeature
 from Bio.SeqRecord import SeqRecord
 from prefect import task
-import click
 from typing import MutableSequence
 
-from pipolin_finder.utilities import CONTEXT_SETTINGS, Orientation
+from pipolin_finder.utilities import GQuery, Orientation
 from pipolin_finder.utilities import read_gff_records
 from pipolin_finder.utilities import read_seqio_records
 from pipolin_finder.utilities import write_genbank_records
 from pipolin_finder.utilities import write_gff_records
-from pipolin_finder.utilities import GQuery
 
 
 def add_new_gb_feature(new_feature: SeqFeature, record: SeqRecord):
@@ -56,20 +50,3 @@ def include_atts_into_annotation(gquery, prokka_dir, root_dir):
     write_gff_records(gff_records=gff_records, out_dir=prokka_atts_dir, gquery=gquery)
 
     return prokka_atts_dir
-
-
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('shelve-file', type=click.Path(exists=True))
-@click.option('--object-name', required=True)
-@click.argument('orig-annot-dir', type=click.Path(exists=True))
-@click.argument('new-annot-dir', type=click.Path())
-def main(shelve_file, object_name, orig_annot_dir, new_annot_dir):
-    """
-    Adds att regions to the annotations (*.gbk and *.gff files)
-    TODO: add also *.faa and *.ffn files!
-    """
-    include_atts_into_annotation(shelve_file, object_name, orig_annot_dir)
-
-
-if __name__ == '__main__':
-    main()
