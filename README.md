@@ -16,10 +16,6 @@ phyla and mitochondria.
 
 python packages:
  * pip
- * click
- * biopython
- * bcbio-gff
- * prefect
 
 other packages:
  * [Entrez Direct](https://www.ncbi.nlm.nih.gov/books/NBK179288/) 
@@ -94,14 +90,17 @@ to build image and run the analysis.
  flanked by att repeats.
  1. TODO: scaffolding restrictions!
 
-## Background
+## Additional scripts
 
-The main modules (scripts): (TODO: some of them not working, REMOVE or FIX)
+(TODO: install as console scripts)
+
  * `download_metadata_ncbi.py` -- downloads the metadata for the analysed 
  genomes, such as accessions, organism and strain names
  * `download_genomes_ncbi.py` -- downloads genome (chromosome) sequences 
  given NCBI assembly accession (i.e. for a non-complete genome, it 
  downloads all its contigs)
+
+#### TODO: remove this:
 
 Prediction of ATTs:
 
