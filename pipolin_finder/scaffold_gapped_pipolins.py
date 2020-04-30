@@ -1,13 +1,4 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
-
-import click
 from prefect import task
-from Bio.Seq import Seq
-from Bio.Alphabet.IUPAC import IUPACAmbiguousDNA
-from Bio.SeqFeature import SeqFeature, FeatureLocation
-from Bio.SeqRecord import SeqRecord
-from pipolin_finder.utilities import CONTEXT_SETTINGS
 from pipolin_finder.utilities import PipolinFragment, GQuery
 
 # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
@@ -52,22 +43,3 @@ def scaffold_pipolins(gquery: GQuery):
     else:
         print('>>>Scaffolding is required!')
         gquery.try_creating_single_record()
-
-
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('in-dir', type=click.Path(exists=True))
-@click.argument('out-dir', type=click.Path())
-@click.option('--long', is_flag=True, help='If long, pipolin regions are identified by leftmost and rightmost '
-                                           'atts. If it is not specified, the closest atts to pi-polB will determine '
-                                           'the pipolin bounds.')
-def main(in_dir, out_dir, long):
-    """
-    The script takes IN_DIR with *.gbk files (generated after annotation and with included atts),
-    detects not assembled pipolins and tries to order the contigs into one sequence,
-    filling in gaps with NNs and adding the /assembly_gap feature to the *.gbk files.
-    """
-    scaffold_pipolins(in_dir, out_dir, long)
-
-
-if __name__ == '__main__':
-    main()

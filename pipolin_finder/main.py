@@ -59,11 +59,11 @@ def get_flow():
 
         pipolin_sequences = extract_pipolin_regions.map(genome=genomes, gquery=gquery,
                                                         root_dir=unmapped(out_dir), upstream_tasks=[t_scaffolding])
-        prokka = annotate_pipolins.map(gquery=gquery, pipolins_dir=pipolin_sequences,
-                                       proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
-        prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
-                                                       root_dir=unmapped(out_dir))
-        easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, abricate_dir=unmapped(Constant(None)))
+        # prokka = annotate_pipolins.map(gquery=gquery, pipolins_dir=pipolin_sequences,
+        #                                proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
+        # prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
+        #                                                root_dir=unmapped(out_dir))
+        # easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, abricate_dir=unmapped(Constant(None)))
 
     return flow
 

@@ -102,18 +102,7 @@ The main modules (scripts): (TODO: some of them not working, REMOVE or FIX)
  * `download_genomes_ncbi.py` -- downloads genome (chromosome) sequences 
  given NCBI assembly accession (i.e. for a non-complete genome, it 
  downloads all its contigs)
- * `identify_pipolins_roughly.py` using a reference `pi-polB.fa` sequence
- * `analyse_pipolin_orientation`
- * `extract_pipolin_regions.py` It is possible to extract regions, 
- determined by the leftmost and rightmost atts (`--long` option).
- * `annotate_pipolins.py`
- * `predict_atts_with_hmmer.py`
- * `store_new_att_bounds.py` -- parses HMMER output for atts
- * `include_atts_into_annotation.py` 
- TODO: So far, the script includes atts only into GB and GFF files.
- * `scaffold_gapped_pipolins.py`
- * `easyfig_add_colours.py`
- 
+
 Prediction of ATTs:
 
  1. Prepared ATT sequences with `prepare_atts_for_msa.py`
