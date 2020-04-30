@@ -1,13 +1,8 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
-
 import os
-import click
 from prefect import task
-from pipolin_finder.utilities import CONTEXT_SETTINGS, SeqIORecords
+from pipolin_finder.utilities import GQuery, SeqIORecords
 from pipolin_finder.utilities import read_seqio_records, write_genbank_records
 from Bio.SeqIO import SeqRecord
-from pipolin_finder.utilities import GQuery
 
 red = '255 0 0'   # Primer-independent DNA polymerase PolB
 brick_red = '139 58 58'   # Tyrosine recombinase XerC
@@ -145,17 +140,3 @@ def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
     if abricate_dir is not None:
         find_and_color_amr_and_virulence(gb_records, abricate_dir)
     write_genbank_records(gb_records=gb_records, out_dir=in_dir, gquery=gquery)
-
-
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('in-dir', type=click.Path(exists=True))
-@click.argument('abricate_dir', type=click.Path(exists=True), required=False)
-def main(in_dir, abricate_dir):
-    """
-    IN_DIR contains *.gbk files to modify.
-    """
-    easyfig_add_colours(in_dir, abricate_dir)
-
-
-if __name__ == '__main__':
-    main()
