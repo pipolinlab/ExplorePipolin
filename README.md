@@ -89,24 +89,6 @@ It is possible to write conda recipe and upload it to Bioconda canal
  given NCBI assembly accession (i.e. for a non-complete genome, it 
  downloads all its contigs)
 
-## Restrictions of the pipeline (to discuss)
-
- 1. The task `find_atts_denovo` works only for complete genomes (SKIPPED for 
- incomplete genomes). It looks for direct repeats of minimal length 6
- around piPolB(s) with a 100 kbp window.
- 1. For our dataset of *E. coli* genomes, no "denovo" atts were found. For that
- reason, only "usual" atts will be used as pipolin boundaries. But, if no 
- "usual" atts were found, "denovo" atts will be used instead. For more details, 
- check `are_atts_present` task.
- 1. If no "usual" or "denovo" atts were found, the pipeline is not going to
- continue the analysis (FAIL).
- 1. The pipeline is expecting a single pipolin per genome, just because 
- we haven't seen genomes with two or more pipolins so far 
- (`NotImplementedError`).
- 1. From the above, we are expecting a single piPolB or several piPolBs 
- (the gene might be disrupted or duplicated) within some restricted area
- flanked by att repeats.
- 1. TODO: scaffolding restrictions!
 
 #### TODO: remove this:
 
