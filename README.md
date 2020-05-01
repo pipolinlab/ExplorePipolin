@@ -12,36 +12,31 @@ phyla and mitochondria.
  pipolin elements within bacterial genome.
 
 ## Installation
-**Install the required dependencies:**
-
-python packages:
+#### Install from source
+Install the required dependencies:
  * pip
-
-other packages:
  * [Entrez Direct](https://www.ncbi.nlm.nih.gov/books/NBK179288/) 
  (not strictly required)
  * [BLAST+](https://www.ncbi.nlm.nih.gov/books/NBK279690/)
  * [ARAGORN](https://github.com/TheSEED/aragorn)
  * [Prokka](https://github.com/tseemann/prokka)
 
-**To install PipolinFinder:**
+Install PipolinFinder:
 
  1. Click green button on the right "Clone or Download" => "Download zip"
  1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master`
  1. `pip install .` (install in user site-package) or
  `sudo pip install .` (requires superuser privileges)
  
-#### How to uninstall:
+**How to uninstall:**
 
 `(sudo) pip uninstall PipolinFinder`
 
-## Quick usage
+#### Quick usage
 
 As input, PipolinFinder takes FASTA file(s) with genome sequence(s). 
 A genome sequence can be either a single complete chromosome (preferred) 
 or contigs (in a single multiFASTA file).
-
-**Test**
 
 ```bash
 --> pipolin_finder -h
@@ -57,7 +52,7 @@ Options:
 
 TODO: test run.
 
-## Running with Docker
+#### Running with Docker
 
 See https://docs.docker.com/install/ to install Docker.
 
@@ -71,7 +66,30 @@ to build image and run the analysis.
  1. `sudo docker run --rm -v $(pwd):/output -w /output pipolin_finder 
  --out-dir output ./input_genomes/*.fa` (example run)
 
-#### Restrictions of the pipeline (to discuss)
+#### TODO: Running with Singularity
+pros: no need in superuser privileges
+
+cons: as complex as Docker
+
+#### TODO: Bioconda
+pros: easy for user
+
+cons: ?
+
+It is possible to write conda recipe and upload it to Bioconda canal
+(but never done this before).
+
+## Additional scripts
+
+(TODO: install as console scripts)
+
+ * `download_metadata_ncbi.py` -- downloads the metadata for the analysed 
+ genomes, such as accessions, organism and strain names
+ * `download_genomes_ncbi.py` -- downloads genome (chromosome) sequences 
+ given NCBI assembly accession (i.e. for a non-complete genome, it 
+ downloads all its contigs)
+
+## Restrictions of the pipeline (to discuss)
 
  1. The task `find_atts_denovo` works only for complete genomes (SKIPPED for 
  incomplete genomes). It looks for direct repeats of minimal length 6
@@ -89,16 +107,6 @@ to build image and run the analysis.
  (the gene might be disrupted or duplicated) within some restricted area
  flanked by att repeats.
  1. TODO: scaffolding restrictions!
-
-## Additional scripts
-
-(TODO: install as console scripts)
-
- * `download_metadata_ncbi.py` -- downloads the metadata for the analysed 
- genomes, such as accessions, organism and strain names
- * `download_genomes_ncbi.py` -- downloads genome (chromosome) sequences 
- given NCBI assembly accession (i.e. for a non-complete genome, it 
- downloads all its contigs)
 
 #### TODO: remove this:
 
