@@ -2,7 +2,7 @@ import csv
 import os
 from collections import defaultdict
 from enum import Enum, auto
-from typing import Sequence, MutableSequence, Mapping, MutableMapping, Set, Optional, Tuple
+from typing import Sequence, MutableSequence, Mapping, MutableMapping, Set, Optional, Tuple, Dict
 from itertools import groupby
 import subprocess
 from random import randrange
@@ -27,6 +27,9 @@ class Orientation(Enum):
 
     def to_pm_one_encoding(self):
         return +1 if self.FORWARD else -1
+
+    def to_string(self):
+        return 'forward' if self.FORWARD else 'reverse'
 
     def __neg__(self):
         if self is self.FORWARD:

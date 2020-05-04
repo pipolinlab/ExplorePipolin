@@ -19,6 +19,7 @@ from pipolin_finder.extract_pipolin_regions import extract_pipolin_regions
 from pipolin_finder.annotate_pipolins import annotate_pipolins
 from pipolin_finder.include_atts_into_annotation import include_atts_into_annotation
 from pipolin_finder.easyfig_add_colours import easyfig_add_colours
+from pipolin_finder.include_atts_into_annotation import set_correct_positions
 
 REF_POLB = Constant(pkg_resources.resource_filename('pipolin_finder', 'data/pi-polB.faa'))
 REF_ATT = Constant(pkg_resources.resource_filename('pipolin_finder', 'data/attL.fa'))
@@ -63,8 +64,10 @@ def get_flow():
                                        proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
         prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
                                                        root_dir=unmapped(out_dir))
+        prokka_atts_positions = set_correct_positions.map(gquery=gquery, prokka_atts_dir=prokka_atts,
+                                                          root_dir=unmapped(out_dir))
         # TODO: make this task optional
-        easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, abricate_dir=unmapped(Constant(None)))
+        easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts_positions, abricate_dir=unmapped(Constant(None)))
 
     return flow
 
