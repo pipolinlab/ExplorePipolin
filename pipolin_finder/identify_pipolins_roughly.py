@@ -155,7 +155,7 @@ def are_atts_present(gquery: GQuery):
             reverse_denovo_atts = []
             for att in gquery.denovo_atts:
                 reverse_denovo_atts.append(Feature(start=att.start, end=att.end, frame=-att.frame, contig=att.contig))
-                gquery.atts.extend(reverse_denovo_atts)
+            gquery.atts.extend(reverse_denovo_atts)
         else:
             gquery.atts.extend(gquery.denovo_atts)
         gquery.target_trnas.extend(gquery.target_trnas_denovo)
