@@ -1,6 +1,7 @@
 import click
 import pkg_resources
 from prefect import Flow, Parameter, unmapped
+from prefect.engine.state import State
 from prefect.tasks.core.constants import Constant
 from pipolin_finder.utilities import CONTEXT_SETTINGS
 from pipolin_finder.identify_pipolins_roughly import create_gquery
@@ -72,6 +73,13 @@ def get_flow():
     return flow
 
 
+# TODO: is it possible to write better?
+def task_state_handler(obj, old_state: State, new_state):
+    if 'gquery' in old_state.cached_inputs:
+        gquery_id = old_state.cached_inputs['gquery'].value.gquery_id
+        print(f'>>> It was {gquery_id}...')
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('genomes', type=click.Path(), nargs=-1, required=True)
 @click.option('--out-dir', type=click.Path(), required=True)
@@ -82,7 +90,7 @@ def find_pipolins(genomes, out_dir):
 
     # get_flow().visualize()
 
-    state = get_flow().run(genomes=genomes, out_dir=out_dir)
+    state = get_flow().run(genomes=genomes, out_dir=out_dir, task_runner_state_handlers=[task_state_handler])
     assert state.is_successful()
 
 

@@ -121,7 +121,6 @@ def add_features_atts_denovo(gquery: GQuery, atts_denovo_dir):
                                               frame=Orientation.FORWARD, contig=gquery.contigs[0]))
 
     for att in gquery.denovo_atts:
-        print(type(att.start), type(att.end))
         target_trna = gquery.find_target_trna(att)
         if target_trna is not None:
             gquery.target_trnas_denovo.append(target_trna)
