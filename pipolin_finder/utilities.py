@@ -2,7 +2,7 @@ import csv
 import os
 from collections import defaultdict
 from enum import Enum, auto
-from typing import Sequence, MutableSequence, Mapping, MutableMapping, Set, Optional, Tuple, Dict
+from typing import Sequence, MutableSequence, Mapping, MutableMapping, Set, Optional
 from itertools import groupby
 import subprocess
 from random import randrange
@@ -46,24 +46,24 @@ class Contig:
 
 
 class Feature:
-    def __init__(self, start, end, frame, contig: Contig):
-        self.start: int = start
-        self.end: int = end
-        self.frame: Orientation = frame
-        self.contig: Contig = contig
+    def __init__(self, start: int, end: int, frame: Orientation, contig: Contig):
+        self.start = start
+        self.end = end
+        self.frame = frame
+        self.contig = contig
 
 
 class PipolinFragment:
-    def __init__(self, contig, start, end):
-        self.contig: Contig = contig
-        self.start: int = start
-        self.end: int = end
+    def __init__(self, contig: Contig, start: int, end: int):
+        self.contig = contig
+        self.start = start
+        self.end = end
         self.atts: MutableSequence[Feature] = []
 
 
 class GQuery:
-    def __init__(self, gquery_id):
-        self.gquery_id: str = gquery_id
+    def __init__(self, gquery_id: str):
+        self.gquery_id = gquery_id
         self.contigs: MutableSequence[Contig] = []
         self.polbs: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
