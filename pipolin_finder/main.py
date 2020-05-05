@@ -65,10 +65,11 @@ def get_flow():
                                        proteins=unmapped(PROTEINS), root_dir=unmapped(out_dir))
         prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
                                                        root_dir=unmapped(out_dir))
-        prokka_atts_positions = set_correct_positions.map(gquery=gquery, prokka_atts_dir=prokka_atts,
-                                                          root_dir=unmapped(out_dir))
         # TODO: make this task optional
-        easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts_positions, abricate_dir=unmapped(Constant(None)))
+        t_easyfig = easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, abricate_dir=unmapped(Constant(None)))
+        # TODO: when easyfig skipped, set (skip_on_upstream_skip=False)
+        # prokka_atts_positions = set_correct_positions.map(gquery=gquery, prokka_atts_dir=prokka_atts,
+        #                                                   root_dir=unmapped(out_dir), upstream_tasks=[t_easyfig])
 
     return flow
 
