@@ -88,8 +88,13 @@ def find_pipolins(genomes, out_dir):
     """
     PipolinFinder is a search tool that identifies, extracts and annotates pipolin elements within bacterial genome(s).
     """
-
-    # get_flow().visualize()
+    # from graphviz import Digraph
+    # graph: Digraph = get_flow().visualize(filename='/dev/null')
+    # graph.node_attr.update(fontsize='18', fontname='DejaVuSansMono')
+    # graph.render('data/test')
+    # # modify test in text editor
+    # # dot -Tpdf test > test.pdf
+    # # check the result
 
     state = get_flow().run(genomes=genomes, out_dir=out_dir, task_runner_state_handlers=[task_state_handler])
     assert state.is_successful()

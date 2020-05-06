@@ -28,7 +28,7 @@ products_to_colours = {'Primer-independent DNA polymerase PolB': red,
                        'Type I restriction modification enzyme': yellow,
                        'Type I restriction modification system methyltransferase (hsdM)': yellow,
                        'metallohydrolase': magenta, 'excisionase': purple,
-                       'Uracil-DNA glycosylase': cyan, 'tRNA-Leu': green,
+                       'Uracil-DNA glycosylase': cyan, 'tRNA-Leu': green, #'tRNA-Arg': green,
                        'repeat_region': blue, 'pipolin_structure': black,
                        'paired-ends': pink, 'Prophage integrase IntS': brown,
                        'other': floral_white}
