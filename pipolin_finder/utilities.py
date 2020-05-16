@@ -432,6 +432,7 @@ class GQuery:
             contigs = list(att_only_contigs)
 
             if len(self.dict_by_contig_normalized(features=self.target_trnas)[contigs[0].contig_id]) != 0:
+                # TODO: here sometimes fails for LREC241: KeyError: 'NODE_38'
                 print('The single record can be created!!!\n')
                 return [contigs[1], contigs[0]]
             elif len(self.dict_by_contig_normalized(features=self.target_trnas)[contigs[1].contig_id]) != 0:

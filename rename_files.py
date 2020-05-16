@@ -4,7 +4,8 @@
 import os
 import shutil
 import click
-from pipolin_finder.utilities import CONTEXT_SETTINGS
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 def create_dict_w_strainnames(names_file):

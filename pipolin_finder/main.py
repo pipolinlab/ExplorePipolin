@@ -31,6 +31,7 @@ def get_flow():
     with Flow('MAIN') as flow:
         genomes = Parameter('genomes')
         out_dir = Parameter('out_dir')
+        abricate_dir = Parameter('abricate_dir')
 
         gquery = create_gquery.map(genome=genomes)
 
@@ -66,7 +67,9 @@ def get_flow():
         prokka_atts = include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
                                                        root_dir=unmapped(out_dir))
         # TODO: make this task optional
-        t_easyfig = easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, abricate_dir=unmapped(Constant(None)))
+        t_easyfig = easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts,
+                                            abricate_dir=unmapped(abricate_dir),
+                                            upstream_tasks=[t_scaffolding])
         # TODO: when easyfig skipped, set (skip_on_upstream_skip=False)
         # prokka_atts_positions = set_correct_positions.map(gquery=gquery, prokka_atts_dir=prokka_atts,
         #                                                   root_dir=unmapped(out_dir), upstream_tasks=[t_easyfig])
@@ -82,9 +85,10 @@ def task_state_handler(obj, old_state: State, new_state):
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('genomes', type=click.Path(), nargs=-1, required=True)
+@click.argument('genomes', type=click.Path(exists=True), nargs=-1, required=True)
 @click.option('--out-dir', type=click.Path(), required=True)
-def find_pipolins(genomes, out_dir):
+@click.option('--abricate_dir', type=click.Path(exists=True))
+def find_pipolins(genomes, out_dir, abricate_dir):
     """
     PipolinFinder is a search tool that identifies, extracts and annotates pipolin elements within bacterial genome(s).
     """
@@ -96,7 +100,8 @@ def find_pipolins(genomes, out_dir):
     # # dot -Tpdf test > test.pdf
     # # check the result
 
-    state = get_flow().run(genomes=genomes, out_dir=out_dir, task_runner_state_handlers=[task_state_handler])
+    state = get_flow().run(genomes=genomes, out_dir=out_dir, abricate_dir=abricate_dir,
+                           task_runner_state_handlers=[task_state_handler])
     assert state.is_successful()
 
 

@@ -1,0 +1,151 @@
+---
+title: "Phylogenetic Analysis"
+author: "Liubov Chuprikova"
+date: "5/15/2020"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, results='hide', message=FALSE}
+# load packages
+library(DECIPHER)
+library(dendextend)
+library(phytools)
+library(ggtree)
+library(ggplot2)
+```
+
+## Dendextend tanglegrams
+
+```{r}
+pipolb_dir = '~/PycharmProjects/ExplorePipolin/data/new_analysis/phylogeny/piPolBs/'
+core_dir = '~/PycharmProjects/ExplorePipolin/data/new_analysis/phylogeny/core/'
+```
+
+```{r}
+dnd_pipolb_mafft <- ReadDendrogram(paste0(pipolb_dir, 'piPolB_concat.MAFFT-L-INS-i.renamed.txt.treefile'))
+dnd_pipolb_prank <- ReadDendrogram(paste0(pipolb_dir, 'piPolB_concat.PRANKcodon.renamed.txt.treefile'))
+print(cor_cophenetic(dnd_pipolb_mafft, dnd_pipolb_prank, method_coef = 'spearman'))
+print(cor_cophenetic(dnd_pipolb_mafft, dnd_pipolb_prank, method_coef = 'pearson'))
+```
+```{r}
+dnd_core_mafft <- ReadDendrogram(paste0(core_dir, 'ROARYwMAFFT.core_gene_alignment.LREC_NCBI.aln.treefile'))
+
+print(cor_cophenetic(dnd_core_mafft, dnd_pipolb_mafft, method_coef = 'spearman'))
+print(cor_cophenetic(dnd_core_mafft, dnd_pipolb_prank, method_coef = 'spearman'))
+
+print(cor_cophenetic(dnd_core_mafft, dnd_pipolb_mafft, method_coef = 'pearson'))
+print(cor_cophenetic(dnd_core_mafft, dnd_pipolb_prank, method_coef = 'pearson'))
+
+```
+```{r}
+print(entanglement(dnd_pipolb_mafft, dnd_pipolb_prank))
+print(entanglement(dnd_core_mafft, dnd_pipolb_mafft))
+print(entanglement(dnd_core_mafft, dnd_pipolb_prank))
+```
+```{r}
+dndlist_pipolb_core <- dendlist(dnd_core_mafft, dnd_pipolb_mafft)
+tanglegram(dndlist_pipolb_core, faster = FALSE, sort = TRUE, 
+           margin_inner = 5,
+           lab.cex = 0.7, lwd = 1,
+           common_subtrees_color_branches = TRUE,
+           highlight_branches_lwd = FALSE,
+           main_left = 'Core genes', main_right = 'piPolBs'
+)
+```
+
+### Read metadata and define phylogroups coloring
+
+```{r}
+mdir <- '/home/liubov/PycharmProjects/ExplorePipolin/data/new_analysis/phylogeny/'
+mdata <- read.csv(paste0(mdir, 'accessions_to_strainnames.tsv'),
+                  sep = '\t', header = FALSE)
+colnames(mdata) <- c('strain', 'accession', 'phylogroup', 'dataset')
+mdata$color <- NA
+mdata$color[mdata$phylogroup == 'A'] <- 'orange'
+mdata$color[mdata$phylogroup == 'B1'] <- 'blue'
+mdata$color[mdata$phylogroup == 'C'] <- 'green'
+mdata$color[mdata$phylogroup == 'D'] <- 'sienna'
+
+cols <- setNames(mdata$color, mdata$strain)
+```
+
+```{r}
+dndlist_pipolb_core <- dendlist(dnd_core_mafft, dnd_pipolb_mafft)
+tanglegram(dndlist_pipolb_core, faster = FALSE, sort = TRUE, 
+           margin_inner = 5, cex_main = 1.5,
+           lab.cex = 0.5, lwd = 0.5,
+           color_lines = cols[labels(dnd_core_mafft)],
+           common_subtrees_color_branches = FALSE,
+           highlight_branches_lwd = FALSE,
+           main_left = 'Core genes', main_right = 'piPolBs',
+           rank_branches = TRUE#, hang = TRUE
+)
+```
+
+## Phytools tanglegrams
+
+```{r}
+phy_pipolb_mafft <- read.newick(paste0(pipolb_dir, 'piPolB_concat.MAFFT-L-INS-i.renamed.txt.treefile'))
+phy_pipolb_prank <- read.newick(paste0(pipolb_dir, 'piPolB_concat.PRANKcodon.renamed.txt.treefile'))
+phy_core_mafft <- read.newick(paste0(core_dir, 'ROARYwMAFFT.core_gene_alignment.LREC_NCBI.aln.treefile'))
+```
+
+```{r}
+dataset_info = data.frame(strain = mdata$strain, dataset = mdata$dataset)
+
+grp <- list(A = as.vector(subset(mdata$strain, mdata$phylogroup == 'A')),
+            B1 = as.vector(subset(mdata$strain, mdata$phylogroup == 'B1')),
+            C = as.vector(subset(mdata$strain, mdata$phylogroup == 'C')),
+            D = as.vector(subset(mdata$strain, mdata$phylogroup == 'D')))
+
+tree_core <- ggtree(phy_core_mafft, layout="circular") +
+  geom_tiplab(size = 1.5, offset = 0.0002, show.legend = F) +
+  geom_treescale()
+
+tree_core <- tree_core %<+% dataset_info + 
+  geom_tippoint(aes(color = dataset), size = 0.5, show.legend = F)
+
+groupOTU(tree_core, grp, 'Phylogroup') +
+  aes(color = Phylogroup) +
+  theme(legend.position = 'right') +
+  scale_colour_manual(breaks = c('A','B1', 'C', 'D', 'NCBI', 'LREC'),
+                      values=c('grey', 'orange', 'blue',
+                               'green', 'sienna', 'red', 'black'))
+
+```
+
+```{r}
+phy_tang <- cophylo(phy_core_mafft, phy_pipolb_mafft)
+```
+
+```{r}
+plot(phy_tang, fsize = 0.2, link.type='curved', link.lty = 'solid', link.lwd = 0.5,
+     link.col = cols[phy_tang$assoc[,1]], lwd = 0.5, pts = F, ftype = 'b')
+```
+
+## Outgroups
+
+```{r, echo=FALSE}
+# outgroups = c('18-1', 'MRY16-398')
+
+# core_OG_mafft <- 
+#   read.newick(paste0(core_dir,
+#                      'OGsp_ROARYwMAFFT.core_gene_alignment.LREC_NCBI_OG.aln.treefile'))
+# ggtree(core_OG_mafft) + geom_tiplab(size = 1.5,
+#                                     aes(color = label %in% outgroups),
+#                                     show.legend = F)
+# pipolb_OG_mafft <- 
+#   read.newick(paste0(pipolb_dir,
+#                      'mafft/OGsp_pi-polB_concat.MAFFT-L-INS-i.renamed.txt.treefile'))
+# ggtree(pipolb_OG_mafft) + geom_tiplab(size = 1.5,
+#                                       aes(color = label %in% outgroups),
+#                                       show.legend = F)
+
+```
+

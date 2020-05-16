@@ -63,7 +63,6 @@ def add_colours(record: SeqRecord):
             colour_feature(feature.qualifiers)
 
 
-# CHECK
 def read_record_ranges(record: SeqRecord):
     ranges = []
     for feature in record.features:
@@ -72,7 +71,6 @@ def read_record_ranges(record: SeqRecord):
     return ranges
 
 
-# CHECK
 def find_feature_position(s_ranges, q_range):
     all_ranges = s_ranges + [q_range]
     all_ranges.sort(key=lambda x: (x[0], x[1]))
@@ -91,7 +89,6 @@ def find_feature_position(s_ranges, q_range):
     return None
 
 
-# CHECK
 def color_feature(record: SeqRecord, feature_position, db_type):
     if record.features[feature_position].qualifiers['colour'] == ['255 250 240']:
         if db_type == 'vir':
@@ -102,7 +99,6 @@ def color_feature(record: SeqRecord, feature_position, db_type):
             raise AssertionError('Something is wrong here!')
 
 
-# CHECK
 def add_info_from_summary(gb_records: SeqIORecords, summary_path, db_type):
     with open(summary_path) as inf:
         _ = inf.readline()   # skip header
@@ -113,24 +109,22 @@ def add_info_from_summary(gb_records: SeqIORecords, summary_path, db_type):
             q_cov = float(entry_line[9])
 
             if q_cov >= 10.0:
-                record = gb_records[os.path.basename(summary_path)[:-4]][q_id]
+                record = gb_records[q_id]
                 record_ranges = read_record_ranges(record)
                 feature_position = find_feature_position(record_ranges, q_location)
                 if feature_position is not None:
                     color_feature(record, feature_position, db_type)
-                gb_records[os.path.basename(summary_path)[:-4]][q_id] = record
+                gb_records[q_id] = record
 
 
-# CHECK
-def find_and_color_amr_and_virulence(gb_records: SeqIORecords, abricate_dir):
+def find_and_color_amr_and_virulence(gquery: GQuery, gb_records: SeqIORecords, abricate_dir):
     contents = os.listdir(abricate_dir)
     for content in contents:
         if content in VIRULENCE_DBs or content in AMR_DBs:
             content_path = os.path.join(abricate_dir, content)
             db_type = 'vir' if content in VIRULENCE_DBs else 'amr'
-            summaries = os.listdir(content_path)
-            for summary in summaries:
-                add_info_from_summary(gb_records, os.path.join(content_path, summary), db_type)
+            summary_path = os.path.join(content_path, gquery.gquery_id + '.tab')
+            add_info_from_summary(gb_records, summary_path, db_type)
 
 
 @task
@@ -138,5 +132,5 @@ def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
     gb_records = read_seqio_records(file=os.path.join(in_dir, gquery.gquery_id + '.gbk'), file_format='genbank')
     add_colours(gb_records[gquery.gquery_id])
     if abricate_dir is not None:
-        find_and_color_amr_and_virulence(gb_records, abricate_dir)
+        find_and_color_amr_and_virulence(gquery, gb_records, abricate_dir)
     write_genbank_records(gb_records=gb_records, out_dir=in_dir, gquery=gquery)
