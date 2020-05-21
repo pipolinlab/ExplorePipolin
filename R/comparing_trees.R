@@ -56,9 +56,21 @@ plot(phy_tang, fsize = 0.35, link.type='curved', link.lty = 'solid', link.lwd = 
 
 
 
-#### dendextend tanglegram ####
+#### dendextend correlation ####
 library(DECIPHER)
 library(dendextend)
+cor_cophenetic(phy_core_mafft, phy_pipolb_mafft) # 0.6269415 ???
+cor_cophenetic(phy_core_mafft, phy_pipolb_prank) # 0.3099922
+cor_cophenetic(phy_pipolb_mafft, phy_pipolb_prank) # 0.4714429 ???
+
+cor_cophenetic(phy_core_mafft, phy_pipolb_mafft,
+               method_coef = 'spearman') # 0.6428999 ???
+cor_cophenetic(phy_core_mafft, phy_pipolb_prank,
+               method_coef = 'spearman') # 0.2285895
+cor_cophenetic(phy_pipolb_mafft, phy_pipolb_prank,
+               method_coef = 'spearman') # 0.6077032 ???
+
+# Hmmmm, this is strange...
 
 dnd_pipolb_mafft <- ReadDendrogram(paste0(
   pipolb_dir, 'piPolB_concat.MAFFT-L-INS-i.renamed.txt.treefile'))
@@ -66,15 +78,19 @@ dnd_pipolb_prank <- ReadDendrogram(paste0(
   pipolb_dir, 'piPolB_concat.PRANKcodon.renamed.txt.treefile'))
 dnd_core_mafft <- ReadDendrogram(paste0(
   core_dir, 'ROARYwMAFFT.core_gene_alignment.LREC_NCBI.aln.treefile'))
+dnd_core_prank <- ReadDendrogram(paste0(
+  core_dir, 'ROARYwPRANK.core_gene_alignment.LREC_NCBI.aln.treefile'))
 
-dndlist_pipolb_core <- dendlist(dnd_core_mafft, dnd_pipolb_mafft)
-tanglegram(dndlist_pipolb_core, faster = FALSE, sort = TRUE, 
-           margin_inner = 5, cex_main = 1.4,
-           lab.cex = 0.8, lwd = 1,
-           color_lines = cols[labels(dnd_core_mafft)],
-           common_subtrees_color_branches = FALSE,
-           highlight_branches_lwd = FALSE,
-           main_left = 'Core genes', main_right = 'piPolBs',
-           rank_branches = TRUE#, hang = TRUE
-)
+cor_common_nodes(dnd_core_mafft, dnd_core_prank) # 0.9945055
+cor_cophenetic(dnd_pipolb_mafft, dnd_pipolb_prank) # 0.9251639
+cor_cophenetic(dnd_core_mafft, dnd_pipolb_mafft) # 0.1931793
+cor_cophenetic(dnd_core_prank, dnd_pipolb_prank) # 0.2138077
 
+cor_cophenetic(dnd_core_mafft, dnd_core_prank,
+               method_coef = 'spearman') # 0.9999998
+cor_cophenetic(dnd_pipolb_mafft, dnd_pipolb_prank,
+               method_coef = 'spearman') # 0.8549248
+cor_cophenetic(dnd_core_mafft, dnd_pipolb_mafft,
+               method_coef = 'spearman') # 0.2987925
+cor_cophenetic(dnd_core_prank, dnd_pipolb_prank,
+               method_coef = 'spearman') # 0.2360742
