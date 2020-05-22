@@ -5,7 +5,7 @@ import click
 import os
 from prefect import task
 import subprocess
-from pipolin_finder.utilities import CONTEXT_SETTINGS
+from explore_pipolin.utilities import CONTEXT_SETTINGS
 
 
 @task

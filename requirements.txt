@@ -1,12 +1,4 @@
--- python packages --
-pip
 click
 Biopython
 bcbio-gff
 prefect
-
--- other packages --
-ncbi-entrez-direct
-ncbi-blast+
-aragorn
-prokka

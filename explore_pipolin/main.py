@@ -3,28 +3,28 @@ import pkg_resources
 from prefect import Flow, Parameter, unmapped
 from prefect.engine.state import State
 from prefect.tasks.core.constants import Constant
-from pipolin_finder.utilities import CONTEXT_SETTINGS
-from pipolin_finder.identify_pipolins_roughly import create_gquery
-from pipolin_finder.identify_pipolins_roughly import run_blast_against_polb
-from pipolin_finder.identify_pipolins_roughly import run_blast_against_att
-from pipolin_finder.identify_pipolins_roughly import add_features_from_blast
-from pipolin_finder.identify_pipolins_roughly import detect_trnas_with_aragorn
-from pipolin_finder.identify_pipolins_roughly import add_features_from_aragorn
-from pipolin_finder.identify_pipolins_roughly import are_polbs_present
-from pipolin_finder.identify_pipolins_roughly import find_atts_denovo
-from pipolin_finder.identify_pipolins_roughly import add_features_atts_denovo
-from pipolin_finder.identify_pipolins_roughly import are_atts_present
-from pipolin_finder.analyse_pipolin_orientation import analyse_pipolin_orientation
-from pipolin_finder.scaffold_gapped_pipolins import scaffold_pipolins
-from pipolin_finder.extract_pipolin_regions import extract_pipolin_regions
-from pipolin_finder.annotate_pipolins import annotate_pipolins
-from pipolin_finder.include_atts_into_annotation import include_atts_into_annotation
-from pipolin_finder.easyfig_add_colours import easyfig_add_colours
-from pipolin_finder.include_atts_into_annotation import set_correct_positions
+from explore_pipolin.utilities import CONTEXT_SETTINGS
+from explore_pipolin.identify_pipolins_roughly import create_gquery
+from explore_pipolin.identify_pipolins_roughly import run_blast_against_polb
+from explore_pipolin.identify_pipolins_roughly import run_blast_against_att
+from explore_pipolin.identify_pipolins_roughly import add_features_from_blast
+from explore_pipolin.identify_pipolins_roughly import detect_trnas_with_aragorn
+from explore_pipolin.identify_pipolins_roughly import add_features_from_aragorn
+from explore_pipolin.identify_pipolins_roughly import are_polbs_present
+from explore_pipolin.identify_pipolins_roughly import find_atts_denovo
+from explore_pipolin.identify_pipolins_roughly import add_features_atts_denovo
+from explore_pipolin.identify_pipolins_roughly import are_atts_present
+from explore_pipolin.analyse_pipolin_orientation import analyse_pipolin_orientation
+from explore_pipolin.scaffold_gapped_pipolins import scaffold_pipolins
+from explore_pipolin.extract_pipolin_regions import extract_pipolin_regions
+from explore_pipolin.annotate_pipolins import annotate_pipolins
+from explore_pipolin.include_atts_into_annotation import include_atts_into_annotation
+from explore_pipolin.easyfig_add_colours import easyfig_add_colours
+from explore_pipolin.include_atts_into_annotation import set_correct_positions
 
-REF_POLB = Constant(pkg_resources.resource_filename('pipolin_finder', 'data/pi-polB.faa'))
-REF_ATT = Constant(pkg_resources.resource_filename('pipolin_finder', 'data/attL.fa'))
-PROTEINS = Constant(pkg_resources.resource_filename('pipolin_finder', '/data/HHpred_proteins.faa'))
+REF_POLB = Constant(pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB.faa'))
+REF_ATT = Constant(pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa'))
+PROTEINS = Constant(pkg_resources.resource_filename('explore_pipolin', '/data/HHpred_proteins.faa'))
 
 
 def get_flow():
@@ -88,9 +88,9 @@ def task_state_handler(obj, old_state: State, new_state):
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1, required=True)
 @click.option('--out-dir', type=click.Path(), required=True)
 @click.option('--abricate_dir', type=click.Path(exists=True))
-def find_pipolins(genomes, out_dir, abricate_dir):
+def explore_pipolin(genomes, out_dir, abricate_dir):
     """
-    PipolinFinder is a search tool that identifies, extracts and annotates pipolin elements within bacterial genome(s).
+    ExplorePipolin is a search tool that identifies and analyses pipolin elements within bacterial genome(s).
     """
     # from graphviz import Digraph
     # graph: Digraph = get_flow().visualize(filename='/dev/null')
@@ -106,4 +106,4 @@ def find_pipolins(genomes, out_dir, abricate_dir):
 
 
 if __name__ == '__main__':
-    find_pipolins()
+    explore_pipolin()

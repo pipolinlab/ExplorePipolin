@@ -5,11 +5,11 @@ from Bio.SeqRecord import SeqRecord
 from prefect import task
 from typing import MutableSequence
 
-from pipolin_finder.utilities import GQuery, Orientation
-from pipolin_finder.utilities import read_gff_records
-from pipolin_finder.utilities import read_seqio_records
-from pipolin_finder.utilities import write_genbank_records
-from pipolin_finder.utilities import write_gff_records
+from explore_pipolin.utilities import GQuery, Orientation
+from explore_pipolin.utilities import read_gff_records
+from explore_pipolin.utilities import read_seqio_records
+from explore_pipolin.utilities import write_genbank_records
+from explore_pipolin.utilities import write_gff_records
 
 
 def add_new_gb_feature(new_feature: SeqFeature, record: SeqRecord):

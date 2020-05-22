@@ -1,5 +1,5 @@
 from prefect import task
-from pipolin_finder.utilities import PipolinFragment, GQuery
+from explore_pipolin.utilities import PipolinFragment, GQuery
 
 # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
 # https://github.com/biopython/biopython/issues/1755

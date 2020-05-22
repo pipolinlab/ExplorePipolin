@@ -33,4 +33,4 @@ COPY ExplorePipolin-master.zip .
 RUN unzip -d / /ExplorePipolin-master.zip; rm /ExplorePipolin-master.zip; \
     pip3 install /ExplorePipolin-master; rm -r /ExplorePipolin-master
 
-ENTRYPOINT ["pipolin_finder"]
+ENTRYPOINT ["explore_pipolin"]

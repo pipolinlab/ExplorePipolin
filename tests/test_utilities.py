@@ -1,6 +1,6 @@
 import unittest
 
-from pipolin_finder.utilities import Orientation, Contig
+from explore_pipolin.utilities import Orientation, Contig
 
 
 class UtilitiesTestCase(unittest.TestCase):

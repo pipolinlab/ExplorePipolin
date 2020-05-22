@@ -5,7 +5,7 @@ import os
 import click
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-from pipolin_finder.utilities import CONTEXT_SETTINGS
+from explore_pipolin.utilities import CONTEXT_SETTINGS
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

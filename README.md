@@ -1,4 +1,4 @@
-# PipolinFinder
+# ExplorePipolin
 
 Pipolins constitute a new group of self-synthesizing or self-replicating 
 mobile genetic elements (MGEs). They are widespread among diverse bacterial 
@@ -8,7 +8,7 @@ phyla and mitochondria.
 >by a family B DNA polymerase from self-replicating Mobile genetic elements." 
 >Cell reports 21.6 (2017): 1574-1587.](https://doi.org/10.1016/j.celrep.2017.10.039)
 
- **PipolinFinder** is a search tool that identifies, extracts and annotates 
+ **ExplorePipolin** is a search tool that identifies and analyses
  pipolin elements within bacterial genome.
 
 ## Installation
@@ -21,7 +21,7 @@ Install the required dependencies:
  * [ARAGORN](https://github.com/TheSEED/aragorn)
  * [Prokka](https://github.com/tseemann/prokka)
 
-Install PipolinFinder:
+Install ExplorePipolin:
 
  1. Click green button on the right "Clone or Download" => "Download zip"
  1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master`
@@ -30,19 +30,19 @@ Install PipolinFinder:
  
 **How to uninstall:**
 
-`(sudo) pip uninstall PipolinFinder`
+`(sudo) pip uninstall ExplorePipolin`
 
 #### Quick usage
 
-As input, PipolinFinder takes FASTA file(s) with genome sequence(s). 
+As input, ExplorePipolin takes FASTA file(s) with genome sequence(s). 
 A genome sequence can be either a single complete chromosome (preferred) 
 or contigs (in a single multiFASTA file).
 
 ```bash
---> pipolin_finder -h
-Usage: pipolin_finder [OPTIONS] GENOMES...
+--> explore_pipolin -h
+Usage: explore_pipolin [OPTIONS] GENOMES...
 
-  PipolinFinder is a search tool that identifies, extracts and annotates
+  ExplorePipolin is a search tool that identifies and analyses
   pipolin elements  within bacterial genome(s).
 
 Options:
@@ -61,9 +61,9 @@ to build image and run the analysis.
 
  1. Click green button on the right "Clone or Download" => "Download zip"
  1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master/docker`
- 1. `sudo docker build -t pipolin_finder .`
- 1. `sudo docker run --rm pipolin_finder --help` (test)
- 1. `sudo docker run --rm -v $(pwd):/output -w /output pipolin_finder 
+ 1. `sudo docker build -t explore_pipolin .`
+ 1. `sudo docker run --rm explore_pipolin --help` (test)
+ 1. `sudo docker run --rm -v $(pwd):/output -w /output explore_pipolin 
  --out-dir output ./input_genomes/*.fa` (example run)
 
 #### TODO: Running with Singularity

@@ -1,7 +1,7 @@
 import os
 from prefect import task
-from pipolin_finder.utilities import GQuery, SeqIORecords
-from pipolin_finder.utilities import read_seqio_records, write_genbank_records
+from explore_pipolin.utilities import GQuery, SeqIORecords
+from explore_pipolin.utilities import read_seqio_records, write_genbank_records
 from Bio.SeqIO import SeqRecord
 
 red = '255 0 0'   # Primer-independent DNA polymerase PolB

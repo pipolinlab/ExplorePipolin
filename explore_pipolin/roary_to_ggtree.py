@@ -12,7 +12,7 @@ from BCBio import GFF
 from Bio.SeqFeature import SeqFeature
 from Bio.SeqRecord import SeqRecord
 
-from pipolin_finder.utilities import CONTEXT_SETTINGS, get_roary_groups
+from explore_pipolin.utilities import CONTEXT_SETTINGS, get_roary_groups
 
 
 class FeatureSet:
