@@ -21,7 +21,7 @@ phyla and mitochondria.
     * [Install using Bioconda](#install-using-bioconda)
 * [Quick usage](#quick-usage)
     * [Test run](#test-run)
-    * [Output files description](#output-files-description)
+    * [Output files](#output-files)
     * [Additional scripts](#additional-scripts)
 * [Running with Docker](#running-with-docker)
 
@@ -48,7 +48,7 @@ phyla and mitochondria.
 
 ### Install using Bioconda
 
-**TODO**
+TODO
 
 # Quick usage
 
@@ -69,9 +69,9 @@ Options:
   -h, --help      Show this message and exit.
 ```
 
-**TODO:** test run.
+TODO: test run.
 
-### Output files description
+### Output files
 
 The output directory will contain several folders:
  
