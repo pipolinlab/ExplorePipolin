@@ -4,9 +4,13 @@ Pipolins constitute a new group of self-synthesizing or self-replicating
 mobile genetic elements (MGEs). They are widespread among diverse bacterial 
 phyla and mitochondria.
 
-> [Redrejo-Rodríguez, Modesto, et al. "Primer-independent DNA synthesis 
+> [Redrejo-Rodríguez, M., *et al.* "Primer-independent DNA synthesis 
 >by a family B DNA polymerase from self-replicating Mobile genetic elements." 
->Cell reports 21.6 (2017): 1574-1587.](https://doi.org/10.1016/j.celrep.2017.10.039)
+>*Cell reports*, 2017](https://doi.org/10.1016/j.celrep.2017.10.039)
+>
+>[Flament-Simon, S.C., de Toro, M., Chuprikova, L., *et al.* "High diversity 
+>and variability of pipolins among a wide range of pathogenic *Escherichia 
+>coli* strains." *bioRxiv*, 2020](https://www.biorxiv.org/content/10.1101/2020.04.24.059261v1)
 
  **ExplorePipolin** is a search tool that identifies and analyses
  pipolin elements within bacterial genome.
