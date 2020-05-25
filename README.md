@@ -49,7 +49,7 @@ phyla and mitochondria.
 
 ### Install using Bioconda
 
-**Not user steps** 
+**Not user steps (TODO: remove this later)** 
 
  * Build the package:
 
@@ -87,8 +87,8 @@ Export the environment:
  
  `conda env create -n ExplorePipolin-0.0.1 --file explore_pipolin-0.0.1.yml`
  
- * Download and intall ExplorePipolin into the created environment (This 
- step will be absent when I upload the package to Anaconda):
+ * Download and install ExplorePipolin into the created environment (This 
+ step will be part of the previous step when we upload the package to Anaconda):
  
  `wget github//explore-pipolin-0.0.1-py_0.tar.bz2`
  
