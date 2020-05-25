@@ -37,6 +37,7 @@ phyla and mitochondria.
 # Installation
 ### Install from source
 
+ 1. Install the requirements (see above).
  1. Click green button on the right "Clone or Download" => "Download zip"
  1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master`
  1. `pip install .` (install in user site-package) or
@@ -48,7 +49,60 @@ phyla and mitochondria.
 
 ### Install using Bioconda
 
-TODO
+**Not user steps** 
+
+ * Build the package:
+
+`conda-build ./conda -c bioconda -c conda-forge`
+
+ * The package can be found in 
+ $HOME/miniconda3/conda-bld/noarch/explore-pipolin-0.0.1-py_0.tar.bz2.
+ TODO: either upload it to Anaconda, or store somewhere on GitHub!
+ 
+ * Create a dummy environment. This steps could be done by user, 
+ but it takes too long to solve the dependencies. 
+
+`conda create -n dummy explore-pipolin -c local -c bioconda -c conda-forge`
+
+Export the environment:
+
+`conda env export -n dummy > explore_pipolin-0.0.1.yml`
+
+ * Delete `local` channel, name, prefix and `explore_pipolin` dependency from 
+ the explore_pipolin-0.0.1.yml. Upload the file to GitHub!
+ 
+ **User steps**
+ 
+ * Before installing ExplorePipolin, make sure you'are running the latest 
+ version of Conda:
+ 
+ `conda update conda`
+ 
+ `conda install wget`
+ 
+ * Create a new environment that is specific for ExplorePipolin. You can 
+ choose whatever name you'd like for the environment.
+ 
+ `wget github//explore_pipolin-0.0.1.yml`
+ 
+ `conda env create -n ExplorePipolin-0.0.1 --file explore_pipolin-0.0.1.yml`
+ 
+ * Download and intall ExplorePipolin into the created environment (This 
+ step will be absent when I upload the package to Anaconda):
+ 
+ `wget github//explore-pipolin-0.0.1-py_0.tar.bz2`
+ 
+ `conda install -n ExplorePipolin-0.0.1 explore-pipolin-0.0.1-py_0.tar.bz2`
+ 
+ Clean up (optional):
+ 
+ `rm explore_pipolin-0.0.1.yml explore-pipolin-0.0.1-py_0.tar.bz2`
+ 
+ * Activate the environment and test the installation:
+ 
+ `conda activate ExplorePipolin-0.0.1`
+ 
+ `explore_pipolin -h`
 
 # Quick usage
 
