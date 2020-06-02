@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip3 install click biopython bcbio-gff prefect
 
-# install prokka
+# install Prokka
 RUN wget -O /prokka.zip https://github.com/tseemann/prokka/archive/v1.14.6.zip; \
     unzip -d / /prokka.zip; rm /prokka.zip; \
     # remove some unused databases
@@ -27,9 +27,9 @@ RUN wget -O /prokka.zip https://github.com/tseemann/prokka/archive/v1.14.6.zip; 
     rm -r /prokka-1.14.6/db/cm/Archaea* /prokka-1.14.6/db/cm/Viruses*
 ENV PATH="$PATH:/prokka-1.14.6/bin"
 
-# install PipolinFinder
+# install ExplorePipolin
 COPY ExplorePipolin-master.zip .
-# replace COPY with wget when the repo is public
+# TODO: replace COPY with wget when the repo is public
 RUN unzip -d / /ExplorePipolin-master.zip; rm /ExplorePipolin-master.zip; \
     pip3 install /ExplorePipolin-master; rm -r /ExplorePipolin-master
 
