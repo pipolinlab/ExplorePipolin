@@ -1,14 +1,16 @@
 import os
 from collections import defaultdict
 from enum import Enum, auto
-from typing import Sequence, MutableSequence, Mapping, MutableMapping, Set, Optional
+from typing import MutableSequence, MutableMapping, Set, Optional
 from itertools import groupby
 import subprocess
 from random import randrange
+import copy
 
 from BCBio import GFF
 from Bio import SearchIO, SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
+from Bio.SeqRecord import SeqRecord
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -602,3 +604,75 @@ def extract_repeats(file):
 
 def set_proper_location(seq_range, shift):
     return seq_range[0] + shift, seq_range[1] + shift
+
+
+def add_new_gb_feature(new_feature: SeqFeature, record: SeqRecord):
+    record.features.append(new_feature)
+    record.features.sort(key=lambda x: x.location.start)
+
+
+def create_new_gb_record(gquery: GQuery, gb_record: SeqRecord) -> SeqRecord:
+    new_record = copy.deepcopy(gb_record)
+    new_source_features = []
+
+    in_start = 0
+    next_start = 0
+    for fragment in gquery.pipolin_fragments:
+        fragment_shift = fragment.start
+        next_start += (fragment.end - fragment.start) + 100
+
+        for i_f, feature in enumerate(gb_record.features):
+            if feature.location.start >= in_start and feature.location.end <= next_start:
+                old_start, old_end, old_strand = feature.location.start, feature.location.end, feature.location.strand
+                new_record.features[i_f].location = FeatureLocation(start=old_start - in_start + fragment_shift,
+                                                                    end=old_end - in_start + fragment_shift,
+                                                                    strand=old_strand)
+
+        in_start += next_start
+
+        source_location = FeatureLocation(start=fragment.start, end=fragment.end + 100)
+        source_feature = SeqFeature(type='source', location=source_location,
+                                    qualifiers=copy.deepcopy(gb_record.features[0].qualifiers))
+        source_feature.qualifiers.update({'note': [fragment.contig.contig_id,
+                                                   fragment.contig.contig_orientation.to_string()]})
+        new_source_features.append(source_feature)
+
+    del new_record.features[0]
+    for feature in new_source_features:
+        add_new_gb_feature(new_feature=feature, record=new_record)
+
+    return new_record
+
+
+def create_att_seqfeatures(record_format: str, gquery: GQuery) -> MutableSequence[SeqFeature]:
+    att_seqfeatures = []
+    in_start = 0
+    for fragment in gquery.pipolin_fragments:
+        fragment_shift = fragment.start if fragment.contig.contig_orientation == Orientation.FORWARD else fragment.end
+        for att in fragment.atts:
+            att_start, att_end = sorted([abs(att.start - fragment_shift), abs(att.end - fragment_shift)])
+            att_feature = gquery.create_att_feature(start=att_start + in_start, end=att_end + in_start,
+                                                    frame=att.frame, records_format=record_format)
+            att_seqfeatures.append(att_feature)
+        in_start += (fragment.end - fragment.start) + 100
+
+    return att_seqfeatures
+
+
+# def create_assembly_gap_record(record):
+#     source_feature = SeqFeature(type='source', location=FeatureLocation(1, 100, strand=+1),
+#                                 qualifiers={'mol_type': record.features[0].qualifiers['mol_type'],
+#                                             'organism': record.features[0].qualifiers['organism'],
+#                                             'strain': record.features[0].qualifiers['strain']})
+#     assembly_gap_seq = Seq('N' * 100, alphabet=IUPACAmbiguousDNA())
+#     assembly_gap_qualifiers = {'estimated_length': ['unknown'],
+#                                'gap_type': ['within_scaffolds'],
+#                                'linkage_evidence': ['pipolin_structure']}
+#     assembly_gap_feature = SeqFeature(type='assembly_gap',
+#                                       location=FeatureLocation(1, 100, strand=+1),
+#                                       qualifiers=assembly_gap_qualifiers)
+#     assembly_gap_record = SeqRecord(seq=assembly_gap_seq, id=record.id, name=record.name,
+#                                     description=record.description, features=[source_feature, assembly_gap_feature],
+#                                     annotations=record.annotations)
+#
+#     return assembly_gap_record

@@ -11,5 +11,7 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': ['explore_pipolin=explore_pipolin.main:explore_pipolin']
-    }
+    },
+    url='https://github.com/liubovch/ExplorePipolin',
+    license=''
 )
