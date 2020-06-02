@@ -5,7 +5,8 @@ import os
 import click
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-from explore_pipolin.utilities import CONTEXT_SETTINGS
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

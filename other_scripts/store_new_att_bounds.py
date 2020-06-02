@@ -5,8 +5,6 @@ import os
 import click
 from explore_pipolin.utilities import CONTEXT_SETTINGS
 from explore_pipolin.utilities import Feature, GQuery
-from explore_pipolin.utilities import read_from_shelve
-from explore_pipolin.utilities import save_to_shelve
 
 
 def parse_hmmer_tbl(file):

@@ -12,7 +12,19 @@ from BCBio import GFF
 from Bio.SeqFeature import SeqFeature
 from Bio.SeqRecord import SeqRecord
 
-from explore_pipolin.utilities import CONTEXT_SETTINGS, get_roary_groups
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
+def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
+    roary_groups = {}
+    with open(os.path.join(roary_dir, 'gene_presence_absence.csv')) as csv_file:
+        reader = csv.reader(csv_file, delimiter=',')
+        header = next(reader)
+        for entry in reader:
+            group_name = entry[0]
+            genes = {genome: genes.split('\t') if genes else [] for genome, genes in zip(header[14:],entry[14:])}
+            roary_groups[group_name] = genes
+    return roary_groups
 
 
 class FeatureSet:

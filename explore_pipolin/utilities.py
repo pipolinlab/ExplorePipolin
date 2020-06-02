@@ -1,4 +1,3 @@
-import csv
 import os
 from collections import defaultdict
 from enum import Enum, auto
@@ -481,19 +480,6 @@ def read_blastxml(blast_xml):
     return SearchIO.read(blast_xml, 'blast-xml')
 
 
-# CHECK
-def get_roary_groups(roary_dir) -> Mapping[str, Mapping[str, Sequence[str]]]:
-    roary_groups = {}
-    with open(os.path.join(roary_dir, 'gene_presence_absence.csv')) as csv_file:
-        reader = csv.reader(csv_file, delimiter=',')
-        header = next(reader)
-        for entry in reader:
-            group_name = entry[0]
-            genes = {genome: genes.split('\t') if genes else [] for genome, genes in zip(header[14:],entry[14:])}
-            roary_groups[group_name] = genes
-    return roary_groups
-
-
 def define_gquery_id(genome):
     return os.path.splitext(os.path.basename(genome))[0]
 
@@ -559,18 +545,6 @@ def write_fna_records(gb_records, out_dir):
         record.id = key
         with open(os.path.join(out_dir, f'{key}.fa'), 'w') as ouf:
             SeqIO.write(record, ouf, format='fasta')
-
-
-# CHECK
-def read_from_prokka_dir(prokka_dir, ext):
-    files = []
-    for file in os.listdir(prokka_dir):
-        if file.endswith(ext):
-            files.append(os.path.join(prokka_dir, file))
-    records = {}
-    for file in files:
-        records.update(SeqIO.to_dict(SeqIO.parse(file, 'fasta')))
-    return records
 
 
 def read_aragorn_batch(aragorn_batch) -> MutableMapping[str, MutableSequence]:

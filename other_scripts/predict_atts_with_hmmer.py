@@ -3,12 +3,11 @@
 
 import click
 import os
-from prefect import task
 import subprocess
-from explore_pipolin.utilities import CONTEXT_SETTINGS
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
-@task
 def predict_atts_with_hmmer(hmm, pipolins_dir, out_dir):
     pipolin_regions = os.listdir(pipolins_dir)
     os.makedirs(os.path.join(out_dir, 'att_hmmer'), exist_ok=True)

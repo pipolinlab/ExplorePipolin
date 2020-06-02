@@ -2,11 +2,12 @@
 # -*- encoding: utf-8 -*-
 
 import click
-from explore_pipolin.utilities import CONTEXT_SETTINGS
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import collections
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

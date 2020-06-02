@@ -2,10 +2,18 @@
 # -*- encoding: utf-8 -*-
 
 import click
-from rename_files import create_dict_w_strainnames
 from Bio import AlignIO
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
+def create_dict_w_strainnames(names_file):
+    accs_to_strainnames = {}
+    with open(names_file) as inf:
+        for line in inf:
+            names = line.strip().split(sep='\t')
+            accs_to_strainnames[names[1]] = names[0]
+    return accs_to_strainnames
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

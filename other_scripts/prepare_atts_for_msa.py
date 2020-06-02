@@ -5,9 +5,9 @@ import os
 import click
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-from explore_pipolin.utilities import CONTEXT_SETTINGS
 from explore_pipolin.utilities import Feature, GQuery
-from explore_pipolin.utilities import read_from_shelve
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 def read_fasta_records(genomes_dir):

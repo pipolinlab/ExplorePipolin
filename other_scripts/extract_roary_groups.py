@@ -4,7 +4,19 @@
 import os
 import click
 from Bio import SeqIO
-from explore_pipolin.utilities import CONTEXT_SETTINGS, read_from_prokka_dir
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
+def read_from_prokka_dir(prokka_dir, ext):
+    files = []
+    for file in os.listdir(prokka_dir):
+        if file.endswith(ext):
+            files.append(os.path.join(prokka_dir, file))
+    records = {}
+    for file in files:
+        records.update(SeqIO.to_dict(SeqIO.parse(file, 'fasta')))
+    return records
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
