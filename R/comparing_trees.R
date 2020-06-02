@@ -51,7 +51,7 @@ phy_tang <- cophylo(phy_core_mafft, phy_pipolb_mafft)
 
 cols <- setNames(mdata$color, mdata$strain)
 
-plot(phy_tang, fsize = 0.35, link.type='curved', link.lty = 'solid', link.lwd = 1,
+plot(phy_tang, fsize = 0.37, link.type='curved', link.lty = 'solid', link.lwd = 1,
      link.col = alpha(cols[phy_tang$assoc[,1]], 0.7), lwd = 1, pts = F, ftype = 'b')
 
 

@@ -18,7 +18,7 @@ phyla and mitochondria.
 * [Requirements](#requirements)
 * [Installation](#installation)
     * [Install from source](#install-from-source)
-    * [Install using Bioconda](#install-using-bioconda)
+    * [Install using Conda](#install-using-conda)
 * [Quick usage](#quick-usage)
     * [Test run](#test-run)
     * [Output files](#output-files)
@@ -47,31 +47,7 @@ phyla and mitochondria.
 
 `(sudo) pip uninstall ExplorePipolin`
 
-### Install using Bioconda
-
-**Not user steps (TODO: remove this later)** 
-
- * Build the package:
-
-`conda-build ./conda -c bioconda -c conda-forge`
-
- * The package can be found in 
- $HOME/miniconda3/conda-bld/noarch/explore-pipolin-0.0.1-py_0.tar.bz2.
- TODO: either upload it to Anaconda, or store somewhere on GitHub!
- 
- * Create a dummy environment. This steps could be done by user, 
- but it takes too long to solve the dependencies. 
-
-`conda create -n dummy explore-pipolin -c local -c bioconda -c conda-forge`
-
-Export the environment:
-
-`conda env export -n dummy > explore_pipolin-0.0.1.yml`
-
- * Delete `local` channel, name, prefix and `explore_pipolin` dependency from 
- the explore_pipolin-0.0.1.yml. Upload the file to GitHub!
- 
- **User steps**
+### Install using Conda
  
  * Before installing ExplorePipolin, make sure you'are running the latest 
  version of Conda:
@@ -83,22 +59,21 @@ Export the environment:
  * Create a new environment that is specific for ExplorePipolin. You can 
  choose whatever name you'd like for the environment.
  
- `wget github//explore_pipolin-0.0.1.yml`
+ `wget github/TODO/explore_pipolin-0.0.1.yml`
  
  `conda env create -n ExplorePipolin-0.0.1 --file explore_pipolin-0.0.1.yml`
  
- * Download and install ExplorePipolin into the created environment (This 
- step will be part of the previous step when we upload the package to Anaconda):
+ * Download and install ExplorePipolin into the created environment:
  
- `wget github//explore-pipolin-0.0.1-py_0.tar.bz2`
+ `wget github/TODO/explore-pipolin-0.0.1-py_0.tar.bz2`
  
  `conda install -n ExplorePipolin-0.0.1 explore-pipolin-0.0.1-py_0.tar.bz2`
  
- Clean up (optional):
+  * Clean up (optional):
  
  `rm explore_pipolin-0.0.1.yml explore-pipolin-0.0.1-py_0.tar.bz2`
  
- * Activate the environment and test the installation:
+ * Activate the environment and check the installation:
  
  `conda activate ExplorePipolin-0.0.1`
  
@@ -153,15 +128,14 @@ TODO: install as console scripts
 
 See https://docs.docker.com/install/ to install Docker.
 
-**NOTE:** superuser privileges and around 3GB of disk space are required
-to build image and run the analysis.
+**NOTE:** superuser privileges are required to run the analysis and around 3GB of disk space for the image.
 
- 1. Click green button on the right "Clone or Download" => "Download zip"
- 1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master/docker`
- 1. `sudo docker build -t explore_pipolin .`
- 1. `sudo docker run --rm explore_pipolin --help` (test)
- 1. `sudo docker run --rm -v $(pwd):/output -w /output explore_pipolin 
- --out-dir output ./input_genomes/*.fa` (example run)
+```
+sudo docker pull link/TODO/to/the/image/on/DockerHub
+sudo docker run --rm explore_pipolin -h
+sudo docker run --rm -v $(pwd):/output -w /output explore_pipolin 
+ --out-dir output ./input_genomes/*.fa   #(example run)
+```
 
 
 <!---
