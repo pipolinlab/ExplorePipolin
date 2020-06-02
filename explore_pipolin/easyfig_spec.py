@@ -1,7 +1,5 @@
 import os
-from prefect import task
 from explore_pipolin.utilities import GQuery, SeqIORecords
-from explore_pipolin.utilities import read_seqio_records, write_genbank_records
 from Bio.SeqIO import SeqRecord
 
 red = '255 0 0'   # Primer-independent DNA polymerase PolB
@@ -125,12 +123,3 @@ def find_and_color_amr_and_virulence(gquery: GQuery, gb_records: SeqIORecords, a
             db_type = 'vir' if content in VIRULENCE_DBs else 'amr'
             summary_path = os.path.join(content_path, gquery.gquery_id + '.tab')
             add_info_from_summary(gb_records, summary_path, db_type)
-
-
-@task
-def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
-    gb_records = read_seqio_records(file=os.path.join(in_dir, gquery.gquery_id + '.gbk'), file_format='genbank')
-    add_colours(gb_records[gquery.gquery_id])
-    if abricate_dir is not None:
-        find_and_color_amr_and_virulence(gquery, gb_records, abricate_dir)
-    write_genbank_records(gb_records=gb_records, out_dir=in_dir, gquery=gquery)

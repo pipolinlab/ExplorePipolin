@@ -676,3 +676,8 @@ def create_att_seqfeatures(record_format: str, gquery: GQuery) -> MutableSequenc
 #                                     annotations=record.annotations)
 #
 #     return assembly_gap_record
+def create_fragment_record(fragment, genome_dict):
+    fragment_record = genome_dict[fragment.contig.contig_id][fragment.start:fragment.end]
+    if fragment.contig.contig_orientation == Orientation.REVERSE:
+        fragment_record = fragment_record.reverse_complement()
+    return fragment_record
