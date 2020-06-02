@@ -6,8 +6,7 @@ source:
   path: ..
 
 build:
-  noarch: python
-  script: {{PYTHON}} -m pip install . --no-deps -vv
+  script: {{PYTHON}} -m pip install . --no-deps
 
 requirements:
   build:
@@ -34,4 +33,6 @@ test:
     - explore_pipolin -h
 
 about:
-  home:
+  home: https://github.com/liubovch/ExplorePipolin
+  license:
+  license_file:
