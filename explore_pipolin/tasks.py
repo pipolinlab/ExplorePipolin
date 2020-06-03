@@ -10,7 +10,7 @@ from prefect.engine import signals
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
-from explore_pipolin.easyfig_spec import add_colours, find_and_color_amr_and_virulence
+from explore_pipolin.utilities.easyfig_spec import add_colours, find_and_color_amr_and_virulence
 from explore_pipolin.utilities import GQuery, Contig, Feature, Orientation, PipolinFragment, read_blastxml
 from explore_pipolin.utilities import define_gquery_id
 from explore_pipolin.utilities.io import read_seqio_records
