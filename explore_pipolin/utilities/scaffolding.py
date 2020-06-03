@@ -264,3 +264,28 @@ class Scaffolder:
     def _contig_has_feature_type(self, contig_id: str, feature_type: FeatureType) -> bool:
         feature_dict = self.gquery.get_features_dict_by_contig_normalized(feature_type)
         return len(feature_dict[contig_id]) != 0
+
+
+def create_pipolin_fragments_single_contig(gquery: GQuery) -> Sequence[PipolinFragment]:
+    if len(gquery.get_features_dict_by_contig_normalized(FeatureType.ATT)) != 0:
+        start, end = _get_pipolin_bounds(gquery)
+        pipolin = PipolinFragment(contig_id=gquery.polbs[0].contig.contig_id, genome=gquery.genome,
+                                  start=start, end=end)
+
+        pipolin.atts.extend(gquery.atts)
+        return [pipolin]
+    else:
+        left_window, right_window = gquery.get_left_right_windows()
+        pipolin = PipolinFragment(contig_id=gquery.polbs[0].contig.contig_id, genome=gquery.genome,
+                                  start=left_window[0], end=right_window[1])
+        return [pipolin]
+
+
+def _get_pipolin_bounds(gquery: GQuery):
+    polymerases = sorted((i for i in gquery.polbs), key=lambda p: p.start)
+    atts = sorted((i for i in gquery.atts), key=lambda p: p.start)
+
+    length = polymerases[0].contig.contig_length
+    left_edge = atts[0].start - 50 if atts[0].start < polymerases[0].start else polymerases[0].start - 50
+    right_edge = atts[-1].end + 50 if atts[-1].end > polymerases[-1].end else polymerases[-1].end + 50
+    return left_edge if left_edge >= 0 else 0, right_edge if right_edge <= length else length

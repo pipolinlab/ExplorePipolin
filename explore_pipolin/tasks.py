@@ -11,7 +11,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours, find_and_color_amr_and_virulence
-from explore_pipolin.utilities import GQuery, Feature, Orientation, PipolinFragment, Genome, FeatureType
+from explore_pipolin.utilities import GQuery, Feature, Orientation, Genome
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
@@ -25,7 +25,7 @@ from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities import add_new_gb_feature
 from explore_pipolin.utilities import create_new_gb_record
-from explore_pipolin.utilities.scaffolding import Scaffolder
+from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
 
 
 @task
@@ -171,18 +171,7 @@ def scaffold_pipolins(gquery: GQuery):
     # https://github.com/biopython/biopython/issues/1755
     if gquery.genome.is_single_contig() or gquery.is_on_the_same_contig():
         print('>>>Scaffolding is not required!')
-        if len(gquery.get_features_dict_by_contig_normalized(FeatureType.ATT)) != 0:
-            start, end = gquery.get_pipolin_bounds()
-            pipolin = PipolinFragment(contig_id=gquery.polbs[0].contig.contig_id, genome=gquery.genome,
-                                      start=start, end=end)
-
-            pipolin.atts.extend(gquery.atts)
-            gquery.pipolin_fragments.append(pipolin)
-        else:
-            left_window, right_window = gquery.get_left_right_windows()
-            pipolin = PipolinFragment(contig_id=gquery.polbs[0].contig.contig_id, genome=gquery.genome,
-                                      start=left_window[0], end=right_window[1])
-            gquery.pipolin_fragments.append(pipolin)
+        gquery.pipolin_fragments = create_pipolin_fragments_single_contig(gquery)
     else:
         print('>>>Scaffolding is required!')
         scaffolder = Scaffolder(gquery=gquery)

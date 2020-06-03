@@ -237,15 +237,7 @@ class GQuery:
                 return contig.contig_orientation
             return polbs[0].frame
 
-    # scaffolding is not required
-    def get_pipolin_bounds(self):
-        polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
-        atts = sorted((i for i in self.atts), key=lambda p: p.start)
 
-        length = polymerases[0].contig.contig_length
-        left_edge = atts[0].start - 50 if atts[0].start < polymerases[0].start else polymerases[0].start - 50
-        right_edge = atts[-1].end + 50 if atts[-1].end > polymerases[-1].end else polymerases[-1].end + 50
-        return left_edge if left_edge >= 0 else 0, right_edge if right_edge <= length else length
 
     @staticmethod
     def _is_overlapping(range1, range2):
