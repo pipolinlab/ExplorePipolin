@@ -103,6 +103,12 @@ class PipolinFragment:
         return self.genome.get_contig_by_id(self.contig_id)
 
 
+class FeatureType(Enum):
+    POLB = auto()
+    ATT = auto()
+    TARGET_TRNA = auto()
+
+
 class GQuery:
     def __init__(self, genome: Genome):
         self.genome = genome
@@ -120,7 +126,7 @@ class GQuery:
                 in groupby((i for i in features), key=lambda x: x.contig.contig_id)}
 
     # TODO: replace it with _dict_by_contig_normalized()!
-    def get_features_of_contig(self, contig_id, feature_type: str) -> MutableSequence[Feature]:
+    def get_features_of_contig(self, contig_id, feature_type: FeatureType) -> MutableSequence[Feature]:
         features_to_return = []
         features = self.get_features_by_type(feature_type=feature_type)
         for feature in features:
@@ -128,15 +134,15 @@ class GQuery:
                 features_to_return.append(feature)
         return features_to_return
 
-    def get_features_by_type(self, feature_type: str) -> MutableSequence[Feature]:
-        if feature_type == 'polbs':
+    def get_features_by_type(self, feature_type: FeatureType) -> MutableSequence[Feature]:
+        if feature_type is FeatureType.POLB:
             return self.polbs
-        elif feature_type == 'atts':
+        elif feature_type is FeatureType.ATT:
             return self.atts
-        elif feature_type == 'target_trnas':
+        elif feature_type is FeatureType.TARGET_TRNA:
             return self.target_trnas
         else:
-            raise AssertionError('Feature type can be: "polbs", "atts" or "target_trnas"!')
+            raise AssertionError(f'Feature must be one of: {list(FeatureType)}')
 
     def feature_from_blasthit(self, hit, contig_id) -> Feature:
         return Feature(start=hit.hit_start, end=hit.hit_end,
@@ -205,10 +211,10 @@ class GQuery:
 
     # `analyse_pipolin_orientation`
     def get_contig_orientation(self, contig: Contig) -> Orientation:
-        target_trnas = self.get_features_of_contig(contig_id=contig.contig_id, feature_type='target_trnas')
-        atts = self.get_features_of_contig(contig_id=contig.contig_id, feature_type='atts')
+        target_trnas = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.TARGET_TRNA)
+        atts = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.ATT)
         atts_frames = [att.frame for att in atts]
-        polbs = self.get_features_of_contig(contig_id=contig.contig_id, feature_type='polbs')
+        polbs = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.POLB)
         polbs_frames = [polb.frame for polb in polbs]
 
         if len(target_trnas) != 0:
@@ -414,10 +420,10 @@ class GQuery:
 
                 polb0_length = sum((i.end - i.start) for i in self.get_features_of_contig(
                     contig_id=polbs_contigs[0].contig_id,
-                    feature_type='polbs'))
+                    feature_type=FeatureType.POLB))
                 polb1_length = sum((i.end - i.start) for i in self.get_features_of_contig(
                     contig_id=polbs_contigs[1].contig_id,
-                    feature_type='polbs'))
+                    feature_type=FeatureType.POLB))
                 # TODO: comparing just by length is an unreliable way! REWRITE if possible!
                 if polb0_length < polb1_length:
                     polbs_fragments = [polb0_fragment, polb1_fragment]
@@ -455,7 +461,7 @@ class GQuery:
 
         contigs_to_return = []
         for contig in polbs_contigs:
-            atts_next_polbs = self.get_features_of_contig(contig_id=contig.contig_id, feature_type='atts')
+            atts_next_polbs = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.ATT)
             if len(atts_next_polbs) != 0:
                 contigs_to_return.append(contig)
         return contigs_to_return
@@ -485,7 +491,7 @@ class GQuery:
     def _get_att_only_contigs(self) -> Set[Contig]:
         att_only_contigs = set()
         for att in self.atts:
-            polbs_next_att = self.get_features_of_contig(contig_id=att.contig_id, feature_type='polbs')
+            polbs_next_att = self.get_features_of_contig(contig_id=att.contig_id, feature_type=FeatureType.POLB)
             if len(polbs_next_att) == 0:
                 att_only_contigs.add(att.contig)
 
