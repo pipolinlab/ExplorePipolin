@@ -122,5 +122,5 @@ def find_and_color_amr_and_virulence(gquery: GQuery, gb_records: SeqIORecords, a
         if content in VIRULENCE_DBs or content in AMR_DBs:
             content_path = os.path.join(abricate_dir, content)
             db_type = 'vir' if content in VIRULENCE_DBs else 'amr'
-            summary_path = os.path.join(content_path, gquery.gquery_id + '.tab')
+            summary_path = os.path.join(content_path, gquery.genome.id + '.tab')
             add_info_from_summary(gb_records, summary_path, db_type)

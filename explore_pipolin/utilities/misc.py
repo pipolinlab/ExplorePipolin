@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from enum import Enum, auto
 from typing import MutableSequence, Set, Optional, Tuple
@@ -7,6 +8,8 @@ import copy
 
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
+
+from explore_pipolin.utilities.io import read_seqio_records
 
 
 class Orientation(Enum):
@@ -40,26 +43,69 @@ class Contig:
         self.contig_orientation: Orientation = orientation
 
 
+class Genome:
+    def __init__(self, id: str):
+        self.id = id
+        self.contigs: MutableSequence[Contig] = []
+
+    def get_contig_by_id(self, contig_id: str) -> Optional[Contig]:
+        for contig in self.contigs:
+            if contig.contig_id == contig_id:
+                return contig
+        return None
+
+    def is_single_contig(self):
+        return len(self.contigs) == 1
+
+    def get_complete_genome_contig_id(self):
+        if not self.is_single_contig():
+            raise AssertionError('Unsupported! Not a complete genome!')
+        return self.contigs[0].contig_id
+
+    def get_complete_genome_length(self) -> int:
+        if not self.is_single_contig():
+            raise AssertionError('Unsupported! Not a complete genome!')
+        return self.contigs[0].contig_length
+
+    @staticmethod
+    def load_from_file(genome_file: str) -> Genome:
+        genome = Genome(id=define_gquery_id(genome_file))
+        genome_dict = read_seqio_records(file=genome_file, file_format='fasta')
+        for key, value in genome_dict.items():
+            contig = Contig(contig_id=key, contig_length=len(value.seq))
+            genome.contigs.append(contig)
+        return genome
+
+
 class Feature:
-    def __init__(self, start: int, end: int, frame: Orientation, contig: Contig):
+    def __init__(self, start: int, end: int, frame: Orientation, contig_id: str, genome: Genome):
         self.start = start
         self.end = end
         self.frame = frame
-        self.contig = contig
+        self.contig_id = contig_id
+        self.genome = genome
+
+    @property
+    def contig(self):
+        return self.genome.get_contig_by_id(self.contig_id)
 
 
 class PipolinFragment:
-    def __init__(self, contig: Contig, start: int, end: int):
-        self.contig = contig
+    def __init__(self, contig_id: str, genome: Genome, start: int, end: int):
+        self.contig_id = contig_id
         self.start = start
         self.end = end
         self.atts: MutableSequence[Feature] = []
+        self.genome = genome
+
+    @property
+    def contig(self):
+        return self.genome.get_contig_by_id(self.contig_id)
 
 
 class GQuery:
-    def __init__(self, gquery_id: str):
-        self.gquery_id = gquery_id
-        self.contigs: MutableSequence[Contig] = []
+    def __init__(self, genome: Genome):
+        self.genome = genome
         self.polbs: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
         self.trnas: MutableSequence[Feature] = []
@@ -67,11 +113,6 @@ class GQuery:
         self.denovo_atts: MutableSequence[Feature] = []
         self.target_trnas_denovo: MutableSequence[Feature] = []
         self.pipolin_fragments: MutableSequence[PipolinFragment] = []
-
-    def get_contig_by_id(self, contig_id: str) -> Contig:
-        for contig in self.contigs:
-            if contig.contig_id == contig_id:
-                return contig
 
     @staticmethod
     def dict_by_contig_normalized(features):
@@ -83,9 +124,8 @@ class GQuery:
         features_to_return = []
         features = self.get_features_by_type(feature_type=feature_type)
         for feature in features:
-            if feature.contig.contig_id == contig_id:
+            if feature.contig_id == contig_id:
                 features_to_return.append(feature)
-
         return features_to_return
 
     def get_features_by_type(self, feature_type: str) -> MutableSequence[Feature]:
@@ -101,26 +141,23 @@ class GQuery:
     def feature_from_blasthit(self, hit, contig_id) -> Feature:
         return Feature(start=hit.hit_start, end=hit.hit_end,
                        frame=Orientation.orientation_from_blast(hit.hit_frame),
-                       contig=self.get_contig_by_id(contig_id))
+                       contig_id=contig_id, genome=self.genome)
 
     # `add_features_from_aragorn` and `add_features_atts_denovo`
     def find_target_trna(self, att: Feature) -> Optional[Feature]:
         trna_dict = self.dict_by_contig_normalized(self.trnas)
 
-        if att.contig.contig_id in trna_dict:
-            trnas = trna_dict[att.contig.contig_id]
+        if att.contig_id in trna_dict:
+            trnas = trna_dict[att.contig_id]
             for trna in trnas:
                 if self._is_overlapping(range1=(att.start, att.end), range2=(trna.start, trna.end)):
                     return trna
 
-    def is_single_contig(self):
-        return len(self.contigs) == 1
-
-    def is_on_the_same_contig(self):
+    def is_on_the_same_contig(self) -> bool:
         target_contigs = []
-        target_contigs.extend(i.contig.contig_id for i in self.polbs)
-        target_contigs.extend(i.contig.contig_id for i in self.atts)
-        target_contigs.extend(i.contig.contig_id for i in self.target_trnas)
+        target_contigs.extend(f.contig_id for f in self.polbs)
+        target_contigs.extend(f.contig_id for f in self.atts)
+        target_contigs.extend(f.contig_id for f in self.target_trnas)
         return len(set(target_contigs)) == 1
 
     # `find_atts_denovo` and `scaffold_pipolins`
@@ -132,7 +169,7 @@ class GQuery:
                                  f'within the region ({polymerases[0].start}, {polymerases[-1].end}). It might be, '
                                  f'that you have two or more pipolins per genome, but we are expecting only one.')
 
-        length = self.contigs[0].contig_length
+        length = self.genome.get_complete_genome_length()
         left_edge = polymerases[0].start - 100000
         left_window = (left_edge if left_edge >= 0 else 0, polymerases[0].start)
         right_edge = polymerases[-1].end + 100000
@@ -149,7 +186,6 @@ class GQuery:
         for att in self.atts:
             if self._is_overlapping(left_repeat, (att.start, att.end)):
                 return True
-
         return False
 
     def _is_overlapping_trna(self, left_repeat, right_repeat):
@@ -157,14 +193,13 @@ class GQuery:
             trna_range = (trna.start, trna.end)
             if self._is_overlapping(left_repeat, trna_range) or self._is_overlapping(right_repeat, trna_range):
                 return True
-
         return False
 
     # `analyse_pipolin_orientation`
     def is_single_target_trna_per_contig(self):
         # TODO: don't like this
         # there was one case with two target trnas per genome, although usually only one
-        targeted_contigs = [trna.contig.contig_id for trna in self.target_trnas]
+        targeted_contigs = [trna.contig_id for trna in self.target_trnas]
         if len(self.target_trnas) != len(targeted_contigs):
             raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
 
@@ -227,7 +262,8 @@ class GQuery:
                     contig_length = unchangeable_contig.contig_length
                     left_edge = atts_dict[unchangeable_contig.contig_id][0].start - 50
                     right_edge = atts_dict[unchangeable_contig.contig_id][-1].end + 50
-                    pipolin = PipolinFragment(contig=self.get_contig_by_id(unchangeable_contig.contig_id),
+                    pipolin = PipolinFragment(contig_id=unchangeable_contig.contig_id,
+                                              genome=self.genome,
                                               start=left_edge if left_edge >= 0 else 0,
                                               end=right_edge if right_edge <= contig_length else contig_length)
                     pipolin.atts.extend(atts_dict[unchangeable_contig.contig_id])
@@ -247,7 +283,8 @@ class GQuery:
                     self.pipolin_fragments.append(right_fragment)
             elif len(att_only_contigs) == 2:
                 # TODO: the order can be also [middle_fragment, left_fragment, right_fragment]
-                middle_fragment = PipolinFragment(contig=self.get_contig_by_id(unchangeable_contig.contig_id),
+                middle_fragment = PipolinFragment(contig_id=unchangeable_contig.contig_id,
+                                                  genome=self.genome,
                                                   start=0, end=unchangeable_contig.contig_length)
                 middle_fragment.atts.extend(atts_dict[unchangeable_contig.contig_id])
 
@@ -289,27 +326,30 @@ class GQuery:
         if direction == 'right':
             if contig.contig_orientation == Orientation.FORWARD:
                 edge = atts_dict[contig.contig_id][0].start - 50
-                fragment = PipolinFragment(contig=self.get_contig_by_id(contig.contig_id),
+                fragment = PipolinFragment(contig_id=contig.contig_id,
+                                           genome=self.genome,
                                            start=edge if edge >= 0 else 0, end=contig.contig_length)
             else:
                 edge = atts_dict[contig.contig_id][-1].end + 50
-                fragment = PipolinFragment(contig=self.get_contig_by_id(contig.contig_id), start=0,
+                fragment = PipolinFragment(contig_id=contig.contig_id, start=0,
+                                           genome=self.genome,
                                            end=edge if edge <= contig.contig_length else contig.contig_length)
         else:
             if contig.contig_orientation == Orientation.FORWARD:
                 edge = atts_dict[contig.contig_id][-1].end + 50
-                fragment = PipolinFragment(contig=self.get_contig_by_id(contig.contig_id), start=0,
+                fragment = PipolinFragment(contig_id=contig.contig_id, start=0,
+                                           genome=self.genome,
                                            end=edge if edge <= contig.contig_length else contig.contig_length)
             else:
                 edge = atts_dict[contig.contig_id][0].start - 50
-                fragment = PipolinFragment(contig=self.get_contig_by_id(contig.contig_id),
+                fragment = PipolinFragment(contig_id=contig.contig_id,
+                                           genome=self.genome,
                                            start=edge if edge >= 0 else 0, end=contig.contig_length)
 
         fragment.atts.extend(atts_dict[contig.contig_id])
         return fragment
 
-    @staticmethod
-    def _create_att_contig_fragment(contig_atts: MutableSequence[Feature], direction: str):
+    def _create_att_contig_fragment(self, contig_atts: MutableSequence[Feature], direction: str):
         contig_length = contig_atts[0].contig.contig_length
         if direction == 'right':
             if contig_atts[0].contig.contig_orientation == Orientation.FORWARD:
@@ -326,8 +366,8 @@ class GQuery:
                 left_edge = 0
                 right_edge = contig_atts[-1].end + 50
 
-        fragment = PipolinFragment(contig=contig_atts[0].contig, start=left_edge if left_edge >= 0 else 0,
-                                   end=right_edge if right_edge <= contig_length else contig_length)
+        fragment = PipolinFragment(contig_id=contig_atts[0].contig_id, start=left_edge if left_edge >= 0 else 0,
+                                   genome=self.genome, end=right_edge if right_edge <= contig_length else contig_length)
         fragment.atts.extend(contig_atts)
         return fragment
 
@@ -337,7 +377,7 @@ class GQuery:
         if len(self.target_trnas) > 1 or len(self.target_trnas) == 0:
             raise NotImplementedError
 
-        right_fragment = self._create_att_contig_fragment(contig_atts=atts_dict[self.target_trnas[0].contig.contig_id],
+        right_fragment = self._create_att_contig_fragment(contig_atts=atts_dict[self.target_trnas[0].contig_id],
                                                           direction='right')
 
         atts_contigs = set([i.contig for i in self.atts])
@@ -345,7 +385,7 @@ class GQuery:
             print('The single record can be created!!!\n')
 
             atts_contigs = list(atts_contigs)
-            if atts_contigs[0].contig_id == self.target_trnas[0].contig.contig_id:
+            if atts_contigs[0].contig_id == self.target_trnas[0].contig_id:
                 left_contig = atts_contigs[1]
             else:
                 left_contig = atts_contigs[0]
@@ -365,9 +405,11 @@ class GQuery:
             print('Two "polb only contigs" were found!')
             polbs_contigs = list(polbs_contigs)
             if polbs_contigs[0].contig_length + polbs_contigs[1].contig_length < 15000:
-                polb0_fragment = PipolinFragment(contig=self.get_contig_by_id(polbs_contigs[0].contig_id), start=0,
+                polb0_fragment = PipolinFragment(contig_id=polbs_contigs[0].contig_id, start=0,
+                                                 genome=self.genome,
                                                  end=polbs_contigs[0].contig_length)
-                polb1_fragment = PipolinFragment(contig=self.get_contig_by_id(polbs_contigs[1].contig_id), start=0,
+                polb1_fragment = PipolinFragment(contig_id=polbs_contigs[1].contig_id, start=0,
+                                                 genome=self.genome,
                                                  end=polbs_contigs[1].contig_length)
 
                 polb0_length = sum((i.end - i.start) for i in self.get_features_of_contig(
@@ -385,7 +427,8 @@ class GQuery:
                 raise NotImplementedError
 
         elif len(polbs_contigs) == 1:
-            polbs_fragments = [PipolinFragment(contig=self.get_contig_by_id(self.polbs[0].contig.contig_id),
+            polbs_fragments = [PipolinFragment(contig_id=self.polbs[0].contig_id,
+                                               genome=self.genome,
                                                start=0, end=self.polbs[0].contig.contig_length)]
         else:
             raise NotImplementedError
@@ -442,7 +485,7 @@ class GQuery:
     def _get_att_only_contigs(self) -> Set[Contig]:
         att_only_contigs = set()
         for att in self.atts:
-            polbs_next_att = self.get_features_of_contig(contig_id=att.contig.contig_id, feature_type='polbs')
+            polbs_next_att = self.get_features_of_contig(contig_id=att.contig_id, feature_type='polbs')
             if len(polbs_next_att) == 0:
                 att_only_contigs.add(att.contig)
 
@@ -460,11 +503,11 @@ class GQuery:
 
     def create_att_feature(self, start: int, end: int, frame: Orientation, records_format: str) -> SeqFeature:
         random_number = randrange(10000, 99999)
-        gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{self.gquery_id}_{random_number}'],
+        gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{self.genome.id}_{random_number}'],
                          'rpt_family': ['Att'], 'rpt_type': ['direct']}
         gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
-                          'ID': [f'{self.gquery_id}_{random_number}'], 'inference': ['HMM:custom'],
-                          'locus_tag': [f'{self.gquery_id}_{random_number}'],
+                          'ID': [f'{self.genome.id}_{random_number}'], 'inference': ['HMM:custom'],
+                          'locus_tag': [f'{self.genome.id}_{random_number}'],
                           'rpt_family': ['Att'], 'rpt_type': ['direct']}
         att_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=frame.to_pm_one_encoding()),
@@ -503,7 +546,7 @@ def create_new_gb_record(gquery: GQuery, gb_record: SeqRecord) -> SeqRecord:
         source_location = FeatureLocation(start=fragment.start, end=fragment.end + 100)
         source_feature = SeqFeature(type='source', location=source_location,
                                     qualifiers=copy.deepcopy(gb_record.features[0].qualifiers))
-        source_feature.qualifiers.update({'note': [fragment.contig.contig_id,
+        source_feature.qualifiers.update({'note': [fragment.contig_id,
                                                    fragment.contig.contig_orientation.to_string()]})
         new_source_features.append(source_feature)
 

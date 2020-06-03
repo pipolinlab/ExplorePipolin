@@ -11,9 +11,8 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours, find_and_color_amr_and_virulence
-from explore_pipolin.utilities import GQuery, Contig, Feature, Orientation, PipolinFragment
+from explore_pipolin.utilities import GQuery, Feature, Orientation, PipolinFragment, Genome
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
-from explore_pipolin.utilities import define_gquery_id
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
 from explore_pipolin.utilities.atts_denovo_search import find_repeats
@@ -30,13 +29,7 @@ from explore_pipolin.utilities import create_new_gb_record
 
 @task
 def create_gquery(genome) -> GQuery:
-    gquery = GQuery(gquery_id=define_gquery_id(genome=genome))
-    genome_dict = read_seqio_records(file=genome, file_format='fasta')
-    for key, value in genome_dict.items():
-        contig = Contig(contig_id=key, contig_length=len(value.seq))
-        gquery.contigs.append(contig)
-
-    return gquery
+    return GQuery(genome=Genome.load_from_file(genome))
 
 
 @task
@@ -55,7 +48,7 @@ def run_blast_against_att(genome, root_dir, reference):
 
 @task
 def add_features_from_blast(gquery: GQuery, blast_dir, feature_type):
-    entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.gquery_id}.fmt5'))
+    entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.genome.id}.fmt5'))
     for entry in entries:
         for hit in entry:
             feature = gquery.feature_from_blasthit(hit=hit, contig_id=entry.id)
@@ -71,10 +64,10 @@ def detect_trnas_with_aragorn(genome, root_dir):
 
 @task
 def add_features_from_aragorn(gquery: GQuery, aragorn_dir):
-    entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.gquery_id}.batch'))
+    entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.genome.id}.batch'))
     for contig_id, hits in entries.items():
         for hit in hits:
-            feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig=gquery.get_contig_by_id(contig_id))
+            feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig_id=contig_id, genome=gquery.genome)
             gquery.trnas.append(feature)
 
     for att in gquery.atts:
@@ -96,7 +89,7 @@ def are_polbs_present(gquery: GQuery):
 def find_atts_denovo(genome, gquery: GQuery, root_dir):
     logger = context.get('logger')
 
-    if not gquery.is_single_contig():
+    if not gquery.genome.is_single_contig():
         logger.warning('This step is only for complete genomes. Pass...')
         raise signals.SKIP()
 
@@ -114,14 +107,18 @@ def find_atts_denovo(genome, gquery: GQuery, root_dir):
 
 @task
 def add_features_atts_denovo(gquery: GQuery, atts_denovo_dir):
-    with open(os.path.join(atts_denovo_dir, gquery.gquery_id + '.atts')) as inf:
+    with open(os.path.join(atts_denovo_dir, gquery.genome.id + '.atts')) as inf:
         _ = inf.readline()
         for line in inf:
             att_pair = [int(i) for i in line.strip().split(sep='\t')]
             gquery.denovo_atts.append(Feature(start=att_pair[0], end=att_pair[1],
-                                              frame=Orientation.FORWARD, contig=gquery.contigs[0]))
+                                              frame=Orientation.FORWARD,
+                                              contig_id=gquery.genome.get_complete_genome_contig_id(),
+                                              genome=gquery.genome))
             gquery.denovo_atts.append(Feature(start=att_pair[2], end=att_pair[3],
-                                              frame=Orientation.FORWARD, contig=gquery.contigs[0]))
+                                              frame=Orientation.FORWARD,
+                                              contig_id=gquery.genome.get_complete_genome_contig_id(),
+                                              genome=gquery.genome))
 
     for att in gquery.denovo_atts:
         target_trna = gquery.find_target_trna(att)
@@ -140,7 +137,7 @@ def are_atts_present(gquery: GQuery):
 
     elif len(gquery.atts) == 0:
         logger.warning(f'\n\n>>>No "usual" atts were found, but some atts were found by denovo search!'
-                       f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!\n')
+                       f'For more details, check the {gquery.genome.id}.atts file in the atts_denovo directory!\n')
         # TODO: check that it's only one repeat! Although, this shouldn't be a problem.
         atts_frames = [att.frame for att in gquery.denovo_atts]
         if len(set(atts_frames)) != 1:
@@ -148,7 +145,8 @@ def are_atts_present(gquery: GQuery):
         if set(atts_frames).pop() == gquery.target_trnas_denovo[0].frame:
             reverse_denovo_atts = []
             for att in gquery.denovo_atts:
-                reverse_denovo_atts.append(Feature(start=att.start, end=att.end, frame=-att.frame, contig=att.contig))
+                reverse_denovo_atts.append(Feature(start=att.start, end=att.end, frame=-att.frame,
+                                                   contig_id=att.contig, genome=gquery.genome))
             gquery.atts.extend(reverse_denovo_atts)
         else:
             gquery.atts.extend(gquery.denovo_atts)
@@ -156,7 +154,7 @@ def are_atts_present(gquery: GQuery):
 
     elif len(gquery.denovo_atts) != 0:
         logger.warning(f'\n\n>>>Some atts were found by denovo search, but we are not going to use them!'
-                       f'For more details, check the {gquery.gquery_id}.atts file in the atts_denovo directory!\n')
+                       f'For more details, check the {gquery.genome.id}.atts file in the atts_denovo directory!\n')
 
 
 @task
@@ -170,18 +168,18 @@ def analyse_pipolin_orientation(gquery):
 def scaffold_pipolins(gquery: GQuery):
     # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
     # https://github.com/biopython/biopython/issues/1755
-    if gquery.is_single_contig() or gquery.is_on_the_same_contig():
+    if gquery.genome.is_single_contig() or gquery.is_on_the_same_contig():
         print('>>>Scaffolding is not required!')
         if len(gquery.dict_by_contig_normalized(gquery.atts)) != 0:
             start, end = gquery.get_pipolin_bounds()
-            pipolin = PipolinFragment(contig=gquery.get_contig_by_id(gquery.polbs[0].contig.contig_id),
+            pipolin = PipolinFragment(contig_id=gquery.polbs[0].contig.contig_id, genome=gquery.genome,
                                       start=start, end=end)
 
             pipolin.atts.extend(gquery.atts)
             gquery.pipolin_fragments.append(pipolin)
         else:
             left_window, right_window = gquery.get_left_right_windows()
-            pipolin = PipolinFragment(contig=gquery.get_contig_by_id(gquery.polbs[0].contig.contig_id),
+            pipolin = PipolinFragment(contig_id=gquery.polbs[0].contig.contig_id, genome=gquery.genome,
                                       start=left_window[0], end=right_window[1])
             gquery.pipolin_fragments.append(pipolin)
     else:
@@ -198,7 +196,7 @@ def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
     pipolins_dir = os.path.join(root_dir, 'pipolin_sequences')
     os.makedirs(pipolins_dir, exist_ok=True)
 
-    with open(os.path.join(pipolins_dir, gquery.gquery_id + '.fa'), 'w') as ouf:
+    with open(os.path.join(pipolins_dir, gquery.genome.id + '.fa'), 'w') as ouf:
         record = SeqRecord(seq='')
         sep_record = SeqRecord(seq='N' * 100)
 
@@ -214,9 +212,9 @@ def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
 
         print(f'@@@ total record length {len(record)}')
 
-        record.id = gquery.gquery_id
-        record.name = gquery.gquery_id
-        record.description = gquery.gquery_id
+        record.id = gquery.genome.id
+        record.name = gquery.genome.id
+        record.description = gquery.genome.id
         SeqIO.write(sequences=record, handle=ouf, format='fasta')
 
     return pipolins_dir
@@ -225,21 +223,21 @@ def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
 @task
 def annotate_pipolins(gquery, pipolins_dir, proteins, root_dir):
     prokka_dir = os.path.join(root_dir, 'prokka')
-    run_prokka(gquery.gquery_id, pipolins_dir, proteins, prokka_dir)
+    run_prokka(gquery.genome.id, pipolins_dir, proteins, prokka_dir)
     return prokka_dir
 
 
 @task
 def include_atts_into_annotation(gquery, prokka_dir, root_dir):
-    gb_records = read_seqio_records(file=os.path.join(prokka_dir, gquery.gquery_id + '.gbk'), file_format='genbank')
-    gff_records = read_gff_records(file=os.path.join(prokka_dir, gquery.gquery_id + '.gff'))
+    gb_records = read_seqio_records(file=os.path.join(prokka_dir, gquery.genome.id + '.gbk'), file_format='genbank')
+    gff_records = read_gff_records(file=os.path.join(prokka_dir, gquery.genome.id + '.gff'))
 
     att_seqfeatures = create_att_seqfeatures(record_format='gb', gquery=gquery)
     for att in att_seqfeatures:
-        add_new_gb_feature(new_feature=att, record=gb_records[gquery.gquery_id])
+        add_new_gb_feature(new_feature=att, record=gb_records[gquery.genome.id])
     att_seqfeatures = create_att_seqfeatures(record_format='gff', gquery=gquery)
     for att in att_seqfeatures:
-        add_new_gb_feature(new_feature=att, record=gff_records[gquery.gquery_id])
+        add_new_gb_feature(new_feature=att, record=gff_records[gquery.genome.id])
 
     prokka_atts_dir = os.path.join(root_dir, 'prokka_atts')
     os.makedirs(prokka_atts_dir, exist_ok=True)
@@ -252,8 +250,8 @@ def include_atts_into_annotation(gquery, prokka_dir, root_dir):
 
 @task
 def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
-    gb_records = read_seqio_records(file=os.path.join(in_dir, gquery.gquery_id + '.gbk'), file_format='genbank')
-    add_colours(gb_records[gquery.gquery_id])
+    gb_records = read_seqio_records(file=os.path.join(in_dir, gquery.genome.id + '.gbk'), file_format='genbank')
+    add_colours(gb_records[gquery.genome.id])
     if abricate_dir is not None:
         find_and_color_amr_and_virulence(gquery, gb_records, abricate_dir)
     write_genbank_records(gb_records=gb_records, out_dir=in_dir, gquery=gquery)
@@ -261,11 +259,11 @@ def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
 
 @task
 def set_correct_positions(gquery: GQuery, prokka_atts_dir, root_dir):
-    gb_records = read_seqio_records(file=os.path.join(prokka_atts_dir, gquery.gquery_id + '.gbk'),
+    gb_records = read_seqio_records(file=os.path.join(prokka_atts_dir, gquery.genome.id + '.gbk'),
                                     file_format='genbank')
-    # gff_records = read_gff_records(file=os.path.join(prokka_atts_dir, gquery.gquery_id + '.gff'))
+    # gff_records = read_gff_records(file=os.path.join(prokka_atts_dir, gquery.genome.id + '.gff'))
 
-    new_gb_records = {gquery.gquery_id: create_new_gb_record(gquery=gquery, gb_record=gb_records[gquery.gquery_id])}
+    new_gb_records = {gquery.genome.id: create_new_gb_record(gquery=gquery, gb_record=gb_records[gquery.genome.id])}
 
     prokka_atts_positions_dir = os.path.join(root_dir, 'prokka_atts_positions')
     os.makedirs(prokka_atts_positions_dir, exist_ok=True)
