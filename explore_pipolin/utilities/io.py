@@ -5,7 +5,7 @@ from typing import MutableMapping, MutableSequence
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.utilities import Orientation
+from explore_pipolin.utilities import Orientation, define_gquery_id
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
@@ -64,3 +64,32 @@ def read_aragorn_batch(aragorn_batch) -> MutableMapping[str, MutableSequence]:
 
 def read_blastxml(blast_xml):
     return SearchIO.read(blast_xml, 'blast-xml')
+
+
+def save_left_right_subsequences(genome, left_window, right_window, repeats_dir):
+    genome_seq = SeqIO.read(handle=genome, format='fasta')
+
+    left_seq = genome_seq[left_window[0]:left_window[1]]
+    right_seq = genome_seq[right_window[0]:right_window[1]]
+    SeqIO.write(sequences=left_seq, format='fasta',
+                handle=os.path.join(repeats_dir, define_gquery_id(genome=genome) + '.left'))
+    SeqIO.write(sequences=right_seq, format='fasta',
+                handle=os.path.join(repeats_dir, define_gquery_id(genome=genome) + '.right'))
+
+
+def write_repeats(gquery, left_repeats, repeats_dir, right_repeats, sequences):
+    with open(os.path.join(repeats_dir, gquery.gquery_id + '.repeats'), 'w') as ouf:
+        polbs_locations = sorted([(x.start, x.end) for x in gquery.polbs], key=lambda x: x[0])
+        print('left_repeat', 'right_repeat', 'length', 'polbs',
+              'd_to_the_left', 'd_to_the_right', 'sequence', sep='\t', file=ouf)
+        for repeat in zip(left_repeats, right_repeats, sequences):
+            print(repeat[0], repeat[1], repeat[0][1] - repeat[0][0], ','.join([str(i) for i in polbs_locations]),
+                  polbs_locations[0][0] - repeat[0][1], repeat[1][0] - polbs_locations[-1][-1], repeat[2],
+                  sep='\t', file=ouf)
+
+
+def write_atts_denovo(atts_denovo, gquery, repeats_dir):
+    with open(os.path.join(repeats_dir, gquery.gquery_id + '.atts'), 'w') as ouf:
+        print('attL_start', 'attL_end', 'attR_start', 'attR_end', sep='\t', file=ouf)
+        for att_pair in atts_denovo:
+            print(att_pair[0][0], att_pair[0][1], att_pair[1][0], att_pair[1][1], sep='\t', file=ouf)

@@ -5,11 +5,8 @@ from itertools import groupby
 from random import randrange
 import copy
 
-from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
-
-from explore_pipolin.utilities.io import read_blastxml
 
 
 class Orientation(Enum):
@@ -126,7 +123,7 @@ class GQuery:
         target_contigs.extend(i.contig.contig_id for i in self.target_trnas)
         return len(set(target_contigs)) == 1
 
-    # `find_atts_denovo`
+    # `find_atts_denovo` and `scaffold_pipolins`
     def get_left_right_windows(self):
         polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
 
@@ -477,35 +474,6 @@ class GQuery:
 
 def define_gquery_id(genome):
     return os.path.splitext(os.path.basename(genome))[0]
-
-
-def save_left_right_subsequences(genome, left_window, right_window, repeats_dir):
-    os.makedirs(repeats_dir, exist_ok=True)
-    genome_seq = SeqIO.read(handle=genome, format='fasta')
-
-    left_seq = genome_seq[left_window[0]:left_window[1]]
-    right_seq = genome_seq[right_window[0]:right_window[1]]
-    SeqIO.write(sequences=left_seq, format='fasta',
-                handle=os.path.join(repeats_dir, define_gquery_id(genome=genome) + '.left'))
-    SeqIO.write(sequences=right_seq, format='fasta',
-                handle=os.path.join(repeats_dir, define_gquery_id(genome=genome) + '.right'))
-
-
-def extract_repeats(file):
-    repeats = read_blastxml(file)
-    left_repeats = []
-    right_repeats = []
-    sequences = []
-    for entry in repeats:
-        for hit in entry:
-            left_repeats.append((hit.query_start, hit.query_end))
-            right_repeats.append((hit.hit_start, hit.hit_end))
-            sequences.append(str(hit.hit.seq))
-    return left_repeats, right_repeats, sequences
-
-
-def set_proper_location(seq_range, shift):
-    return seq_range[0] + shift, seq_range[1] + shift
 
 
 def add_new_gb_feature(new_feature: SeqFeature, record: SeqRecord):
