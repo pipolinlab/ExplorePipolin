@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
-
 import os
 import click
 import subprocess
-from explore_pipolin.utilities import CONTEXT_SETTINGS
 from Bio import SeqIO
 from io import StringIO
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 def download_genomes_ncbi(metadata_file, out_dir):

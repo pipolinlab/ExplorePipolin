@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
-
 import click
 import subprocess
 from collections import namedtuple
 from Bio import SearchIO
-from explore_pipolin.utilities import CONTEXT_SETTINGS
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 def get_assembly_info(acc_id):

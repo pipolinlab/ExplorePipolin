@@ -288,6 +288,7 @@ def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
         find_and_color_amr_and_virulence(gquery, gb_records, abricate_dir)
     write_genbank_records(gb_records=gb_records, out_dir=in_dir, gquery=gquery)
 
+
 @task
 def set_correct_positions(gquery: GQuery, prokka_atts_dir, root_dir):
     gb_records = read_seqio_records(file=os.path.join(prokka_atts_dir, gquery.gquery_id + '.gbk'),

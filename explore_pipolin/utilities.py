@@ -12,9 +12,6 @@ from Bio import SearchIO, SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
-
 class Orientation(Enum):
     FORWARD = auto()
     REVERSE = auto()
