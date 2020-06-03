@@ -103,10 +103,10 @@ def find_atts_denovo(genome, gquery: GQuery, root_dir):
     atts_denovo_dir = os.path.join(root_dir, 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
-    left_repeats, right_repeats, sequences = find_repeats(genome, gquery, atts_denovo_dir)
-    write_repeats(gquery, left_repeats, atts_denovo_dir, right_repeats, sequences)
+    repeats = find_repeats(genome, gquery, atts_denovo_dir)
+    write_repeats(gquery, repeats, atts_denovo_dir)
 
-    atts_denovo = [(i, j) for i, j in zip(left_repeats, right_repeats) if gquery.is_att_denovo(i, j)]
+    atts_denovo = [(rep.left, rep.right) for rep in repeats if gquery.is_att_denovo(rep.left, rep.right)]
     write_atts_denovo(atts_denovo, gquery, atts_denovo_dir)
 
     return atts_denovo_dir

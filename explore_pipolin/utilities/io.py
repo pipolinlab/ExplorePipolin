@@ -1,11 +1,12 @@
 import os
 from collections import defaultdict
-from typing import MutableMapping, MutableSequence
+from typing import MutableMapping, MutableSequence, Sequence
 
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
 from explore_pipolin.utilities import Orientation, define_gquery_id
+from explore_pipolin.utilities.atts_denovo_search import Repeat
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
@@ -77,14 +78,14 @@ def save_left_right_subsequences(genome, left_window, right_window, repeats_dir)
                 handle=os.path.join(repeats_dir, define_gquery_id(genome=genome) + '.right'))
 
 
-def write_repeats(gquery, left_repeats, repeats_dir, right_repeats, sequences):
+def write_repeats(gquery, repeats: Sequence[Repeat], repeats_dir):
     with open(os.path.join(repeats_dir, gquery.gquery_id + '.repeats'), 'w') as ouf:
         polbs_locations = sorted([(x.start, x.end) for x in gquery.polbs], key=lambda x: x[0])
         print('left_repeat', 'right_repeat', 'length', 'polbs',
               'd_to_the_left', 'd_to_the_right', 'sequence', sep='\t', file=ouf)
-        for repeat in zip(left_repeats, right_repeats, sequences):
-            print(repeat[0], repeat[1], repeat[0][1] - repeat[0][0], ','.join([str(i) for i in polbs_locations]),
-                  polbs_locations[0][0] - repeat[0][1], repeat[1][0] - polbs_locations[-1][-1], repeat[2],
+        for repeat in repeats:
+            print(repeat.left, repeat.right, repeat.left[1] - repeat.left[0], ','.join([str(i) for i in polbs_locations]),
+                  polbs_locations[0][0] - repeat.left[1], repeat.right[0] - polbs_locations[-1][-1], repeat.seq,
                   sep='\t', file=ouf)
 
 

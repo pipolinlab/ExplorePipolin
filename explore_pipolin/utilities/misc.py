@@ -1,6 +1,6 @@
 import os
 from enum import Enum, auto
-from typing import MutableSequence, Set, Optional
+from typing import MutableSequence, Set, Optional, Tuple
 from itertools import groupby
 from random import randrange
 import copy
@@ -140,7 +140,7 @@ class GQuery:
 
         return left_window, right_window
 
-    def is_att_denovo(self, left_repeat, right_repeat):
+    def is_att_denovo(self, left_repeat: Tuple[int, int], right_repeat: Tuple[int, int]) -> bool:
         if self._is_overlapping_att(left_repeat=left_repeat):
             return False
         return self._is_overlapping_trna(left_repeat=left_repeat, right_repeat=right_repeat)
