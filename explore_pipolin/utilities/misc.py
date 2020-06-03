@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 from enum import Enum, auto
-from typing import MutableSequence, Set, Optional, Tuple
+from typing import MutableSequence, Optional, Tuple, Sequence, Mapping
 from itertools import groupby
 from random import randrange
 import copy
@@ -121,9 +121,12 @@ class GQuery:
         self.pipolin_fragments: MutableSequence[PipolinFragment] = []
 
     @staticmethod
-    def dict_by_contig_normalized(features):
+    def _dict_by_contig_normalized(features: Sequence[Feature]) -> Mapping[Contig, Sequence[Feature]]:
         return {contig: sorted(list(ps), key=lambda p: p.start) for contig, ps
                 in groupby((i for i in features), key=lambda x: x.contig.contig_id)}
+
+    def get_features_dict_by_contig_normalized(self, feature_type: FeatureType):
+        return self._dict_by_contig_normalized(self.get_features_by_type(feature_type))
 
     # TODO: replace it with _dict_by_contig_normalized()!
     def get_features_of_contig(self, contig_id, feature_type: FeatureType) -> MutableSequence[Feature]:
@@ -151,7 +154,7 @@ class GQuery:
 
     # `add_features_from_aragorn` and `add_features_atts_denovo`
     def find_target_trna(self, att: Feature) -> Optional[Feature]:
-        trna_dict = self.dict_by_contig_normalized(self.trnas)
+        trna_dict = self.get_features_dict_by_contig_normalized(FeatureType.TARGET_TRNA)
 
         if att.contig_id in trna_dict:
             trnas = trna_dict[att.contig_id]
@@ -243,259 +246,6 @@ class GQuery:
         left_edge = atts[0].start - 50 if atts[0].start < polymerases[0].start else polymerases[0].start - 50
         right_edge = atts[-1].end + 50 if atts[-1].end > polymerases[-1].end else polymerases[-1].end + 50
         return left_edge if left_edge >= 0 else 0, right_edge if right_edge <= length else length
-
-    # scaffolding is required
-    def try_creating_single_record(self):
-        polbs_dict = self.dict_by_contig_normalized(self.polbs)
-        atts_dict = self.dict_by_contig_normalized(self.atts)
-        target_trnas_dict = self.dict_by_contig_normalized(self.target_trnas)
-
-        unchangeable_contigs = self._get_unchangeable_contigs()
-
-        if len(unchangeable_contigs) == 1:
-            unchangeable_contig = unchangeable_contigs[0]
-            print(f'The unchangeable contig is {unchangeable_contig.contig_id}!')
-
-            att_only_contigs = self._order_att_only_contigs()
-            if len(att_only_contigs) == 1:
-                direction = self._get_direction_of_unchangeable(
-                    polbs_sorted=polbs_dict[unchangeable_contig.contig_id],
-                    atts_sorted=atts_dict[unchangeable_contig.contig_id])
-
-                orphan_atts = atts_dict[att_only_contigs[0].contig_id]
-
-                if direction == 'none':
-                    contig_length = unchangeable_contig.contig_length
-                    left_edge = atts_dict[unchangeable_contig.contig_id][0].start - 50
-                    right_edge = atts_dict[unchangeable_contig.contig_id][-1].end + 50
-                    pipolin = PipolinFragment(contig_id=unchangeable_contig.contig_id,
-                                              genome=self.genome,
-                                              start=left_edge if left_edge >= 0 else 0,
-                                              end=right_edge if right_edge <= contig_length else contig_length)
-                    pipolin.atts.extend(atts_dict[unchangeable_contig.contig_id])
-                    self.pipolin_fragments.append(pipolin)
-                    # TODO: if att_only_contig has a target_trna, it could be added on the right
-                elif direction == 'right':
-                    left_fragment = self._create_unchangeable_fragment(atts_dict, unchangeable_contig, direction)
-                    self.pipolin_fragments.append(left_fragment)
-
-                    right_fragment = self._create_att_contig_fragment(contig_atts=orphan_atts, direction=direction)
-                    self.pipolin_fragments.append(right_fragment)
-                elif direction == 'left':
-                    left_fragment = self._create_att_contig_fragment(contig_atts=orphan_atts, direction=direction)
-                    self.pipolin_fragments.append(left_fragment)
-
-                    right_fragment = self._create_unchangeable_fragment(atts_dict, unchangeable_contig, direction)
-                    self.pipolin_fragments.append(right_fragment)
-            elif len(att_only_contigs) == 2:
-                # TODO: the order can be also [middle_fragment, left_fragment, right_fragment]
-                middle_fragment = PipolinFragment(contig_id=unchangeable_contig.contig_id,
-                                                  genome=self.genome,
-                                                  start=0, end=unchangeable_contig.contig_length)
-                middle_fragment.atts.extend(atts_dict[unchangeable_contig.contig_id])
-
-                left_atts = atts_dict[att_only_contigs[0].contig_id]
-                left_fragment = self._create_att_contig_fragment(contig_atts=left_atts, direction='left')
-
-                right_atts = atts_dict[att_only_contigs[1].contig_id]
-                right_fragment = self._create_att_contig_fragment(contig_atts=right_atts, direction='right')
-
-                self.pipolin_fragments.extend([left_fragment, middle_fragment, right_fragment])
-        elif len(unchangeable_contigs) == 2:
-            target_trnas_contig0 = target_trnas_dict[unchangeable_contigs[0].contig_id]
-            target_trnas_contig1 = target_trnas_dict[unchangeable_contigs[1].contig_id]
-
-            if len(target_trnas_contig0) != 0:
-                right_contig = unchangeable_contigs[0]
-                left_contig = unchangeable_contigs[1]
-            elif len(target_trnas_contig1) != 0:
-                right_contig = unchangeable_contigs[1]
-                left_contig = unchangeable_contigs[0]
-            else:
-                raise NotImplementedError
-
-            left_direction = self._get_direction_of_unchangeable(polbs_sorted=polbs_dict[left_contig.contig_id],
-                                                                 atts_sorted=atts_dict[left_contig.contig_id])
-            left_fragment = self._create_unchangeable_fragment(atts_dict, left_contig, left_direction)
-
-            right_direction = self._get_direction_of_unchangeable(polbs_sorted=polbs_dict[right_contig.contig_id],
-                                                                  atts_sorted=atts_dict[right_contig.contig_id])
-            right_fragment = self._create_unchangeable_fragment(atts_dict, right_contig, right_direction)
-
-            self.pipolin_fragments.extend([left_fragment, right_fragment])
-        elif len(unchangeable_contigs) > 2:
-            raise NotImplementedError
-        else:
-            self._try_finish_separate(atts_dict)
-
-    def _create_unchangeable_fragment(self, atts_dict, contig, direction):
-        if direction == 'right':
-            if contig.contig_orientation == Orientation.FORWARD:
-                edge = atts_dict[contig.contig_id][0].start - 50
-                fragment = PipolinFragment(contig_id=contig.contig_id,
-                                           genome=self.genome,
-                                           start=edge if edge >= 0 else 0, end=contig.contig_length)
-            else:
-                edge = atts_dict[contig.contig_id][-1].end + 50
-                fragment = PipolinFragment(contig_id=contig.contig_id, start=0,
-                                           genome=self.genome,
-                                           end=edge if edge <= contig.contig_length else contig.contig_length)
-        else:
-            if contig.contig_orientation == Orientation.FORWARD:
-                edge = atts_dict[contig.contig_id][-1].end + 50
-                fragment = PipolinFragment(contig_id=contig.contig_id, start=0,
-                                           genome=self.genome,
-                                           end=edge if edge <= contig.contig_length else contig.contig_length)
-            else:
-                edge = atts_dict[contig.contig_id][0].start - 50
-                fragment = PipolinFragment(contig_id=contig.contig_id,
-                                           genome=self.genome,
-                                           start=edge if edge >= 0 else 0, end=contig.contig_length)
-
-        fragment.atts.extend(atts_dict[contig.contig_id])
-        return fragment
-
-    def _create_att_contig_fragment(self, contig_atts: MutableSequence[Feature], direction: str):
-        contig_length = contig_atts[0].contig.contig_length
-        if direction == 'right':
-            if contig_atts[0].contig.contig_orientation == Orientation.FORWARD:
-                left_edge = 0
-                right_edge = contig_atts[-1].end + 50
-            else:
-                left_edge = contig_atts[0].start - 50
-                right_edge = contig_length
-        else:
-            if contig_atts[0].contig.contig_orientation == Orientation.FORWARD:
-                left_edge = contig_atts[0].start - 50
-                right_edge = contig_length
-            else:
-                left_edge = 0
-                right_edge = contig_atts[-1].end + 50
-
-        fragment = PipolinFragment(contig_id=contig_atts[0].contig_id, start=left_edge if left_edge >= 0 else 0,
-                                   genome=self.genome, end=right_edge if right_edge <= contig_length else contig_length)
-        fragment.atts.extend(contig_atts)
-        return fragment
-
-    def _try_finish_separate(self, atts_dict):
-        polbs_fragments = self._create_polbs_fragments()
-
-        if len(self.target_trnas) > 1 or len(self.target_trnas) == 0:
-            raise NotImplementedError
-
-        right_fragment = self._create_att_contig_fragment(contig_atts=atts_dict[self.target_trnas[0].contig_id],
-                                                          direction='right')
-
-        atts_contigs = set([i.contig for i in self.atts])
-        if len(atts_contigs) == 2:
-            print('The single record can be created!!!\n')
-
-            atts_contigs = list(atts_contigs)
-            if atts_contigs[0].contig_id == self.target_trnas[0].contig_id:
-                left_contig = atts_contigs[1]
-            else:
-                left_contig = atts_contigs[0]
-
-            left_fragment = self._create_att_contig_fragment(contig_atts=atts_dict[left_contig.contig_id],
-                                                             direction='left')
-        else:
-            raise NotImplementedError
-
-        self.pipolin_fragments.append(left_fragment)
-        self.pipolin_fragments.extend(polbs_fragments)
-        self.pipolin_fragments.append(right_fragment)
-
-    def _create_polbs_fragments(self) -> MutableSequence[PipolinFragment]:
-        polbs_contigs = set([i.contig for i in self.polbs])
-        if len(polbs_contigs) == 2:
-            print('Two "polb only contigs" were found!')
-            polbs_contigs = list(polbs_contigs)
-            if polbs_contigs[0].contig_length + polbs_contigs[1].contig_length < 15000:
-                polb0_fragment = PipolinFragment(contig_id=polbs_contigs[0].contig_id, start=0,
-                                                 genome=self.genome,
-                                                 end=polbs_contigs[0].contig_length)
-                polb1_fragment = PipolinFragment(contig_id=polbs_contigs[1].contig_id, start=0,
-                                                 genome=self.genome,
-                                                 end=polbs_contigs[1].contig_length)
-
-                polb0_length = sum((i.end - i.start) for i in self.get_features_of_contig(
-                    contig_id=polbs_contigs[0].contig_id,
-                    feature_type=FeatureType.POLB))
-                polb1_length = sum((i.end - i.start) for i in self.get_features_of_contig(
-                    contig_id=polbs_contigs[1].contig_id,
-                    feature_type=FeatureType.POLB))
-                # TODO: comparing just by length is an unreliable way! REWRITE if possible!
-                if polb0_length < polb1_length:
-                    polbs_fragments = [polb0_fragment, polb1_fragment]
-                else:
-                    polbs_fragments = [polb1_fragment, polb0_fragment]
-            else:
-                raise NotImplementedError
-
-        elif len(polbs_contigs) == 1:
-            polbs_fragments = [PipolinFragment(contig_id=self.polbs[0].contig_id,
-                                               genome=self.genome,
-                                               start=0, end=self.polbs[0].contig.contig_length)]
-        else:
-            raise NotImplementedError
-
-        return polbs_fragments
-
-    @staticmethod
-    def _get_direction_of_unchangeable(polbs_sorted: MutableSequence[Feature], atts_sorted: MutableSequence[Feature]):
-        if polbs_sorted[0].start > atts_sorted[-1].end:
-            if polbs_sorted[0].contig.contig_orientation == Orientation.FORWARD:
-                return 'right'
-            else:
-                return 'left'
-        elif polbs_sorted[-1].end < atts_sorted[0].start:
-            if polbs_sorted[-1].contig.contig_orientation == Orientation.FORWARD:
-                return 'left'
-            else:
-                return 'right'
-        else:
-            return 'none'
-
-    def _get_unchangeable_contigs(self) -> MutableSequence[Contig]:
-        polbs_contigs = set([i.contig for i in self.polbs])
-
-        contigs_to_return = []
-        for contig in polbs_contigs:
-            atts_next_polbs = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.ATT)
-            if len(atts_next_polbs) != 0:
-                contigs_to_return.append(contig)
-        return contigs_to_return
-
-    def _order_att_only_contigs(self) -> MutableSequence[Contig]:
-        att_only_contigs = self._get_att_only_contigs()
-
-        if len(att_only_contigs) == 1:
-            print('The single record can be created!!!\n')
-            return [att_only_contigs.pop()]
-        elif len(att_only_contigs) == 2:
-            contigs = list(att_only_contigs)
-
-            if len(self.dict_by_contig_normalized(features=self.target_trnas)[contigs[0].contig_id]) != 0:
-                # TODO: here sometimes fails for LREC241: KeyError: 'NODE_38'
-                print('The single record can be created!!!\n')
-                return [contigs[1], contigs[0]]
-            elif len(self.dict_by_contig_normalized(features=self.target_trnas)[contigs[1].contig_id]) != 0:
-                print('The single record can be created!!!\n')
-                return [contigs[0], contigs[1]]
-            else:
-                raise NotImplementedError
-
-        else:
-            raise NotImplementedError
-
-    def _get_att_only_contigs(self) -> Set[Contig]:
-        att_only_contigs = set()
-        for att in self.atts:
-            polbs_next_att = self.get_features_of_contig(contig_id=att.contig_id, feature_type=FeatureType.POLB)
-            if len(polbs_next_att) == 0:
-                att_only_contigs.add(att.contig)
-
-        return att_only_contigs
 
     @staticmethod
     def _is_overlapping(range1, range2):

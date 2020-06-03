@@ -11,7 +11,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours, find_and_color_amr_and_virulence
-from explore_pipolin.utilities import GQuery, Feature, Orientation, PipolinFragment, Genome
+from explore_pipolin.utilities import GQuery, Feature, Orientation, PipolinFragment, Genome, FeatureType
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
@@ -25,6 +25,7 @@ from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities import add_new_gb_feature
 from explore_pipolin.utilities import create_new_gb_record
+from explore_pipolin.utilities.scaffolding import Scaffolder
 
 
 @task
@@ -170,7 +171,7 @@ def scaffold_pipolins(gquery: GQuery):
     # https://github.com/biopython/biopython/issues/1755
     if gquery.genome.is_single_contig() or gquery.is_on_the_same_contig():
         print('>>>Scaffolding is not required!')
-        if len(gquery.dict_by_contig_normalized(gquery.atts)) != 0:
+        if len(gquery.get_features_dict_by_contig_normalized(FeatureType.ATT)) != 0:
             start, end = gquery.get_pipolin_bounds()
             pipolin = PipolinFragment(contig_id=gquery.polbs[0].contig.contig_id, genome=gquery.genome,
                                       start=start, end=end)
@@ -184,7 +185,8 @@ def scaffold_pipolins(gquery: GQuery):
             gquery.pipolin_fragments.append(pipolin)
     else:
         print('>>>Scaffolding is required!')
-        gquery.try_creating_single_record()
+        scaffolder = Scaffolder(gquery=gquery)
+        gquery.pipolin_fragments = scaffolder.try_creating_single_record()
 
 
 @task
