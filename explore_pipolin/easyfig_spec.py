@@ -1,5 +1,6 @@
 import os
-from explore_pipolin.utilities import GQuery, SeqIORecords
+from explore_pipolin.utilities import GQuery
+from explore_pipolin.utilities.io import SeqIORecords
 from Bio.SeqIO import SeqRecord
 
 red = '255 0 0'   # Primer-independent DNA polymerase PolB

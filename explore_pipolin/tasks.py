@@ -12,22 +12,21 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
 from explore_pipolin.easyfig_spec import add_colours, find_and_color_amr_and_virulence
-from explore_pipolin.utilities import GQuery, Contig, Feature, Orientation, PipolinFragment
+from explore_pipolin.utilities import GQuery, Contig, Feature, Orientation, PipolinFragment, read_blastxml
 from explore_pipolin.utilities import define_gquery_id
-from explore_pipolin.utilities import read_seqio_records
+from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities import blast_genome_against_seq
-from explore_pipolin.utilities import read_blastxml
 from explore_pipolin.utilities import run_aragorn
-from explore_pipolin.utilities import read_aragorn_batch
+from explore_pipolin.utilities.io import read_aragorn_batch
 from explore_pipolin.utilities import save_left_right_subsequences
 from explore_pipolin.utilities import blast_for_identical
 from explore_pipolin.utilities import extract_repeats
 from explore_pipolin.utilities import set_proper_location
 from explore_pipolin.utilities import create_fragment_record
-from explore_pipolin.utilities import read_gff_records
+from explore_pipolin.utilities.io import read_gff_records
 from explore_pipolin.utilities import create_att_seqfeatures
-from explore_pipolin.utilities import write_genbank_records
-from explore_pipolin.utilities import write_gff_records
+from explore_pipolin.utilities.io import write_genbank_records
+from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities import add_new_gb_feature
 from explore_pipolin.utilities import create_new_gb_record
 
