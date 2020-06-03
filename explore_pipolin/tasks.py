@@ -3,7 +3,6 @@ All the tasks should be defined in this file!
 """
 
 import os
-import subprocess
 from prefect import task
 from prefect import context
 from prefect.engine import signals
@@ -15,11 +14,10 @@ from explore_pipolin.easyfig_spec import add_colours, find_and_color_amr_and_vir
 from explore_pipolin.utilities import GQuery, Contig, Feature, Orientation, PipolinFragment, read_blastxml
 from explore_pipolin.utilities import define_gquery_id
 from explore_pipolin.utilities.io import read_seqio_records
-from explore_pipolin.utilities import blast_genome_against_seq
-from explore_pipolin.utilities import run_aragorn
 from explore_pipolin.utilities.io import read_aragorn_batch
 from explore_pipolin.utilities import save_left_right_subsequences
-from explore_pipolin.utilities import blast_for_identical
+from explore_pipolin.utilities.external_tools import blast_for_identical, run_aragorn, blast_genome_against_seq,\
+    run_prokka
 from explore_pipolin.utilities import extract_repeats
 from explore_pipolin.utilities import set_proper_location
 from explore_pipolin.utilities import create_fragment_record
@@ -246,15 +244,7 @@ def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
 @task
 def annotate_pipolins(gquery, pipolins_dir, proteins, root_dir):
     prokka_dir = os.path.join(root_dir, 'prokka')
-    os.makedirs(prokka_dir, exist_ok=True)
-
-    subprocess.run(['prokka', '--outdir', prokka_dir,
-                    '--prefix', gquery.gquery_id,
-                    '--rawproduct', '--cdsrnaolap', '--cpus', '4',
-                    '--rfam', '--proteins', proteins, '--force',
-                    '--locustag', gquery.gquery_id,
-                    os.path.join(pipolins_dir, gquery.gquery_id + '.fa')])
-
+    run_prokka(gquery.gquery_id, pipolins_dir, proteins, prokka_dir)
     return prokka_dir
 
 
