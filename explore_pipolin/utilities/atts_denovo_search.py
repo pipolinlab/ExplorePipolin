@@ -3,7 +3,7 @@ import os
 
 from typing import Tuple, Sequence
 
-from explore_pipolin.utilities.external_tools_run import blast_for_repeats
+from explore_pipolin.utilities.external_tools import blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml
 from explore_pipolin.utilities.io import save_left_right_subsequences
 
@@ -39,5 +39,3 @@ def _extract_repeats(file) -> Sequence[Repeat]:
         for hit in entry:
             repeats.append(Repeat((hit.query_start, hit.query_end), (hit.hit_start, hit.hit_end), str(hit.hit.seq)))
     return repeats
-
-

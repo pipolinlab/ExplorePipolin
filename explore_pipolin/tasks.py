@@ -16,8 +16,8 @@ from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_att
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
 from explore_pipolin.utilities.atts_denovo_search import find_repeats
-from explore_pipolin.utilities.external_tools_run import blast_genome_against_seq
-from explore_pipolin.utilities.external_tools_run import run_prokka, run_aragorn
+from explore_pipolin.utilities.external_tools import blast_genome_against_seq
+from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
 from explore_pipolin.utilities import create_fragment_record
 from explore_pipolin.utilities.io import read_gff_records
 from explore_pipolin.utilities import create_att_seqfeatures

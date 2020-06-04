@@ -170,7 +170,7 @@ class GQuery:
         return len(set(target_contigs)) == 1
 
     # `find_atts_denovo` and `scaffold_pipolins`
-    def get_left_right_windows(self):
+    def get_left_right_windows(self) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
 
         if polymerases[-1].start - polymerases[0].start > 10000:   # TODO: is it small/big enough?
@@ -236,8 +236,6 @@ class GQuery:
             if len(set(polbs_frames)) != 1:  # an ambiguous case
                 return contig.contig_orientation
             return polbs[0].frame
-
-
 
     @staticmethod
     def _is_overlapping(range1, range2):
