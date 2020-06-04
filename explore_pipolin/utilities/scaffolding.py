@@ -191,7 +191,7 @@ class Scaffolder:
 
         return contigs_to_return
 
-    def _create_att_contig_fragment(self, contig_atts: MutableSequence[Feature],
+    def _create_att_contig_fragment(self, contig_atts: Sequence[Feature],
                                     direction: Direction) -> PipolinFragment:
         contig = contig_atts[0].contig
         contig_length = contig.contig_length
@@ -218,7 +218,6 @@ class Scaffolder:
 
     def _order_att_only_contigs(self) -> MutableSequence[Contig]:
         att_only_contigs = list(self._get_att_only_contigs())
-
         if len(att_only_contigs) == 1:
             print('The single record can be created!!!\n')
             return att_only_contigs
@@ -232,7 +231,6 @@ class Scaffolder:
                 return [att_only_contigs[0], att_only_contigs[1]]
             else:
                 raise NotImplementedError
-
         else:
             raise NotImplementedError
 

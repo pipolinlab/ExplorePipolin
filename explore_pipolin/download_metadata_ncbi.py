@@ -18,7 +18,7 @@ def get_assembly_acc_and_species_name(assembly_info):
                                            input=assembly_info, stdout=subprocess.PIPE)
     assembly_info_extracted = subprocess.run(
         ['xtract', '-pattern', 'DocumentSummary', '-element', 'AssemblyAccession', 'SpeciesName'],
-                                             input=assembly_info_fetched.stdout, stdout=subprocess.PIPE)
+        input=assembly_info_fetched.stdout, stdout=subprocess.PIPE)
     info_strings = assembly_info_extracted.stdout.decode(encoding='UTF8').strip().split(sep='\n')
     # There might be old release assemblies as well, but we need the latest!
     if len(info_strings) == 1:
@@ -32,7 +32,7 @@ def get_assembly_acc_and_species_name(assembly_info):
 
 def get_and_filter_seqs_info(assembly_info):
     seqs_info = subprocess.run(['elink', '-target', 'nucleotide', '-name', 'assembly_nuccore_insdc'],
-                                input=assembly_info, stdout=subprocess.PIPE)
+                               input=assembly_info, stdout=subprocess.PIPE)
     seqs_info_fetched = subprocess.run(['efetch', '-format', 'docsum'],
                                        input=seqs_info.stdout, stdout=subprocess.PIPE)
     seqs_info_filtered = subprocess.run(

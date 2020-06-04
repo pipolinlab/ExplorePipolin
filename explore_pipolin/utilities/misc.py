@@ -1,80 +1,15 @@
 from __future__ import annotations
-import os
+
+from collections import defaultdict
 from enum import Enum, auto
-from typing import MutableSequence, Optional, Tuple, Sequence, Mapping
-from itertools import groupby
+from typing import MutableSequence, Optional, Tuple, Sequence, Mapping, MutableMapping, List
 from random import randrange
 import copy
 
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 
-from explore_pipolin.utilities.io import read_seqio_records
-
-
-class Orientation(Enum):
-    FORWARD = auto()
-    REVERSE = auto()
-
-    @staticmethod
-    def orientation_from_blast(hit_frame):
-        if hit_frame == 1:
-            return Orientation.FORWARD
-        elif hit_frame == -1:
-            return Orientation.REVERSE
-
-    def to_pm_one_encoding(self):
-        return +1 if self.FORWARD else -1
-
-    def to_string(self):
-        return 'forward' if self.FORWARD else 'reverse'
-
-    def __neg__(self):
-        if self is self.FORWARD:
-            return self.REVERSE
-        else:
-            return self.FORWARD
-
-
-class Contig:
-    def __init__(self, contig_id, contig_length, orientation=Orientation.FORWARD):
-        self.contig_id: str = contig_id
-        self.contig_length: int = contig_length
-        self.contig_orientation: Orientation = orientation
-
-
-class Genome:
-    def __init__(self, id: str):
-        self.id = id
-        self.contigs: MutableSequence[Contig] = []
-
-    def get_contig_by_id(self, contig_id: str) -> Optional[Contig]:
-        for contig in self.contigs:
-            if contig.contig_id == contig_id:
-                return contig
-        return None
-
-    def is_single_contig(self):
-        return len(self.contigs) == 1
-
-    def get_complete_genome_contig_id(self):
-        if not self.is_single_contig():
-            raise AssertionError('Unsupported! Not a complete genome!')
-        return self.contigs[0].contig_id
-
-    def get_complete_genome_length(self) -> int:
-        if not self.is_single_contig():
-            raise AssertionError('Unsupported! Not a complete genome!')
-        return self.contigs[0].contig_length
-
-    @staticmethod
-    def load_from_file(genome_file: str) -> Genome:
-        genome = Genome(id=define_gquery_id(genome_file))
-        genome_dict = read_seqio_records(file=genome_file, file_format='fasta')
-        for key, value in genome_dict.items():
-            contig = Contig(contig_id=key, contig_length=len(value.seq))
-            genome.contigs.append(contig)
-        return genome
+from explore_pipolin.utilities.common import Orientation, Contig, Genome
 
 
 class Feature:
@@ -107,6 +42,7 @@ class FeatureType(Enum):
     POLB = auto()
     ATT = auto()
     TARGET_TRNA = auto()
+    TRNA = auto()
 
 
 class GQuery:
@@ -121,11 +57,15 @@ class GQuery:
         self.pipolin_fragments: MutableSequence[PipolinFragment] = []
 
     @staticmethod
-    def _dict_by_contig_normalized(features: Sequence[Feature]) -> Mapping[Contig, Sequence[Feature]]:
-        return {contig: sorted(list(ps), key=lambda p: p.start) for contig, ps
-                in groupby((i for i in features), key=lambda x: x.contig.contig_id)}
+    def _dict_by_contig_normalized(features: Sequence[Feature]) -> Mapping[str, Sequence[Feature]]:
+        result: MutableMapping[str, List[Feature]] = defaultdict(list)
+        for feature in features:
+            result[feature.contig_id].append(feature)
+        for _, features in result.items():
+            features.sort(key=lambda p: p.start)
+        return result
 
-    def get_features_dict_by_contig_normalized(self, feature_type: FeatureType):
+    def get_features_dict_by_contig_normalized(self, feature_type: FeatureType) -> Mapping[str, Sequence[Feature]]:
         return self._dict_by_contig_normalized(self.get_features_by_type(feature_type))
 
     # TODO: replace it with _dict_by_contig_normalized()!
@@ -144,8 +84,10 @@ class GQuery:
             return self.atts
         elif feature_type is FeatureType.TARGET_TRNA:
             return self.target_trnas
+        elif feature_type is FeatureType.TRNA:
+            return self.trnas
         else:
-            raise AssertionError(f'Feature must be one of: {list(FeatureType)}')
+            raise AssertionError(f'Feature must be one of: {list(FeatureType)}, not {feature_type}')
 
     def feature_from_blasthit(self, hit, contig_id) -> Feature:
         return Feature(start=hit.hit_start, end=hit.hit_end,
@@ -154,7 +96,7 @@ class GQuery:
 
     # `add_features_from_aragorn` and `add_features_atts_denovo`
     def find_target_trna(self, att: Feature) -> Optional[Feature]:
-        trna_dict = self.get_features_dict_by_contig_normalized(FeatureType.TARGET_TRNA)
+        trna_dict = self.get_features_dict_by_contig_normalized(FeatureType.TRNA)
 
         if att.contig_id in trna_dict:
             trnas = trna_dict[att.contig_id]
@@ -259,10 +201,6 @@ class GQuery:
                                  location=FeatureLocation(start=start, end=end, strand=frame.to_pm_one_encoding()),
                                  qualifiers=gb_qualifiers if records_format == 'gb' else gff_qualifiers)
         return att_feature
-
-
-def define_gquery_id(genome):
-    return os.path.splitext(os.path.basename(genome))[0]
 
 
 def add_new_gb_feature(new_feature: SeqFeature, record: SeqRecord):

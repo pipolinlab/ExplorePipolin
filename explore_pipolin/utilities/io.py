@@ -5,10 +5,18 @@ from typing import MutableMapping, MutableSequence, Sequence
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.utilities import Orientation, define_gquery_id
-from explore_pipolin.utilities.atts_denovo_search import Repeat
+from explore_pipolin.utilities.common import Genome, Orientation, define_gquery_id, Repeat, Contig
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
+
+
+def read_genome_from_file(genome_file: str) -> Genome:
+    genome = Genome(id=define_gquery_id(genome_file))
+    genome_dict = read_seqio_records(file=genome_file, file_format='fasta')
+    for key, value in genome_dict.items():
+        contig = Contig(contig_id=key, contig_length=len(value.seq))
+        genome.contigs.append(contig)
+    return genome
 
 
 def read_seqio_records(file, file_format) -> SeqIORecords:
@@ -29,15 +37,15 @@ def read_gff_records(file) -> SeqIORecords:
     return gff_records
 
 
-def write_genbank_records(gb_records: SeqIORecords, out_dir, gquery):
+def write_genbank_records(gb_records: SeqIORecords, out_dir, genome: Genome):
     records = [record for record in gb_records.values()]
-    with open(os.path.join(out_dir, f'{gquery.gquery_id}.gbk'), 'w') as ouf:
+    with open(os.path.join(out_dir, f'{genome.id}.gbk'), 'w') as ouf:
         SeqIO.write(records, ouf, 'genbank')
 
 
-def write_gff_records(gff_records: SeqIORecords, out_dir, gquery):
+def write_gff_records(gff_records: SeqIORecords, out_dir, genome: Genome):
     records = [record for record in gff_records.values()]
-    with open(os.path.join(out_dir, f'{gquery.gquery_id}.gff'), 'w') as ouf:
+    with open(os.path.join(out_dir, f'{genome.id}.gff'), 'w') as ouf:
         GFF.write(records, ouf)
         print('##FASTA', file=ouf)
         SeqIO.write(records, ouf, format='fasta')
@@ -84,7 +92,8 @@ def write_repeats(gquery, repeats: Sequence[Repeat], repeats_dir):
         print('left_repeat', 'right_repeat', 'length', 'polbs',
               'd_to_the_left', 'd_to_the_right', 'sequence', sep='\t', file=ouf)
         for repeat in repeats:
-            print(repeat.left, repeat.right, repeat.left[1] - repeat.left[0], ','.join([str(i) for i in polbs_locations]),
+            print(repeat.left, repeat.right, repeat.left[1] - repeat.left[0],
+                  ','.join([str(i) for i in polbs_locations]),
                   polbs_locations[0][0] - repeat.left[1], repeat.right[0] - polbs_locations[-1][-1], repeat.seq,
                   sep='\t', file=ouf)
 

@@ -6,9 +6,10 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 # TODO: is it possible to write better?
-def task_state_handler(obj, old_state: State, new_state):
+def task_state_handler(_obj, old_state: State, _new_state):
     if 'gquery' in old_state.cached_inputs:
-        gquery_id = old_state.cached_inputs['gquery'].value.gquery_id
+        gquery = old_state.cached_inputs['gquery'].value
+        gquery_id = gquery.genome.id
         print(f'>>> It was {gquery_id}...')
 
 

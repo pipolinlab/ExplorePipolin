@@ -11,7 +11,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours, find_and_color_amr_and_virulence
-from explore_pipolin.utilities import GQuery, Feature, Orientation, Genome
+from explore_pipolin.utilities import GQuery, Feature, Orientation, FeatureType
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
@@ -23,6 +23,7 @@ from explore_pipolin.utilities.io import read_gff_records
 from explore_pipolin.utilities import create_att_seqfeatures
 from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
+from explore_pipolin.utilities.io import read_genome_from_file
 from explore_pipolin.utilities import add_new_gb_feature
 from explore_pipolin.utilities import create_new_gb_record
 from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
@@ -30,7 +31,7 @@ from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fra
 
 @task
 def create_gquery(genome) -> GQuery:
-    return GQuery(genome=Genome.load_from_file(genome))
+    return GQuery(genome=read_genome_from_file(genome))
 
 
 @task
@@ -48,7 +49,7 @@ def run_blast_against_att(genome, root_dir, reference):
 
 
 @task
-def add_features_from_blast(gquery: GQuery, blast_dir, feature_type):
+def add_features_from_blast(gquery: GQuery, blast_dir, feature_type: FeatureType):
     entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.genome.id}.fmt5'))
     for entry in entries:
         for hit in entry:
@@ -70,7 +71,6 @@ def add_features_from_aragorn(gquery: GQuery, aragorn_dir):
         for hit in hits:
             feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig_id=contig_id, genome=gquery.genome)
             gquery.trnas.append(feature)
-
     for att in gquery.atts:
         target_trna = gquery.find_target_trna(att)
         if target_trna is not None:
@@ -159,9 +159,9 @@ def are_atts_present(gquery: GQuery):
 
 
 @task
-def analyse_pipolin_orientation(gquery):
+def analyse_pipolin_orientation(gquery: GQuery):
     gquery.is_single_target_trna_per_contig()
-    for contig in gquery.contigs:
+    for contig in gquery.genome.contigs:
         contig.contig_orientation = gquery.get_contig_orientation(contig)
 
 
@@ -233,8 +233,8 @@ def include_atts_into_annotation(gquery, prokka_dir, root_dir):
     prokka_atts_dir = os.path.join(root_dir, 'prokka_atts')
     os.makedirs(prokka_atts_dir, exist_ok=True)
 
-    write_genbank_records(gb_records=gb_records, out_dir=prokka_atts_dir, gquery=gquery)
-    write_gff_records(gff_records=gff_records, out_dir=prokka_atts_dir, gquery=gquery)
+    write_genbank_records(gb_records=gb_records, out_dir=prokka_atts_dir, genome=gquery.genome)
+    write_gff_records(gff_records=gff_records, out_dir=prokka_atts_dir, genome=gquery.genome)
 
     return prokka_atts_dir
 
@@ -245,7 +245,7 @@ def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
     add_colours(gb_records[gquery.genome.id])
     if abricate_dir is not None:
         find_and_color_amr_and_virulence(gquery, gb_records, abricate_dir)
-    write_genbank_records(gb_records=gb_records, out_dir=in_dir, gquery=gquery)
+    write_genbank_records(gb_records=gb_records, out_dir=in_dir, genome=gquery.genome)
 
 
 @task
@@ -259,7 +259,7 @@ def set_correct_positions(gquery: GQuery, prokka_atts_dir, root_dir):
     prokka_atts_positions_dir = os.path.join(root_dir, 'prokka_atts_positions')
     os.makedirs(prokka_atts_positions_dir, exist_ok=True)
 
-    write_genbank_records(gb_records=new_gb_records, out_dir=prokka_atts_positions_dir, gquery=gquery)
+    write_genbank_records(gb_records=new_gb_records, out_dir=prokka_atts_positions_dir, genome=gquery.genome)
     # write_gff_records(gff_records=gff_records, out_dir=prokka_atts_positions_dir, gquery=gquery)
 
     return prokka_atts_positions_dir

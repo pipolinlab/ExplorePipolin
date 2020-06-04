@@ -3,6 +3,7 @@ from prefect import Flow, Parameter, unmapped
 from prefect.tasks.core.constants import Constant
 
 from explore_pipolin import tasks
+from explore_pipolin.utilities import FeatureType
 
 _REF_POLB = Constant(pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB.faa'))
 _REF_ATT = Constant(pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa'))
@@ -20,12 +21,12 @@ def get_flow():
         polbs_blast = tasks.run_blast_against_polb.map(genome=genomes, root_dir=unmapped(out_dir),
                                                        reference=unmapped(_REF_POLB))
         t_add_polbs = tasks.add_features_from_blast.map(gquery=gquery, blast_dir=polbs_blast,
-                                                        feature_type=unmapped(Constant('polbs')))
+                                                        feature_type=unmapped(Constant(FeatureType.POLB)))
 
         atts_blast = tasks.run_blast_against_att.map(genome=genomes, root_dir=unmapped(out_dir),
                                                      reference=unmapped(_REF_ATT))
         t_add_atts = tasks.add_features_from_blast.map(gquery=gquery, blast_dir=atts_blast,
-                                                       feature_type=unmapped(Constant('atts')))
+                                                       feature_type=unmapped(Constant(FeatureType.ATT)))
 
         aragorn_results = tasks.detect_trnas_with_aragorn.map(genome=genomes, root_dir=unmapped(out_dir))
         t_add_trnas = tasks.add_features_from_aragorn.map(gquery=gquery, aragorn_dir=aragorn_results,
