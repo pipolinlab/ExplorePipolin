@@ -1,33 +1,34 @@
+from enum import Enum
 from Bio.SeqIO import SeqRecord
 
-red = '255 0 0'   # Primer-independent DNA polymerase PolB
-brick_red = '139 58 58'   # Tyrosine recombinase XerC
-brown = '200 150 100'   # Prophage integrase IntS
-yellow = '255 255 0'   # Type I site-specific deoxyribonuclease (hsdR)
-# Type I restriction modification enzyme
-# Type I restriction modification system methyltransferase (hsdM)
-magenta = '255 0 255'   # metallohydrolase
-purple = '178 58 238'   # excisionase
-cyan = '0 255 255'   # Uracil-DNA glycosylase
-green = '0 255 0'   # tRNA-Leu
-blue = '0 0 255'   # repeat_region
-floral_white = '255 250 240'   # others
-black = '0 0 0'   # pipolin_structure
-pink = '255 200 200'   # paired-ends
 
-orange = '255 165 0'   # AMR gene
-light_steel_blue = '176 196 222'   # virulence gene
+class EasyfigColour(Enum):
+    RED = '255 0 0'   # Primer-independent DNA polymerase PolB
+    BRICK_RED = '139 58 58'   # Tyrosine recombinase XerC
+    BROWN = '200 150 100'   # Prophage integrase IntS
+    YELLOW = '255 255 0'   # Type I site-specific deoxyribonuclease (hsdR)
+    # Type I restriction modification enzyme
+    # Type I restriction modification system methyltransferase (hsdM)
+    MAGENTA = '255 0 255'   # metallohydrolase
+    PURPLE = '178 58 238'   # excisionase
+    CYAN = '0 255 255'   # Uracil-DNA glycosylase
+    GREEN = '0 255 0'   # tRNA-Leu
+    BLUE = '0 0 255'   # repeat_region
+    FLORAL_WHITE = '255 250 240'   # others
+    BLACK = '0 0 0'   # pipolin_structure
+    PINK = '255 200 200'   # paired-ends
 
-products_to_colours = {'Primer-independent DNA polymerase PolB': red,
-                       'Tyrosine recombinase XerC': brick_red,
-                       'Type I site-specific deoxyribonuclease (hsdR)': yellow,
-                       'Type I restriction modification enzyme': yellow,
-                       'Type I restriction modification system methyltransferase (hsdM)': yellow,
-                       'metallohydrolase': magenta, 'excisionase': purple,
-                       'Uracil-DNA glycosylase': cyan, 'tRNA-Leu': green,  # 'tRNA-Arg': green,
-                       'repeat_region': blue, 'pipolin_structure': black,
-                       'paired-ends': pink, 'Prophage integrase IntS': brown,
-                       'other': floral_white}
+
+products_to_colours = {'Primer-independent DNA polymerase PolB': EasyfigColour.RED,
+                       'Tyrosine recombinase XerC': EasyfigColour.BRICK_RED,
+                       'Type I site-specific deoxyribonuclease (hsdR)': EasyfigColour.YELLOW,
+                       'Type I restriction modification enzyme': EasyfigColour.YELLOW,
+                       'Type I restriction modification system methyltransferase (hsdM)': EasyfigColour.YELLOW,
+                       'metallohydrolase': EasyfigColour.MAGENTA, 'excisionase': EasyfigColour.PURPLE,
+                       'Uracil-DNA glycosylase': EasyfigColour.CYAN, 'tRNA-Leu': EasyfigColour.GREEN,
+                       'repeat_region': EasyfigColour.BLUE, 'pipolin_structure': EasyfigColour.BLACK,
+                       'paired-ends': EasyfigColour.PINK, 'Prophage integrase IntS': EasyfigColour.BROWN,
+                       'other': EasyfigColour.FLORAL_WHITE}
 
 
 def colour_feature(qualifiers):
