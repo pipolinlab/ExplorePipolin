@@ -27,6 +27,9 @@ def get_flow():
         t_add_pipolbs = tasks.add_features_from_blast.map(gquery=gquery, blast_dir=pipolb_blast_dir,
                                                           feature_type=unmapped(Constant(FeatureType.PIPOLB)))
 
+        t_check_pipolbs = tasks.are_pipolbs_present.map(gquery=gquery, upstream_tasks=[t_add_pipolbs])
+        gquery = _DEFAULT_FILTER(tasks.filter_no_pipolbs.map(task_to_filter=gquery, filter_by=t_check_pipolbs))
+
         att_blast_dir = tasks.run_blast_against_att.map(gquery=gquery, ref_att=unmapped(_REF_ATT),
                                                         out_dir=unmapped(out_dir))
         t_add_atts = tasks.add_features_from_blast.map(gquery=gquery, blast_dir=att_blast_dir,
@@ -35,12 +38,8 @@ def get_flow():
         aragorn_results_dir = tasks.detect_trnas_with_aragorn.map(gquery=gquery, out_dir=unmapped(out_dir))
         t_add_trnas = tasks.add_features_from_aragorn.map(gquery=gquery, aragorn_results_dir=aragorn_results_dir,
                                                           upstream_tasks=[t_add_pipolbs, t_add_atts])
-        # TODO: move it before att blast and aragorn!
-        t_check_pipolbs = tasks.are_pipolbs_present.map(gquery=gquery, upstream_tasks=[t_add_trnas])
 
-        gquery = _DEFAULT_FILTER(tasks.filter_no_pipolbs.map(task_to_filter=gquery, filter_by=t_check_pipolbs))
-
-        atts_denovo = tasks.find_atts_denovo.map(gquery=gquery, out_dir=unmapped(out_dir))
+        atts_denovo = tasks.find_atts_denovo.map(gquery=gquery, out_dir=unmapped(out_dir), upstream_tasks=[t_add_trnas])
         t_add_denovo_atts = tasks.add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
 
         t_check_atts = tasks.are_atts_present.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts])
