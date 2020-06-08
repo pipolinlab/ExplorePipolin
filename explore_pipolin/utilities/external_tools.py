@@ -8,10 +8,12 @@ def run_prokka(gquery_id, pipolins_dir, proteins, prokka_dir):
     os.makedirs(prokka_dir, exist_ok=True)
     subprocess.run(['prokka', '--outdir', prokka_dir,
                     '--prefix', gquery_id,
+                    # TODO: number of CPUs is hardcoded. To pass it as an argument?
                     '--rawproduct', '--cdsrnaolap', '--cpus', '4',
                     '--rfam', '--proteins', proteins, '--force',
                     '--locustag', gquery_id,
-                    os.path.join(pipolins_dir, gquery_id + '.fa')])
+                    os.path.join(pipolins_dir, gquery_id + '.fa')],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def blast_for_repeats(gquery_id, repeats_dir):
