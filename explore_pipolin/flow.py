@@ -24,31 +24,29 @@ def get_flow():
 
         pipolb_blast_dir = tasks.run_blast_against_pipolb.map(gquery=gquery, ref_pipolb=unmapped(_REF_PIPOLB),
                                                               out_dir=unmapped(out_dir))
-        t_add_pipolbs = tasks.add_features_from_blast.map(gquery=gquery, blast_dir=pipolb_blast_dir,
-                                                          feature_type=unmapped(Constant(FeatureType.PIPOLB)))
+        gquery = tasks.add_features_from_blast.map(gquery=gquery, blast_dir=pipolb_blast_dir,
+                                                   feature_type=unmapped(Constant(FeatureType.PIPOLB)))
 
-        t_check_pipolbs = tasks.are_pipolbs_present.map(gquery=gquery, upstream_tasks=[t_add_pipolbs])
+        t_check_pipolbs = tasks.are_pipolbs_present.map(gquery=gquery)
         gquery = _DEFAULT_FILTER(tasks.filter_no_pipolbs.map(task_to_filter=gquery, filter_by=t_check_pipolbs))
 
         att_blast_dir = tasks.run_blast_against_att.map(gquery=gquery, ref_att=unmapped(_REF_ATT),
                                                         out_dir=unmapped(out_dir))
-        t_add_atts = tasks.add_features_from_blast.map(gquery=gquery, blast_dir=att_blast_dir,
-                                                       feature_type=unmapped(Constant(FeatureType.ATT)))
+        gquery = tasks.add_features_from_blast.map(gquery=gquery, blast_dir=att_blast_dir,
+                                                   feature_type=unmapped(Constant(FeatureType.ATT)))
 
         aragorn_results_dir = tasks.detect_trnas_with_aragorn.map(gquery=gquery, out_dir=unmapped(out_dir))
-        t_add_trnas = tasks.add_features_from_aragorn.map(gquery=gquery, aragorn_results_dir=aragorn_results_dir,
-                                                          upstream_tasks=[t_add_pipolbs, t_add_atts])
+        gquery = tasks.add_features_from_aragorn.map(gquery=gquery, aragorn_results_dir=aragorn_results_dir)
 
-        atts_denovo = tasks.find_atts_denovo.map(gquery=gquery, out_dir=unmapped(out_dir), upstream_tasks=[t_add_trnas])
-        t_add_denovo_atts = tasks.add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
+        atts_denovo = tasks.find_atts_denovo.map(gquery=gquery, out_dir=unmapped(out_dir))
+        task_atts_denovo = tasks.add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
 
-        t_check_atts = tasks.are_atts_present.map(gquery=gquery, upstream_tasks=[t_add_denovo_atts])
+        gquery = tasks.are_atts_present.map(gquery=gquery, upstream_tasks=[task_atts_denovo])
 
-        t_set_orientations = tasks.analyse_pipolin_orientation.map(gquery=gquery, upstream_tasks=[t_check_atts])
-        t_scaffolding = tasks.scaffold_pipolins.map(gquery=gquery, upstream_tasks=[t_set_orientations])
+        gquery = tasks.analyse_pipolin_orientation.map(gquery=gquery)
+        gquery = tasks.scaffold_pipolins.map(gquery=gquery)
 
-        pipolin_sequences = tasks.extract_pipolin_regions.map(gquery=gquery, out_dir=unmapped(out_dir),
-                                                              upstream_tasks=[t_scaffolding])
+        pipolin_sequences = tasks.extract_pipolin_regions.map(gquery=gquery, out_dir=unmapped(out_dir))
         prokka = tasks.annotate_pipolins.map(gquery=gquery, pipolins_dir=pipolin_sequences,
                                              proteins=unmapped(_PROTEINS), out_dir=unmapped(out_dir))
         prokka_atts = tasks.include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,

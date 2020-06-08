@@ -52,12 +52,14 @@ def run_blast_against_att(gquery, ref_att, out_dir):
 
 
 @task
-def add_features_from_blast(gquery: GQuery, blast_dir, feature_type: FeatureType):
+def add_features_from_blast(gquery: GQuery, blast_dir, feature_type: FeatureType) -> GQuery:
     entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.genome.genome_id}.fmt5'))
     for entry in entries:
         for hit in entry:
             feature = gquery.feature_from_blasthit(hit=hit, contig_id=entry.id)
             gquery.get_features_by_type(feature_type).append(feature)
+
+    return gquery
 
 
 @task
@@ -69,7 +71,7 @@ def detect_trnas_with_aragorn(gquery, out_dir):
 
 
 @task
-def add_features_from_aragorn(gquery: GQuery, aragorn_results_dir):
+def add_features_from_aragorn(gquery: GQuery, aragorn_results_dir) -> GQuery:
     entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_results_dir, f'{gquery.genome.genome_id}.batch'))
     for contig_id, hits in entries.items():
         for hit in hits:
@@ -79,6 +81,8 @@ def add_features_from_aragorn(gquery: GQuery, aragorn_results_dir):
         target_trna = gquery.find_target_trna(att)
         if target_trna is not None:
             gquery.target_trnas.append(target_trna)
+
+    return gquery
 
 
 @task
@@ -173,12 +177,16 @@ def are_atts_present(gquery: GQuery):
                        f'For more details, check the {gquery.genome.genome_id}.atts file '
                        f'in the atts_denovo directory!\n')
 
+    return gquery
+
 
 @task
 def analyse_pipolin_orientation(gquery: GQuery):
     gquery.is_single_target_trna_per_contig()
     for contig in gquery.genome.contigs:
         contig.contig_orientation = gquery.get_contig_orientation(contig)
+
+    return gquery
 
 
 @task
@@ -192,6 +200,8 @@ def scaffold_pipolins(gquery: GQuery):
         print('>>>Scaffolding is required!')
         scaffolder = Scaffolder(gquery=gquery)
         gquery.pipolin_fragments = scaffolder.try_creating_single_record()
+
+    return gquery
 
 
 @task
