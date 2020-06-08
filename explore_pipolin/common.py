@@ -36,8 +36,9 @@ class Contig:
 
 
 class Genome:
-    def __init__(self, genome_id: str):
+    def __init__(self, genome_id: str, genome_file: str):
         self.genome_id = genome_id
+        self.genome_file = genome_file
         self.contigs: MutableSequence[Contig] = []
 
     def get_contig_by_id(self, contig_id: str) -> Optional[Contig]:

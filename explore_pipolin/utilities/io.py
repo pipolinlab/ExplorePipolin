@@ -10,8 +10,8 @@ from explore_pipolin.common import Genome, Orientation, define_genome_id, Repeat
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
 
-def read_genome_from_file(genome_file: str) -> Genome:
-    genome = Genome(genome_id=define_genome_id(genome_file))
+def create_genome_from_file(genome_file: str) -> Genome:
+    genome = Genome(genome_id=define_genome_id(genome_file), genome_file=genome_file)
     genome_dict = read_seqio_records(file=genome_file, file_format='fasta')
     for key, value in genome_dict.items():
         contig = Contig(contig_id=key, contig_length=len(value.seq))

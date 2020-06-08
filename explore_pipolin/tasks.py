@@ -25,29 +25,29 @@ from explore_pipolin.utilities.io import read_gff_records
 from explore_pipolin.utilities.misc import create_att_seqfeatures
 from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
-from explore_pipolin.utilities.io import read_genome_from_file
+from explore_pipolin.utilities.io import create_genome_from_file
 from explore_pipolin.utilities.misc import add_new_gb_feature
 from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
 
 
 @task
-def create_gquery(genome) -> GQuery:
-    return GQuery(genome=read_genome_from_file(genome))
+def create_gquery(genome_file) -> GQuery:
+    return GQuery(genome=create_genome_from_file(genome_file))
 
 
 @task
-def run_blast_against_pipolb(genome, out_dir, ref_pipolb):
+def run_blast_against_pipolb(gquery, ref_pipolb, out_dir):
     blast_results_dir = os.path.join(out_dir, 'polb_blast')
     os.makedirs(blast_results_dir, exist_ok=True)
-    tblastn_against_ref_pipolb(genome=genome, ref_pipolb=ref_pipolb, out_dir=blast_results_dir)
+    tblastn_against_ref_pipolb(genome=gquery.genome.genome_file, ref_pipolb=ref_pipolb, out_dir=blast_results_dir)
     return blast_results_dir
 
 
 @task
-def run_blast_against_att(genome, out_dir, ref_att):
+def run_blast_against_att(gquery, ref_att, out_dir):
     blast_results_dir = os.path.join(out_dir, 'att_blast')
     os.makedirs(blast_results_dir, exist_ok=True)
-    blastn_against_ref_att(genome=genome, ref_att=ref_att, out_dir=blast_results_dir)
+    blastn_against_ref_att(genome=gquery.genome.genome_file, ref_att=ref_att, out_dir=blast_results_dir)
     return blast_results_dir
 
 
@@ -61,10 +61,10 @@ def add_features_from_blast(gquery: GQuery, blast_dir, feature_type: FeatureType
 
 
 @task
-def detect_trnas_with_aragorn(genome, out_dir):
+def detect_trnas_with_aragorn(gquery, out_dir):
     aragorn_results_dir = os.path.join(out_dir, 'aragorn_results')
     os.makedirs(aragorn_results_dir, exist_ok=True)
-    run_aragorn(genome=genome, aragorn_results_dir=aragorn_results_dir)
+    run_aragorn(genome=gquery.genome.genome_file, aragorn_results_dir=aragorn_results_dir)
     return aragorn_results_dir
 
 
@@ -101,7 +101,7 @@ def filter_no_pipolbs(task_to_filter: Any, filter_by: bool) -> Optional[Any]:
 
 
 @task()
-def find_atts_denovo(genome, gquery: GQuery, out_dir):
+def find_atts_denovo(gquery: GQuery, out_dir):
     logger = context.get('logger')
 
     if not gquery.genome.is_single_contig():
@@ -111,7 +111,7 @@ def find_atts_denovo(genome, gquery: GQuery, out_dir):
     atts_denovo_dir = os.path.join(out_dir, 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
-    repeats = find_repeats(genome, gquery, atts_denovo_dir)
+    repeats = find_repeats(gquery, atts_denovo_dir)
     write_repeats(gquery, repeats, atts_denovo_dir)
 
     atts_denovo = [(rep.left, rep.right) for rep in repeats if gquery.is_att_denovo(rep.left, rep.right)]
@@ -195,10 +195,10 @@ def scaffold_pipolins(gquery: GQuery):
 
 
 @task
-def extract_pipolin_regions(genome, gquery: GQuery, out_dir):
+def extract_pipolin_regions(gquery: GQuery, out_dir):
     if gquery.pipolin_fragments is None:
         raise AssertionError('No pipolin fragments, but should be!!!')
-    genome_dict = read_seqio_records(file=genome, file_format='fasta')
+    genome_dict = read_seqio_records(file=gquery.genome.genome_file, file_format='fasta')
 
     pipolins_dir = os.path.join(out_dir, 'pipolin_sequences')
     os.makedirs(pipolins_dir, exist_ok=True)
