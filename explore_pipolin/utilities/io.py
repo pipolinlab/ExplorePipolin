@@ -32,7 +32,7 @@ def read_gff_records(file) -> SeqIORecords:
     gff_records = {}
     with open(file) as inf:
         for entry in GFF.parse(inf):
-            gff_records[entry.genome_id] = entry
+            gff_records[entry.id] = entry
 
     return gff_records
 

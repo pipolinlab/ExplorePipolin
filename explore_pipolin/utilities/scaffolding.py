@@ -238,7 +238,8 @@ class Scaffolder:
     def _get_att_only_contigs(self) -> Set[Contig]:
         att_only_contigs = set()
         for att in self.gquery.atts:
-            polbs_next_att = self.gquery.get_features_of_contig(contig_id=att.contig_id, feature_type=FeatureType.PIPOLB)
+            polbs_next_att = self.gquery.get_features_of_contig(contig_id=att.contig_id,
+                                                                feature_type=FeatureType.PIPOLB)
             if len(polbs_next_att) == 0:
                 att_only_contigs.add(att.contig)
 

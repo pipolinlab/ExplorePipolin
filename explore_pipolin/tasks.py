@@ -9,6 +9,7 @@ from prefect.engine import signals
 
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
+from typing import Any, Optional
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, Orientation, FeatureType
@@ -53,7 +54,7 @@ def add_features_from_blast(gquery: GQuery, blast_dir, feature_type: FeatureType
     entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.genome.genome_id}.fmt5'))
     for entry in entries:
         for hit in entry:
-            feature = gquery.feature_from_blasthit(hit=hit, contig_id=entry.genome_id)
+            feature = gquery.feature_from_blasthit(hit=hit, contig_id=entry.id)
             gquery.get_features_by_type(feature_type).append(feature)
 
 
@@ -83,7 +84,17 @@ def are_pipolbs_present(gquery: GQuery):
 
     if len(gquery.pipolbs) == 0:
         logger.info('No piPolBs were found!')
-        raise signals.FAIL()
+        return False
+
+    return True
+
+
+@task
+def filter_no_pipolbs(task_to_filter: Any, filter_by: bool) -> Optional[Any]:
+    if filter_by:
+        return task_to_filter
+
+    return None
 
 
 @task()
