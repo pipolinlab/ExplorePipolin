@@ -5,13 +5,13 @@ from typing import MutableMapping, MutableSequence, Sequence
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.common import Genome, Orientation, define_gquery_id, Repeat, Contig
+from explore_pipolin.common import Genome, Orientation, define_genome_id, Repeat, Contig
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
 
 def read_genome_from_file(genome_file: str) -> Genome:
-    genome = Genome(id=define_gquery_id(genome_file))
+    genome = Genome(genome_id=define_genome_id(genome_file))
     genome_dict = read_seqio_records(file=genome_file, file_format='fasta')
     for key, value in genome_dict.items():
         contig = Contig(contig_id=key, contig_length=len(value.seq))
@@ -32,20 +32,20 @@ def read_gff_records(file) -> SeqIORecords:
     gff_records = {}
     with open(file) as inf:
         for entry in GFF.parse(inf):
-            gff_records[entry.id] = entry
+            gff_records[entry.genome_id] = entry
 
     return gff_records
 
 
 def write_genbank_records(gb_records: SeqIORecords, out_dir, genome: Genome):
     records = [record for record in gb_records.values()]
-    with open(os.path.join(out_dir, f'{genome.id}.gbk'), 'w') as ouf:
+    with open(os.path.join(out_dir, f'{genome.genome_id}.gbk'), 'w') as ouf:
         SeqIO.write(records, ouf, 'genbank')
 
 
 def write_gff_records(gff_records: SeqIORecords, out_dir, genome: Genome):
     records = [record for record in gff_records.values()]
-    with open(os.path.join(out_dir, f'{genome.id}.gff'), 'w') as ouf:
+    with open(os.path.join(out_dir, f'{genome.genome_id}.gff'), 'w') as ouf:
         GFF.write(records, ouf)
         print('##FASTA', file=ouf)
         SeqIO.write(records, ouf, format='fasta')
@@ -81,14 +81,14 @@ def save_left_right_subsequences(genome, left_window, right_window, repeats_dir)
     left_seq = genome_seq[left_window[0]:left_window[1]]
     right_seq = genome_seq[right_window[0]:right_window[1]]
     SeqIO.write(sequences=left_seq, format='fasta',
-                handle=os.path.join(repeats_dir, define_gquery_id(genome=genome) + '.left'))
+                handle=os.path.join(repeats_dir, define_genome_id(genome=genome) + '.left'))
     SeqIO.write(sequences=right_seq, format='fasta',
-                handle=os.path.join(repeats_dir, define_gquery_id(genome=genome) + '.right'))
+                handle=os.path.join(repeats_dir, define_genome_id(genome=genome) + '.right'))
 
 
 def write_repeats(gquery, repeats: Sequence[Repeat], repeats_dir):
     with open(os.path.join(repeats_dir, gquery.gquery_id + '.repeats'), 'w') as ouf:
-        polbs_locations = sorted([(x.start, x.end) for x in gquery.polbs], key=lambda x: x[0])
+        polbs_locations = sorted([(x.start, x.end) for x in gquery.pipolbs], key=lambda x: x[0])
         print('left_repeat', 'right_repeat', 'length', 'polbs',
               'd_to_the_left', 'd_to_the_right', 'sequence', sep='\t', file=ouf)
         for repeat in repeats:

@@ -13,7 +13,7 @@ class Direction(Enum):
 class Scaffolder:
     def __init__(self, gquery: GQuery):
         self.gquery = gquery
-        self.polbs_dict = gquery.get_features_dict_by_contig_normalized(FeatureType.POLB)
+        self.polbs_dict = gquery.get_features_dict_by_contig_normalized(FeatureType.PIPOLB)
         self.atts_dict = gquery.get_features_dict_by_contig_normalized(FeatureType.ATT)
         self.target_trnas_dict = gquery.get_features_dict_by_contig_normalized(FeatureType.TARGET_TRNA)
 
@@ -144,7 +144,7 @@ class Scaffolder:
         return [left_fragment, polbs_fragments, right_fragment]
 
     def _create_polbs_fragments(self) -> MutableSequence[PipolinFragment]:
-        polbs_contigs = set([i.contig for i in self.gquery.polbs])
+        polbs_contigs = set([i.contig for i in self.gquery.pipolbs])
         if len(polbs_contigs) == 2:
             print('Two "polb only contigs" were found!')
             polbs_contigs = list(polbs_contigs)
@@ -158,10 +158,10 @@ class Scaffolder:
 
                 polb0_length = sum((i.end - i.start) for i in self.gquery.get_features_of_contig(
                     contig_id=polbs_contigs[0].contig_id,
-                    feature_type=FeatureType.POLB))
+                    feature_type=FeatureType.PIPOLB))
                 polb1_length = sum((i.end - i.start) for i in self.gquery.get_features_of_contig(
                     contig_id=polbs_contigs[1].contig_id,
-                    feature_type=FeatureType.POLB))
+                    feature_type=FeatureType.PIPOLB))
                 # TODO: comparing just by length is an unreliable way! REWRITE if possible!
                 if polb0_length < polb1_length:
                     polbs_fragments = [polb0_fragment, polb1_fragment]
@@ -181,7 +181,7 @@ class Scaffolder:
         return polbs_fragments
 
     def _get_unchangeable_contigs(self) -> MutableSequence[Contig]:
-        polbs_contigs = set([i.contig for i in self.gquery.polbs])
+        polbs_contigs = set([i.contig for i in self.gquery.pipolbs])
 
         contigs_to_return = []
         for contig in polbs_contigs:
@@ -238,7 +238,7 @@ class Scaffolder:
     def _get_att_only_contigs(self) -> Set[Contig]:
         att_only_contigs = set()
         for att in self.gquery.atts:
-            polbs_next_att = self.gquery.get_features_of_contig(contig_id=att.contig_id, feature_type=FeatureType.POLB)
+            polbs_next_att = self.gquery.get_features_of_contig(contig_id=att.contig_id, feature_type=FeatureType.PIPOLB)
             if len(polbs_next_att) == 0:
                 att_only_contigs.add(att.contig)
 
@@ -268,20 +268,20 @@ class Scaffolder:
 def create_pipolin_fragments_single_contig(gquery: GQuery) -> Sequence[PipolinFragment]:
     if len(gquery.get_features_dict_by_contig_normalized(FeatureType.ATT)) != 0:
         start, end = _get_pipolin_bounds(gquery)
-        pipolin = PipolinFragment(contig_id=gquery.polbs[0].contig.contig_id, genome=gquery.genome,
+        pipolin = PipolinFragment(contig_id=gquery.pipolbs[0].contig.contig_id, genome=gquery.genome,
                                   start=start, end=end)
 
         pipolin.atts.extend(gquery.atts)
         return [pipolin]
     else:
         left_window, right_window = gquery.get_left_right_windows()
-        pipolin = PipolinFragment(contig_id=gquery.polbs[0].contig.contig_id, genome=gquery.genome,
+        pipolin = PipolinFragment(contig_id=gquery.pipolbs[0].contig.contig_id, genome=gquery.genome,
                                   start=left_window[0], end=right_window[1])
         return [pipolin]
 
 
 def _get_pipolin_bounds(gquery: GQuery):
-    polymerases = sorted((i for i in gquery.polbs), key=lambda p: p.start)
+    polymerases = sorted((i for i in gquery.pipolbs), key=lambda p: p.start)
     atts = sorted((i for i in gquery.atts), key=lambda p: p.start)
 
     length = polymerases[0].contig.contig_length

@@ -35,38 +35,38 @@ def create_gquery(genome) -> GQuery:
 
 
 @task
-def run_blast_against_polb(genome, root_dir, reference):
-    blast_path = os.path.join(root_dir, 'polb_blast')
-    blast_genome_against_seq(genome=genome, seq=reference, seq_type='protein', output_dir=blast_path)
+def run_blast_against_pipolb(genome, out_dir, reference_pipolb):
+    blast_path = os.path.join(out_dir, 'polb_blast')
+    blast_genome_against_seq(genome=genome, seq=reference_pipolb, seq_type='protein', output_dir=blast_path)
     return blast_path
 
 
 @task
-def run_blast_against_att(genome, root_dir, reference):
-    blast_path = os.path.join(root_dir, 'att_blast')
-    blast_genome_against_seq(genome=genome, seq=reference, seq_type='nucleotide', output_dir=blast_path)
+def run_blast_against_att(genome, out_dir, reference_att):
+    blast_path = os.path.join(out_dir, 'att_blast')
+    blast_genome_against_seq(genome=genome, seq=reference_att, seq_type='nucleotide', output_dir=blast_path)
     return blast_path
 
 
 @task
 def add_features_from_blast(gquery: GQuery, blast_dir, feature_type: FeatureType):
-    entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.genome.id}.fmt5'))
+    entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.genome.genome_id}.fmt5'))
     for entry in entries:
         for hit in entry:
-            feature = gquery.feature_from_blasthit(hit=hit, contig_id=entry.id)
+            feature = gquery.feature_from_blasthit(hit=hit, contig_id=entry.genome_id)
             gquery.get_features_by_type(feature_type).append(feature)
 
 
 @task
-def detect_trnas_with_aragorn(genome, root_dir):
-    aragorn_results = os.path.join(root_dir, 'aragorn_results')
+def detect_trnas_with_aragorn(genome, out_dir):
+    aragorn_results = os.path.join(out_dir, 'aragorn_results')
     run_aragorn(genome, aragorn_results)
     return aragorn_results
 
 
 @task
 def add_features_from_aragorn(gquery: GQuery, aragorn_dir):
-    entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.genome.id}.batch'))
+    entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.genome.genome_id}.batch'))
     for contig_id, hits in entries.items():
         for hit in hits:
             feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig_id=contig_id, genome=gquery.genome)
@@ -78,23 +78,23 @@ def add_features_from_aragorn(gquery: GQuery, aragorn_dir):
 
 
 @task
-def are_polbs_present(gquery: GQuery):
+def are_pipolbs_present(gquery: GQuery):
     logger = context.get('logger')
 
-    if len(gquery.polbs) == 0:
-        logger.warning('No piPolB! => No pipolins!')
+    if len(gquery.pipolbs) == 0:
+        logger.info('No piPolBs were found!')
         raise signals.FAIL()
 
 
 @task()
-def find_atts_denovo(genome, gquery: GQuery, root_dir):
+def find_atts_denovo(genome, gquery: GQuery, out_dir):
     logger = context.get('logger')
 
     if not gquery.genome.is_single_contig():
         logger.warning('This step is only for complete genomes. Pass...')
         raise signals.SKIP()
 
-    atts_denovo_dir = os.path.join(root_dir, 'atts_denovo')
+    atts_denovo_dir = os.path.join(out_dir, 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
     repeats = find_repeats(genome, gquery, atts_denovo_dir)
@@ -108,7 +108,7 @@ def find_atts_denovo(genome, gquery: GQuery, root_dir):
 
 @task
 def add_features_atts_denovo(gquery: GQuery, atts_denovo_dir):
-    with open(os.path.join(atts_denovo_dir, gquery.genome.id + '.atts')) as inf:
+    with open(os.path.join(atts_denovo_dir, gquery.genome.genome_id + '.atts')) as inf:
         _ = inf.readline()
         for line in inf:
             att_pair = [int(i) for i in line.strip().split(sep='\t')]
@@ -138,7 +138,8 @@ def are_atts_present(gquery: GQuery):
 
     elif len(gquery.atts) == 0:
         logger.warning(f'\n\n>>>No "usual" atts were found, but some atts were found by denovo search!'
-                       f'For more details, check the {gquery.genome.id}.atts file in the atts_denovo directory!\n')
+                       f'For more details, check the {gquery.genome.genome_id}.atts file '
+                       f'in the atts_denovo directory!\n')
         # TODO: check that it's only one repeat! Although, this shouldn't be a problem.
         atts_frames = [att.frame for att in gquery.denovo_atts]
         if len(set(atts_frames)) != 1:
@@ -155,7 +156,8 @@ def are_atts_present(gquery: GQuery):
 
     elif len(gquery.denovo_atts) != 0:
         logger.warning(f'\n\n>>>Some atts were found by denovo search, but we are not going to use them!'
-                       f'For more details, check the {gquery.genome.id}.atts file in the atts_denovo directory!\n')
+                       f'For more details, check the {gquery.genome.genome_id}.atts file '
+                       f'in the atts_denovo directory!\n')
 
 
 @task
@@ -179,15 +181,15 @@ def scaffold_pipolins(gquery: GQuery):
 
 
 @task
-def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
+def extract_pipolin_regions(genome, gquery: GQuery, out_dir):
     if gquery.pipolin_fragments is None:
         raise AssertionError('No pipolin fragments, but should be!!!')
     genome_dict = read_seqio_records(file=genome, file_format='fasta')
 
-    pipolins_dir = os.path.join(root_dir, 'pipolin_sequences')
+    pipolins_dir = os.path.join(out_dir, 'pipolin_sequences')
     os.makedirs(pipolins_dir, exist_ok=True)
 
-    with open(os.path.join(pipolins_dir, gquery.genome.id + '.fa'), 'w') as ouf:
+    with open(os.path.join(pipolins_dir, gquery.genome.genome_id + '.fa'), 'w') as ouf:
         record = SeqRecord(seq='')
         sep_record = SeqRecord(seq='N' * 100)
 
@@ -203,34 +205,35 @@ def extract_pipolin_regions(genome, gquery: GQuery, root_dir):
 
         print(f'@@@ total record length {len(record)}')
 
-        record.id = gquery.genome.id
-        record.name = gquery.genome.id
-        record.description = gquery.genome.id
+        record.id = gquery.genome.genome_id
+        record.name = gquery.genome.genome_id
+        record.description = gquery.genome.genome_id
         SeqIO.write(sequences=record, handle=ouf, format='fasta')
 
     return pipolins_dir
 
 
 @task
-def annotate_pipolins(gquery, pipolins_dir, proteins, root_dir):
-    prokka_dir = os.path.join(root_dir, 'prokka')
-    run_prokka(gquery.genome.id, pipolins_dir, proteins, prokka_dir)
+def annotate_pipolins(gquery, pipolins_dir, proteins, out_dir):
+    prokka_dir = os.path.join(out_dir, 'prokka')
+    run_prokka(gquery.genome.genome_id, pipolins_dir, proteins, prokka_dir)
     return prokka_dir
 
 
 @task
-def include_atts_into_annotation(gquery, prokka_dir, root_dir):
-    gb_records = read_seqio_records(file=os.path.join(prokka_dir, gquery.genome.id + '.gbk'), file_format='genbank')
-    gff_records = read_gff_records(file=os.path.join(prokka_dir, gquery.genome.id + '.gff'))
+def include_atts_into_annotation(gquery, prokka_dir, out_dir):
+    gb_records = read_seqio_records(file=os.path.join(prokka_dir, gquery.genome.genome_id + '.gbk'),
+                                    file_format='genbank')
+    gff_records = read_gff_records(file=os.path.join(prokka_dir, gquery.genome.genome_id + '.gff'))
 
     att_seqfeatures = create_att_seqfeatures(record_format='gb', gquery=gquery)
     for att in att_seqfeatures:
-        add_new_gb_feature(new_feature=att, record=gb_records[gquery.genome.id])
+        add_new_gb_feature(new_feature=att, record=gb_records[gquery.genome.genome_id])
     att_seqfeatures = create_att_seqfeatures(record_format='gff', gquery=gquery)
     for att in att_seqfeatures:
-        add_new_gb_feature(new_feature=att, record=gff_records[gquery.genome.id])
+        add_new_gb_feature(new_feature=att, record=gff_records[gquery.genome.genome_id])
 
-    prokka_atts_dir = os.path.join(root_dir, 'prokka_atts')
+    prokka_atts_dir = os.path.join(out_dir, 'prokka_atts')
     os.makedirs(prokka_atts_dir, exist_ok=True)
 
     write_genbank_records(gb_records=gb_records, out_dir=prokka_atts_dir, genome=gquery.genome)
@@ -241,6 +244,6 @@ def include_atts_into_annotation(gquery, prokka_dir, root_dir):
 
 @task
 def easyfig_add_colours(gquery: GQuery, in_dir):
-    gb_records = read_seqio_records(file=os.path.join(in_dir, gquery.genome.id + '.gbk'), file_format='genbank')
-    add_colours(gb_records[gquery.genome.id])
+    gb_records = read_seqio_records(file=os.path.join(in_dir, gquery.genome.genome_id + '.gbk'), file_format='genbank')
+    add_colours(gb_records[gquery.genome.genome_id])
     write_genbank_records(gb_records=gb_records, out_dir=in_dir, genome=gquery.genome)

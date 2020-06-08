@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from explore_pipolin.common import define_gquery_id
+from explore_pipolin.common import define_genome_id
 
 
 def run_prokka(gquery_id, pipolins_dir, proteins, prokka_dir):
@@ -26,13 +26,13 @@ def blast_for_repeats(gquery_id, repeats_dir):
 
 def run_aragorn(genome, aragorn_results):
     os.makedirs(aragorn_results, exist_ok=True)
-    with open(os.path.join(aragorn_results, define_gquery_id(genome=genome) + '.batch'), 'w') as ouf:
+    with open(os.path.join(aragorn_results, define_genome_id(genome=genome) + '.batch'), 'w') as ouf:
         subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
 
 
 def blast_genome_against_seq(genome, seq, seq_type, output_dir):
     os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, define_gquery_id(genome=genome) + '.fmt5'), 'w') as ouf:
+    with open(os.path.join(output_dir, define_genome_id(genome=genome) + '.fmt5'), 'w') as ouf:
         if seq_type == 'protein':
             subprocess.run(['tblastn', '-query', seq, '-subject', genome, '-evalue', '0.1', '-outfmt', '5'],
                            stdout=ouf)

@@ -37,8 +37,8 @@ class Contig:
 
 
 class Genome:
-    def __init__(self, id: str):
-        self.id = id
+    def __init__(self, genome_id: str):
+        self.genome_id = genome_id
         self.contigs: MutableSequence[Contig] = []
 
     def get_contig_by_id(self, contig_id: str) -> Optional[Contig]:
@@ -75,7 +75,7 @@ class Feature:
 
 
 class FeatureType(Enum):
-    POLB = auto()
+    PIPOLB = auto()
     ATT = auto()
     TARGET_TRNA = auto()
     TRNA = auto()
@@ -108,5 +108,5 @@ class PipolinFragment:
         return self.genome.get_contig_by_id(self.contig_id)
 
 
-def define_gquery_id(genome):
+def define_genome_id(genome):
     return os.path.splitext(os.path.basename(genome))[0]

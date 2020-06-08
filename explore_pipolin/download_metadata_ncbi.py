@@ -54,8 +54,8 @@ def download_metadata_ncbi(blast_tab, out_file):
     NOTE: requires "ncbi-entrez-direct" package!
     """
     blast_result = SearchIO.read(blast_tab, 'blast-tab', comments=True)
-    blast_ids = [i.id for i in blast_result]   # acc_ids are all unique here!
-    blast_ids.append(blast_result.id)   # query id == NZ_JNMI01000006.1
+    blast_ids = [i.genome_id for i in blast_result]   # acc_ids are all unique here!
+    blast_ids.append(blast_result.genome_id)   # query id == NZ_JNMI01000006.1
 
     Metadata = namedtuple('Metadata', ['assembly_id', 'species_name', 'strain_name', 'acc_ids'])
     metadata = []

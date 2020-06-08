@@ -13,7 +13,7 @@ from explore_pipolin.common import Orientation, Contig, Genome, Feature, Pipolin
 class GQuery:
     def __init__(self, genome: Genome):
         self.genome = genome
-        self.polbs: MutableSequence[Feature] = []
+        self.pipolbs: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
         self.trnas: MutableSequence[Feature] = []
         self.target_trnas: MutableSequence[Feature] = []
@@ -43,8 +43,8 @@ class GQuery:
         return features_to_return
 
     def get_features_by_type(self, feature_type: FeatureType) -> MutableSequence[Feature]:
-        if feature_type is FeatureType.POLB:
-            return self.polbs
+        if feature_type is FeatureType.PIPOLB:
+            return self.pipolbs
         elif feature_type is FeatureType.ATT:
             return self.atts
         elif feature_type is FeatureType.TARGET_TRNA:
@@ -71,14 +71,14 @@ class GQuery:
 
     def is_on_the_same_contig(self) -> bool:
         target_contigs = []
-        target_contigs.extend(f.contig_id for f in self.polbs)
+        target_contigs.extend(f.contig_id for f in self.pipolbs)
         target_contigs.extend(f.contig_id for f in self.atts)
         target_contigs.extend(f.contig_id for f in self.target_trnas)
         return len(set(target_contigs)) == 1
 
     # `find_atts_denovo` and `scaffold_pipolins`
     def get_left_right_windows(self) -> Tuple[Tuple[int, int], Tuple[int, int]]:
-        polymerases = sorted((i for i in self.polbs), key=lambda p: p.start)
+        polymerases = sorted((i for i in self.pipolbs), key=lambda p: p.start)
 
         if polymerases[-1].start - polymerases[0].start > 10000:   # TODO: is it small/big enough?
             raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
@@ -124,7 +124,7 @@ class GQuery:
         target_trnas = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.TARGET_TRNA)
         atts = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.ATT)
         atts_frames = [att.frame for att in atts]
-        polbs = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.POLB)
+        polbs = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.PIPOLB)
         polbs_frames = [polb.frame for polb in polbs]
 
         if len(target_trnas) != 0:
@@ -156,11 +156,11 @@ class GQuery:
 
     def create_att_feature(self, start: int, end: int, frame: Orientation, records_format: str) -> SeqFeature:
         random_number = randrange(10000, 99999)
-        gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{self.genome.id}_{random_number}'],
+        gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{self.genome.genome_id}_{random_number}'],
                          'rpt_family': ['Att'], 'rpt_type': ['direct']}
         gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
-                          'ID': [f'{self.genome.id}_{random_number}'], 'inference': ['HMM:custom'],
-                          'locus_tag': [f'{self.genome.id}_{random_number}'],
+                          'ID': [f'{self.genome.genome_id}_{random_number}'], 'inference': ['HMM:custom'],
+                          'locus_tag': [f'{self.genome.genome_id}_{random_number}'],
                           'rpt_family': ['Att'], 'rpt_type': ['direct']}
         att_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=frame.to_pm_one_encoding()),

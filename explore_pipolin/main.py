@@ -1,16 +1,7 @@
 import click
-from prefect.engine.state import State
 from explore_pipolin.flow import get_flow
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
-
-# TODO: is it possible to write better?
-def task_state_handler(_obj, old_state: State, _new_state):
-    if 'gquery' in old_state.cached_inputs:
-        gquery = old_state.cached_inputs['gquery'].value
-        gquery_id = gquery.genome.id
-        print(f'>>> It was {gquery_id}...')
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -31,8 +22,7 @@ def explore_pipolin(genomes, out_dir, add_colours):
     # # dot -Tpdf test > test.pdf
     # # check the result
 
-    state = get_flow().run(genomes=genomes, out_dir=out_dir, add_colours=add_colours,
-                           task_runner_state_handlers=[task_state_handler])
+    state = get_flow().run(genomes=genomes, out_dir=out_dir, add_colours=add_colours)
     assert state.is_successful()
 
 
