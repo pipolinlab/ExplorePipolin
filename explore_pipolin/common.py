@@ -10,17 +10,16 @@ class Orientation(Enum):
     REVERSE = auto()
 
     @staticmethod
-    def orientation_from_blast(hit_frame):
-        if hit_frame == 1:
+    def orientation_from_blast(hit_strand):
+        if hit_strand == 1:
             return Orientation.FORWARD
-        elif hit_frame == -1:
+        elif hit_strand == -1:
             return Orientation.REVERSE
+        else:
+            raise AssertionError(f'Unknown hit_frame: {hit_strand}! 0 is also unexpected in our case!')
 
     def to_pm_one_encoding(self):
-        return +1 if self.FORWARD else -1
-
-    def to_string(self):
-        return 'forward' if self.FORWARD else 'reverse'
+        return +1 if self is self.FORWARD else -1
 
     def __neg__(self):
         if self is self.FORWARD:
@@ -30,9 +29,9 @@ class Orientation(Enum):
 
 
 class Contig:
-    def __init__(self, contig_id, contig_length, orientation=Orientation.FORWARD):
-        self.contig_id: str = contig_id
-        self.contig_length: int = contig_length
+    def __init__(self, contig_id: str, contig_length: int, orientation=Orientation.FORWARD):
+        self.contig_id = contig_id
+        self.contig_length = contig_length
         self.contig_orientation: Orientation = orientation
 
 
@@ -45,7 +44,7 @@ class Genome:
         for contig in self.contigs:
             if contig.contig_id == contig_id:
                 return contig
-        return None
+        raise AssertionError('It is unexpected that you ask for a non-existent contig!')
 
     def is_single_contig(self):
         return len(self.contigs) == 1
@@ -69,6 +68,12 @@ class Feature:
         self.contig_id = contig_id
         self.genome = genome
 
+        if self.start > self.end:
+            raise AssertionError('Feature start cannot be greater than feature end!')
+
+        if self.end > self.contig.contig_length:
+            raise AssertionError('Feature end cannot be greater than contig length!')
+
     @property
     def contig(self):
         return self.genome.get_contig_by_id(self.contig_id)
@@ -77,8 +82,8 @@ class Feature:
 class FeatureType(Enum):
     PIPOLB = auto()
     ATT = auto()
-    TARGET_TRNA = auto()
     TRNA = auto()
+    TARGET_TRNA = auto()
 
 
 class Repeat:
@@ -87,7 +92,22 @@ class Repeat:
         self.right = right
         self.seq = seq
 
+        if self.left[0] > self.left[1] or self.right[0] > self.right[1]:
+            raise AssertionError('Repeat start cannot be greater than repeat end!')
+
+        if self.left[1] > self.right[0]:
+            raise AssertionError('Left repeat cannot be upstream of or overlap with right repeat!')
+
+        left_repeat_length = self.left[1] - self.left[0]
+        right_repeat_length = self.right[1] - self.right[0]
+        seq_length = len(self.seq)
+        if seq_length > left_repeat_length or seq_length > right_repeat_length:
+            raise AssertionError('Repeat sequence length cannot be greater than repeat ranges!')
+
     def shift(self, left_shift: int, right_shift: int) -> Repeat:
+        if left_shift > right_shift:
+            raise AssertionError('Left shift cannot be greater than right shift!')
+
         return Repeat(self._shift_range(self.left, left_shift), self._shift_range(self.right, right_shift), self.seq)
 
     @staticmethod
@@ -103,10 +123,23 @@ class PipolinFragment:
         self.atts: MutableSequence[Feature] = []
         self.genome = genome
 
+        if self.start > self.end:
+            raise AssertionError('Fragment start cannot be greater than fragment end!')
+
+        if self.end > self.contig.contig_length:
+            raise AssertionError('Fragment end cannot be greater than contig length!')
+
     @property
     def contig(self):
         return self.genome.get_contig_by_id(self.contig_id)
 
 
-def define_genome_id(genome):
-    return os.path.splitext(os.path.basename(genome))[0]
+def define_genome_id(genome_path: str):
+    genome_id = os.path.splitext(os.path.basename(genome_path))[0]
+
+    if len(genome_id) > 16:
+        raise AssertionError('Genome file basename is going to be used as a genome identifier. '
+                             'Due to Biopython restrictions, it cannot be longer than 16 characters. '
+                             'Please, rename the file, so that its basename does not exceed the limit!')
+
+    return genome_id

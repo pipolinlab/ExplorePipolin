@@ -56,7 +56,7 @@ class GQuery:
 
     def feature_from_blasthit(self, hit, contig_id) -> Feature:
         return Feature(start=hit.hit_start, end=hit.hit_end,
-                       frame=Orientation.orientation_from_blast(hit.hit_frame),
+                       frame=Orientation.orientation_from_blast(hit.hit_strand),
                        contig_id=contig_id, genome=self.genome)
 
     # `add_features_from_aragorn` and `add_features_atts_denovo`

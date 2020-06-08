@@ -81,9 +81,9 @@ def save_left_right_subsequences(genome, left_window, right_window, repeats_dir)
     left_seq = genome_seq[left_window[0]:left_window[1]]
     right_seq = genome_seq[right_window[0]:right_window[1]]
     SeqIO.write(sequences=left_seq, format='fasta',
-                handle=os.path.join(repeats_dir, define_genome_id(genome=genome) + '.left'))
+                handle=os.path.join(repeats_dir, define_genome_id(genome_path=genome) + '.left'))
     SeqIO.write(sequences=right_seq, format='fasta',
-                handle=os.path.join(repeats_dir, define_genome_id(genome=genome) + '.right'))
+                handle=os.path.join(repeats_dir, define_genome_id(genome_path=genome) + '.right'))
 
 
 def write_repeats(gquery, repeats: Sequence[Repeat], repeats_dir):
