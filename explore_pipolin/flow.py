@@ -3,7 +3,7 @@ from prefect import Flow, Parameter, unmapped
 from prefect.tasks.core.constants import Constant
 
 from explore_pipolin import tasks
-from explore_pipolin.utilities import FeatureType
+from explore_pipolin.utilities.common import FeatureType
 
 _REF_POLB = Constant(pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB.faa'))
 _REF_ATT = Constant(pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa'))
@@ -54,9 +54,5 @@ def get_flow():
         t_easyfig = tasks.easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts,
                                                   abricate_dir=unmapped(abricate_dir),
                                                   upstream_tasks=[t_scaffolding])
-        # TODO: when easyfig skipped, set (skip_on_upstream_skip=False)
-        # prokka_atts_positions = tasks.set_correct_positions.map(gquery=gquery, prokka_atts_dir=prokka_atts,
-        #                                                         root_dir=unmapped(out_dir),
-        #                                                         upstream_tasks=[t_easyfig])
 
     return flow

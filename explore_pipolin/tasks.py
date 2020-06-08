@@ -25,7 +25,6 @@ from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities.io import read_genome_from_file
 from explore_pipolin.utilities import add_new_gb_feature
-from explore_pipolin.utilities import create_new_gb_record
 from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
 
 
@@ -246,20 +245,3 @@ def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
     if abricate_dir is not None:
         find_and_color_amr_and_virulence(gquery, gb_records, abricate_dir)
     write_genbank_records(gb_records=gb_records, out_dir=in_dir, genome=gquery.genome)
-
-
-@task
-def set_correct_positions(gquery: GQuery, prokka_atts_dir, root_dir):
-    gb_records = read_seqio_records(file=os.path.join(prokka_atts_dir, gquery.genome.id + '.gbk'),
-                                    file_format='genbank')
-    # gff_records = read_gff_records(file=os.path.join(prokka_atts_dir, gquery.genome.id + '.gff'))
-
-    new_gb_records = {gquery.genome.id: create_new_gb_record(gquery=gquery, gb_record=gb_records[gquery.genome.id])}
-
-    prokka_atts_positions_dir = os.path.join(root_dir, 'prokka_atts_positions')
-    os.makedirs(prokka_atts_positions_dir, exist_ok=True)
-
-    write_genbank_records(gb_records=new_gb_records, out_dir=prokka_atts_positions_dir, genome=gquery.genome)
-    # write_gff_records(gff_records=gff_records, out_dir=prokka_atts_positions_dir, gquery=gquery)
-
-    return prokka_atts_positions_dir

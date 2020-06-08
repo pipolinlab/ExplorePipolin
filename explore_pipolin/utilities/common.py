@@ -29,24 +29,6 @@ class Orientation(Enum):
             return self.FORWARD
 
 
-def define_gquery_id(genome):
-    return os.path.splitext(os.path.basename(genome))[0]
-
-
-class Repeat:
-    def __init__(self, left: Tuple[int, int], right: Tuple[int, int], seq: str):
-        self.left = left
-        self.right = right
-        self.seq = seq
-
-    def shift(self, left_shift: int, right_shift: int) -> Repeat:
-        return Repeat(self._shift_range(self.left, left_shift), self._shift_range(self.right, right_shift), self.seq)
-
-    @staticmethod
-    def _shift_range(seq_range: Tuple[int, int], shift):
-        return seq_range[0] + shift, seq_range[1] + shift
-
-
 class Contig:
     def __init__(self, contig_id, contig_length, orientation=Orientation.FORWARD):
         self.contig_id: str = contig_id
@@ -77,3 +59,54 @@ class Genome:
         if not self.is_single_contig():
             raise AssertionError('Unsupported! Not a complete genome!')
         return self.contigs[0].contig_length
+
+
+class Feature:
+    def __init__(self, start: int, end: int, frame: Orientation, contig_id: str, genome: Genome):
+        self.start = start
+        self.end = end
+        self.frame = frame
+        self.contig_id = contig_id
+        self.genome = genome
+
+    @property
+    def contig(self):
+        return self.genome.get_contig_by_id(self.contig_id)
+
+
+class FeatureType(Enum):
+    POLB = auto()
+    ATT = auto()
+    TARGET_TRNA = auto()
+    TRNA = auto()
+
+
+class Repeat:
+    def __init__(self, left: Tuple[int, int], right: Tuple[int, int], seq: str):
+        self.left = left
+        self.right = right
+        self.seq = seq
+
+    def shift(self, left_shift: int, right_shift: int) -> Repeat:
+        return Repeat(self._shift_range(self.left, left_shift), self._shift_range(self.right, right_shift), self.seq)
+
+    @staticmethod
+    def _shift_range(seq_range: Tuple[int, int], shift):
+        return seq_range[0] + shift, seq_range[1] + shift
+
+
+class PipolinFragment:
+    def __init__(self, contig_id: str, genome: Genome, start: int, end: int):
+        self.contig_id = contig_id
+        self.start = start
+        self.end = end
+        self.atts: MutableSequence[Feature] = []
+        self.genome = genome
+
+    @property
+    def contig(self):
+        return self.genome.get_contig_by_id(self.contig_id)
+
+
+def define_gquery_id(genome):
+    return os.path.splitext(os.path.basename(genome))[0]
