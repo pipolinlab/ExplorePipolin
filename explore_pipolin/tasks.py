@@ -18,7 +18,7 @@ from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_att
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
 from explore_pipolin.utilities.atts_denovo_search import find_repeats
-from explore_pipolin.utilities.external_tools import blast_genome_against_seq
+from explore_pipolin.utilities.external_tools import tblastn_against_ref_pipolb, blastn_against_ref_att
 from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
 from explore_pipolin.utilities.misc import create_fragment_record
 from explore_pipolin.utilities.io import read_gff_records
@@ -36,17 +36,19 @@ def create_gquery(genome) -> GQuery:
 
 
 @task
-def run_blast_against_pipolb(genome, out_dir, reference_pipolb):
-    blast_path = os.path.join(out_dir, 'polb_blast')
-    blast_genome_against_seq(genome=genome, seq=reference_pipolb, seq_type='protein', output_dir=blast_path)
-    return blast_path
+def run_blast_against_pipolb(genome, out_dir, ref_pipolb):
+    blast_results_dir = os.path.join(out_dir, 'polb_blast')
+    os.makedirs(blast_results_dir, exist_ok=True)
+    tblastn_against_ref_pipolb(genome=genome, ref_pipolb=ref_pipolb, out_dir=blast_results_dir)
+    return blast_results_dir
 
 
 @task
-def run_blast_against_att(genome, out_dir, reference_att):
-    blast_path = os.path.join(out_dir, 'att_blast')
-    blast_genome_against_seq(genome=genome, seq=reference_att, seq_type='nucleotide', output_dir=blast_path)
-    return blast_path
+def run_blast_against_att(genome, out_dir, ref_att):
+    blast_results_dir = os.path.join(out_dir, 'att_blast')
+    os.makedirs(blast_results_dir, exist_ok=True)
+    blastn_against_ref_att(genome=genome, ref_att=ref_att, out_dir=blast_results_dir)
+    return blast_results_dir
 
 
 @task
@@ -60,14 +62,15 @@ def add_features_from_blast(gquery: GQuery, blast_dir, feature_type: FeatureType
 
 @task
 def detect_trnas_with_aragorn(genome, out_dir):
-    aragorn_results = os.path.join(out_dir, 'aragorn_results')
-    run_aragorn(genome, aragorn_results)
-    return aragorn_results
+    aragorn_results_dir = os.path.join(out_dir, 'aragorn_results')
+    os.makedirs(aragorn_results_dir, exist_ok=True)
+    run_aragorn(genome=genome, aragorn_results_dir=aragorn_results_dir)
+    return aragorn_results_dir
 
 
 @task
-def add_features_from_aragorn(gquery: GQuery, aragorn_dir):
-    entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_dir, f'{gquery.genome.genome_id}.batch'))
+def add_features_from_aragorn(gquery: GQuery, aragorn_results_dir):
+    entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_results_dir, f'{gquery.genome.genome_id}.batch'))
     for contig_id, hits in entries.items():
         for hit in hits:
             feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig_id=contig_id, genome=gquery.genome)

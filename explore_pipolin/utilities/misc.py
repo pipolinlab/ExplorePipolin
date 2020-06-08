@@ -54,7 +54,7 @@ class GQuery:
         else:
             raise AssertionError(f'Feature must be one of: {list(FeatureType)}, not {feature_type}')
 
-    def feature_from_blasthit(self, hit, contig_id) -> Feature:
+    def feature_from_blasthit(self, hit, contig_id: str) -> Feature:
         return Feature(start=hit.hit_start, end=hit.hit_end,
                        frame=Orientation.orientation_from_blast(hit.hit_strand),
                        contig_id=contig_id, genome=self.genome)

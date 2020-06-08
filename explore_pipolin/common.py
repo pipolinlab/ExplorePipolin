@@ -136,10 +136,12 @@ class PipolinFragment:
 
 def define_genome_id(genome_path: str):
     genome_id = os.path.splitext(os.path.basename(genome_path))[0]
+    check_genome_id_length(genome_id)
+    return genome_id
 
+
+def check_genome_id_length(genome_id):
     if len(genome_id) > 16:
         raise AssertionError('Genome file basename is going to be used as a genome identifier. '
                              'Due to Biopython restrictions, it cannot be longer than 16 characters. '
                              'Please, rename the file, so that its basename does not exceed the limit!')
-
-    return genome_id
