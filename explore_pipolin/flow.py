@@ -1,5 +1,5 @@
 import pkg_resources
-from prefect import Flow, Parameter, unmapped
+from prefect import Flow, Parameter, unmapped, case
 from prefect.tasks.core.constants import Constant
 
 from explore_pipolin import tasks
@@ -14,6 +14,7 @@ def get_flow():
     with Flow('MAIN') as flow:
         genomes = Parameter('genomes')
         out_dir = Parameter('out_dir')
+        add_colours = Parameter('add_colours')
 
         gquery = tasks.create_gquery.map(genome=genomes)
 
@@ -49,7 +50,7 @@ def get_flow():
                                              proteins=unmapped(_PROTEINS), root_dir=unmapped(out_dir))
         prokka_atts = tasks.include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
                                                              root_dir=unmapped(out_dir))
-        # TODO: make this task optional
-        tasks.easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, upstream_tasks=[t_scaffolding])
+        with case(add_colours, True):
+            tasks.easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts)
 
     return flow

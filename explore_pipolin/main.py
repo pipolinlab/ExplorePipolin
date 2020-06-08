@@ -15,8 +15,11 @@ def task_state_handler(_obj, old_state: State, _new_state):
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('genomes', type=click.Path(exists=True), nargs=-1, required=True)
-@click.option('--out-dir', type=click.Path(), required=True)
-def explore_pipolin(genomes, out_dir):
+@click.option('--out-dir', type=click.Path(), required=True, help='Specify the output directory!')
+@click.option('--add-colours', is_flag=True,
+              help='Add colours to the final Genbank file features. '
+                   'The files can be visualized further using Easyfig.')
+def explore_pipolin(genomes, out_dir, add_colours):
     """
     ExplorePipolin is a search tool that identifies and analyses pipolin elements within bacterial genome(s).
     """
@@ -28,7 +31,7 @@ def explore_pipolin(genomes, out_dir):
     # # dot -Tpdf test > test.pdf
     # # check the result
 
-    state = get_flow().run(genomes=genomes, out_dir=out_dir,
+    state = get_flow().run(genomes=genomes, out_dir=out_dir, add_colours=add_colours,
                            task_runner_state_handlers=[task_state_handler])
     assert state.is_successful()
 

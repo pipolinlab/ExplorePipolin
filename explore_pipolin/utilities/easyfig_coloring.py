@@ -35,23 +35,23 @@ def colour_feature(qualifiers):
     if 'product' in qualifiers:
         for product in qualifiers['product']:
             if product in products_to_colours:
-                qualifiers['colour'] = [products_to_colours[product]]
+                qualifiers['colour'] = [products_to_colours[product].value]
             else:
-                qualifiers['colour'] = [products_to_colours['other']]
+                qualifiers['colour'] = [products_to_colours['other'].value]
     elif 'linkage_evidence' in qualifiers:
         if qualifiers['estimated_length'] == ['100']:
             qualifiers['linkage_evidence'] = ['pipolin_structure']
             qualifiers['estimated_length'] = ['unknown']
-            qualifiers['colour'] = [products_to_colours['pipolin_structure']]
+            qualifiers['colour'] = [products_to_colours['pipolin_structure'].value]
         else:
-            qualifiers['color'] = [products_to_colours[qualifiers['linkage_evidence'][0]]]
+            qualifiers['color'] = [products_to_colours[qualifiers['linkage_evidence'][0]].value]
     else:
-        qualifiers['colour'] = [products_to_colours['other']]
+        qualifiers['colour'] = [products_to_colours['other'].value]
 
 
 def add_colours(record: SeqRecord):
     for feature in record.features:
         if feature.type in products_to_colours:
-            feature.qualifiers['colour'] = products_to_colours[feature.type]
+            feature.qualifiers['colour'] = products_to_colours[feature.type].value
         else:
             colour_feature(feature.qualifiers)
