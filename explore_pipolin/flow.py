@@ -14,7 +14,6 @@ def get_flow():
     with Flow('MAIN') as flow:
         genomes = Parameter('genomes')
         out_dir = Parameter('out_dir')
-        abricate_dir = Parameter('abricate_dir')
 
         gquery = tasks.create_gquery.map(genome=genomes)
 
@@ -51,8 +50,6 @@ def get_flow():
         prokka_atts = tasks.include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
                                                              root_dir=unmapped(out_dir))
         # TODO: make this task optional
-        t_easyfig = tasks.easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts,
-                                                  abricate_dir=unmapped(abricate_dir),
-                                                  upstream_tasks=[t_scaffolding])
+        tasks.easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts, upstream_tasks=[t_scaffolding])
 
     return flow

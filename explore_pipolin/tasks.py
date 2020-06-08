@@ -10,7 +10,7 @@ from prefect.engine import signals
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
-from explore_pipolin.utilities.easyfig_coloring import add_colours, find_and_color_amr_and_virulence
+from explore_pipolin.utilities.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, Orientation, FeatureType
 from explore_pipolin.utilities.misc import GQuery
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
@@ -240,9 +240,7 @@ def include_atts_into_annotation(gquery, prokka_dir, root_dir):
 
 
 @task
-def easyfig_add_colours(gquery: GQuery, in_dir, abricate_dir):
+def easyfig_add_colours(gquery: GQuery, in_dir):
     gb_records = read_seqio_records(file=os.path.join(in_dir, gquery.genome.id + '.gbk'), file_format='genbank')
     add_colours(gb_records[gquery.genome.id])
-    if abricate_dir is not None:
-        find_and_color_amr_and_virulence(gquery, gb_records, abricate_dir)
     write_genbank_records(gb_records=gb_records, out_dir=in_dir, genome=gquery.genome)
