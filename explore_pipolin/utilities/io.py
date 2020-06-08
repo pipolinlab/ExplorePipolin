@@ -5,7 +5,7 @@ from typing import MutableMapping, MutableSequence, Sequence
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.utilities.common import Genome, Orientation, define_gquery_id, Repeat, Contig
+from explore_pipolin.common import Genome, Orientation, define_gquery_id, Repeat, Contig
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 

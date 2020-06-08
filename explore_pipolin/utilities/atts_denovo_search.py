@@ -3,7 +3,7 @@ import os
 
 from typing import Sequence
 
-from explore_pipolin.utilities.common import Repeat
+from explore_pipolin.common import Repeat
 from explore_pipolin.utilities.external_tools import blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml
 from explore_pipolin.utilities.io import save_left_right_subsequences

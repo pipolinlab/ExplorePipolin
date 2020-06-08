@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from explore_pipolin.utilities.common import define_gquery_id
+from explore_pipolin.common import define_gquery_id
 
 
 def run_prokka(gquery_id, pipolins_dir, proteins, prokka_dir):

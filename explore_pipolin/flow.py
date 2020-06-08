@@ -3,7 +3,7 @@ from prefect import Flow, Parameter, unmapped
 from prefect.tasks.core.constants import Constant
 
 from explore_pipolin import tasks
-from explore_pipolin.utilities.common import FeatureType
+from explore_pipolin.common import FeatureType
 
 _REF_POLB = Constant(pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB.faa'))
 _REF_ATT = Constant(pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa'))

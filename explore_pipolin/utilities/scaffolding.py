@@ -1,7 +1,8 @@
 from enum import Enum, auto
 from typing import Sequence, MutableSequence, Optional, Set
 
-from explore_pipolin.utilities import PipolinFragment, FeatureType, Contig, GQuery, Feature, Orientation
+from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Orientation
+from explore_pipolin.utilities.misc import GQuery
 
 
 class Direction(Enum):

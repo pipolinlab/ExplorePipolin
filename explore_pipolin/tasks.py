@@ -11,20 +11,21 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours, find_and_color_amr_and_virulence
-from explore_pipolin.utilities import GQuery, Feature, Orientation, FeatureType
+from explore_pipolin.common import Feature, Orientation, FeatureType
+from explore_pipolin.utilities.misc import GQuery
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
 from explore_pipolin.utilities.atts_denovo_search import find_repeats
 from explore_pipolin.utilities.external_tools import blast_genome_against_seq
 from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
-from explore_pipolin.utilities import create_fragment_record
+from explore_pipolin.utilities.misc import create_fragment_record
 from explore_pipolin.utilities.io import read_gff_records
-from explore_pipolin.utilities import create_att_seqfeatures
+from explore_pipolin.utilities.misc import create_att_seqfeatures
 from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities.io import read_genome_from_file
-from explore_pipolin.utilities import add_new_gb_feature
+from explore_pipolin.utilities.misc import add_new_gb_feature
 from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
 
 

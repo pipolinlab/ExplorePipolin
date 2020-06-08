@@ -7,7 +7,7 @@ from random import randrange
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 
-from explore_pipolin.utilities.common import Orientation, Contig, Genome, Feature, PipolinFragment, FeatureType
+from explore_pipolin.common import Orientation, Contig, Genome, Feature, PipolinFragment, FeatureType
 
 
 class GQuery:
