@@ -4,7 +4,15 @@ import os
 import click
 from explore_pipolin.flow import get_flow
 
+from explore_pipolin.utilities.external_tools import check_aragorn, check_blast, check_prokka
+
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
+def check_external_dependencies():
+    check_blast()
+    check_aragorn()
+    check_prokka()
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -25,9 +33,12 @@ def explore_pipolin(genome, out_dir, add_colours):
     # # dot -Tpdf test > test.pdf
     # # check the result
 
-    if len(genome) != len(set(os.path.basename(i) for i in genome)):
-        logging.fatal('GENOME files should have different names!')
-        exit(1)
+    if len(genome) > 1:
+        if len(genome) != len(set(os.path.basename(i) for i in genome)):
+            logging.fatal('GENOME files should have different names!')
+            exit(1)
+
+    check_external_dependencies()
 
     state = get_flow().run(genome=genome, out_dir=out_dir, add_colours=add_colours)
     assert state.is_successful()

@@ -1,7 +1,33 @@
+import logging
 import os
 import subprocess
 
 from explore_pipolin.common import define_genome_id
+
+
+def check_blast():
+    try:
+        subprocess.run(['blastn', '-version'], stdout=subprocess.DEVNULL)
+        subprocess.run(['tblastn', '-version'], stdout=subprocess.DEVNULL)
+    except FileNotFoundError:
+        logging.fatal('Cannot find blastn and tblastn executables in your PATH! Is BLAST+ installed?')
+        exit(1)
+
+
+def check_aragorn():
+    try:
+        subprocess.run(['aragorn', '-h'], stdout=subprocess.DEVNULL)
+    except FileNotFoundError:
+        logging.fatal('Cannot find aragorn executable in your PATH! Is ARAGORN installed?')
+        exit(1)
+
+
+def check_prokka():
+    try:
+        subprocess.run(['prokka', '--version'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except FileNotFoundError:
+        logging.fatal('Cannot find prokka executable in your PATH! Is Prokka installed?')
+        exit(1)
 
 
 def run_prokka(genome_id, pipolins_dir, proteins, prokka_results_dir):
