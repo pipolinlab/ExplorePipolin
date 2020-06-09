@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import os
+from contextlib import contextmanager
 from enum import Enum, auto
 from logging import Logger, LogRecord
 from typing import Tuple, MutableSequence, Optional
@@ -65,19 +66,22 @@ class Genome:
         return self.contigs[0].contig_length
 
 
+@contextmanager
 def _add_genome_id_to_logger(genome: Genome, logger: Logger):
     def my_filter(record: LogRecord):
         record.msg = genome.genome_id + ' ' + record.msg
         return 1
     logger.addFilter(my_filter)
+    yield
+    logger.removeFilter(my_filter)
 
 
 def genome_task(func):
     @functools.wraps(func)
     def wrapper(gquery, **kwargs):
-        _add_genome_id_to_logger(gquery.genome, context['logger'])
-        context['logger'].info(' >>> ')
-        return func(gquery, **kwargs)
+        with _add_genome_id_to_logger(gquery.genome, context['logger']):
+            context['logger'].info(' >>> ')
+            return func(gquery, **kwargs)
     return wrapper
 
 
