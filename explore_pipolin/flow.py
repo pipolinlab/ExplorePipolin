@@ -16,11 +16,11 @@ _DEFAULT_FILTER = FilterTask()
 
 def get_flow():
     with Flow('MAIN') as flow:
-        genomes = Parameter('genomes')
+        genome = Parameter('genome')
         out_dir = Parameter('out_dir')
         add_colours = Parameter('add_colours')
 
-        gquery = tasks.create_gquery.map(genome_file=genomes)
+        gquery = tasks.create_gquery.map(genome_file=genome)
 
         pipolb_blast_dir = tasks.run_blast_against_pipolb.map(gquery=gquery, ref_pipolb=unmapped(_REF_PIPOLB),
                                                               out_dir=unmapped(out_dir))
