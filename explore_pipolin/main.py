@@ -2,9 +2,11 @@ import logging
 import os
 
 import click
+
 from explore_pipolin.flow import get_flow
 
 from explore_pipolin.utilities.external_tools import check_aragorn, check_blast, check_prokka
+from explore_pipolin.utilities.logging import set_logging_dir
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -39,7 +41,7 @@ def explore_pipolin(genome, out_dir, add_colours):
             exit(1)
 
     check_external_dependencies()
-
+    set_logging_dir(out_dir)
     state = get_flow().run(genome=genome, out_dir=out_dir, add_colours=add_colours)
     assert state.is_successful()
 
