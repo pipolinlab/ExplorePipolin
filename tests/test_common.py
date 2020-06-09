@@ -77,10 +77,6 @@ class UtilitiesTestCase(unittest.TestCase):
         with self.assertRaises(AssertionError):
             Repeat(left=(123, 321), right=(654, 456), seq='ATCG')
 
-    def test_repeat_left_not_greater_right(self):
-        with self.assertRaises(AssertionError):
-            Repeat(left=(456, 654), right=(123, 321), seq='ATCG')
-
     def test_repeat_seq_not_greater_range(self):
         with self.assertRaises(AssertionError):
             Repeat(left=(1, 3), right=(5, 7), seq='ATCG')

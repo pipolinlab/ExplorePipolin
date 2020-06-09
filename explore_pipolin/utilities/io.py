@@ -87,7 +87,7 @@ def save_left_right_subsequences(genome, left_window, right_window, repeats_dir)
 
 
 def write_repeats(gquery, repeats: Sequence[Repeat], repeats_dir):
-    with open(os.path.join(repeats_dir, gquery.gquery_id + '.repeats'), 'w') as ouf:
+    with open(os.path.join(repeats_dir, gquery.genome.genome_id + '.repeats'), 'w') as ouf:
         polbs_locations = sorted([(x.start, x.end) for x in gquery.pipolbs], key=lambda x: x[0])
         print('left_repeat', 'right_repeat', 'length', 'polbs',
               'd_to_the_left', 'd_to_the_right', 'sequence', sep='\t', file=ouf)
@@ -99,7 +99,7 @@ def write_repeats(gquery, repeats: Sequence[Repeat], repeats_dir):
 
 
 def write_atts_denovo(atts_denovo, gquery, repeats_dir):
-    with open(os.path.join(repeats_dir, gquery.gquery_id + '.atts'), 'w') as ouf:
+    with open(os.path.join(repeats_dir, gquery.genome.genome_id + '.atts'), 'w') as ouf:
         print('attL_start', 'attL_end', 'attR_start', 'attR_end', sep='\t', file=ouf)
         for att_pair in atts_denovo:
             print(att_pair[0][0], att_pair[0][1], att_pair[1][0], att_pair[1][1], sep='\t', file=ouf)

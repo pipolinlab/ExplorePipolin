@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import functools
 import os
 from enum import Enum, auto
+from logging import Logger, LogRecord
 from typing import Tuple, MutableSequence, Optional
+
+from prefect import context
 
 
 class Orientation(Enum):
@@ -61,6 +65,22 @@ class Genome:
         return self.contigs[0].contig_length
 
 
+def _add_genome_id_to_logger(genome: Genome, logger: Logger):
+    def my_filter(record: LogRecord):
+        record.msg = genome.genome_id + ' ' + record.msg
+        return 1
+    logger.addFilter(my_filter)
+
+
+def genome_task(func):
+    @functools.wraps(func)
+    def wrapper(gquery, **kwargs):
+        _add_genome_id_to_logger(gquery.genome, context['logger'])
+        context['logger'].info(' >>> ')
+        return func(gquery, **kwargs)
+    return wrapper
+
+
 class Feature:
     def __init__(self, start: int, end: int, strand: Orientation, contig_id: str, genome: Genome):
         self.start = start
@@ -95,9 +115,6 @@ class Repeat:
 
         if self.left[0] > self.left[1] or self.right[0] > self.right[1]:
             raise AssertionError('Repeat start cannot be greater than repeat end!')
-
-        if self.left[1] > self.right[0]:
-            raise AssertionError('Left repeat cannot be upstream of or overlap with right repeat!')
 
         left_repeat_length = self.left[1] - self.left[0]
         right_repeat_length = self.right[1] - self.right[0]
