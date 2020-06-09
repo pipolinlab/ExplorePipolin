@@ -1,7 +1,6 @@
 """
 All the tasks should be defined in this file!
 """
-
 import os
 from prefect import task
 from prefect import context
@@ -35,7 +34,7 @@ def create_gquery(genome_file) -> GQuery:
     return GQuery(genome=create_genome_from_file(genome_file))
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def run_blast_against_pipolb(gquery, ref_pipolb, out_dir):
     blast_results_dir = os.path.join(out_dir, 'polb_blast')
@@ -44,7 +43,7 @@ def run_blast_against_pipolb(gquery, ref_pipolb, out_dir):
     return blast_results_dir
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def run_blast_against_att(gquery, ref_att, out_dir):
     blast_results_dir = os.path.join(out_dir, 'att_blast')
@@ -53,7 +52,7 @@ def run_blast_against_att(gquery, ref_att, out_dir):
     return blast_results_dir
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def add_features_from_blast(gquery: GQuery, blast_dir, feature_type: FeatureType) -> GQuery:
     entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.genome.genome_id}.fmt5'))
@@ -65,7 +64,7 @@ def add_features_from_blast(gquery: GQuery, blast_dir, feature_type: FeatureType
     return gquery
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def detect_trnas_with_aragorn(gquery, out_dir):
     aragorn_results_dir = os.path.join(out_dir, 'aragorn_results')
@@ -74,7 +73,7 @@ def detect_trnas_with_aragorn(gquery, out_dir):
     return aragorn_results_dir
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def add_features_from_aragorn(gquery: GQuery, aragorn_results_dir) -> GQuery:
     entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_results_dir, f'{gquery.genome.genome_id}.batch'))
@@ -90,13 +89,13 @@ def add_features_from_aragorn(gquery: GQuery, aragorn_results_dir) -> GQuery:
     return gquery
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def are_pipolbs_present(gquery: GQuery):
     logger = context.get('logger')
 
     if len(gquery.pipolbs) == 0:
-        logger.info('No piPolBs were found!')
+        logger.warning('No piPolBs were found!')
         return False
 
     return True
@@ -110,7 +109,7 @@ def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> O
     return None
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def find_atts_denovo(gquery: GQuery, out_dir):
     logger = context.get('logger')
@@ -131,7 +130,7 @@ def find_atts_denovo(gquery: GQuery, out_dir):
     return atts_denovo_dir
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def add_features_atts_denovo(gquery: GQuery, atts_denovo_dir):
     with open(os.path.join(atts_denovo_dir, gquery.genome.genome_id + '.atts')) as inf:
@@ -153,7 +152,7 @@ def add_features_atts_denovo(gquery: GQuery, atts_denovo_dir):
             gquery.target_trnas_denovo.append(target_trna)
 
 
-@task(skip_on_upstream_skip=False, log_stdout=True)
+@task(skip_on_upstream_skip=False)
 @genome_task
 def are_atts_present(gquery: GQuery):
     logger = context.get('logger')
@@ -189,7 +188,7 @@ def are_atts_present(gquery: GQuery):
     return gquery
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def analyse_pipolin_orientation(gquery: GQuery):
     gquery.is_single_target_trna_per_contig()
@@ -199,23 +198,25 @@ def analyse_pipolin_orientation(gquery: GQuery):
     return gquery
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def scaffold_pipolins(gquery: GQuery):
     # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
     # https://github.com/biopython/biopython/issues/1755
+    logger = context.get('logger')
+
     if gquery.genome.is_single_contig() or gquery.is_on_the_same_contig():
-        print('>>>Scaffolding is not required!')
+        logger.warning('>>> Scaffolding is not required!')
         gquery.pipolin_fragments = create_pipolin_fragments_single_contig(gquery)
     else:
-        print('>>>Scaffolding is required!')
+        logger.warning('>>> Scaffolding is required!')
         scaffolder = Scaffolder(gquery=gquery)
         gquery.pipolin_fragments = scaffolder.try_creating_single_record()
 
     return gquery
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def extract_pipolin_regions(gquery: GQuery, out_dir):
     if gquery.pipolin_fragments is None:
@@ -225,21 +226,23 @@ def extract_pipolin_regions(gquery: GQuery, out_dir):
     pipolins_dir = os.path.join(out_dir, 'pipolin_sequences')
     os.makedirs(pipolins_dir, exist_ok=True)
 
+    logger = context.get('logger')
+
     with open(os.path.join(pipolins_dir, gquery.genome.genome_id + '.fa'), 'w') as ouf:
         record = SeqRecord(seq='')
         sep_record = SeqRecord(seq='N' * 100)
 
         for fragment in gquery.pipolin_fragments[:-1]:
             fragment_record = create_fragment_record(fragment=fragment, genome_dict=genome_dict)
-            print(f'@fragment length {len(fragment_record)} from {fragment.contig.contig_id}')
+            logger.info(f'@fragment length {len(fragment_record)} from {fragment.contig.contig_id}')
             record += fragment_record
             record += sep_record
 
         last_record = create_fragment_record(fragment=gquery.pipolin_fragments[-1], genome_dict=genome_dict)
-        print(f'@fragment length {len(last_record)} from {gquery.pipolin_fragments[-1].contig.contig_id}')
+        logger.info(f'@fragment length {len(last_record)} from {gquery.pipolin_fragments[-1].contig.contig_id}')
         record += last_record
 
-        print(f'@@@ total record length {len(record)}')
+        logger.info(f'@@@ total record length {len(record)}')
 
         record.id = gquery.genome.genome_id
         record.name = gquery.genome.genome_id
@@ -249,7 +252,7 @@ def extract_pipolin_regions(gquery: GQuery, out_dir):
     return pipolins_dir
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def annotate_pipolins(gquery, pipolins_dir, proteins, out_dir):
     prokka_results_dir = os.path.join(out_dir, 'prokka')
@@ -259,7 +262,7 @@ def annotate_pipolins(gquery, pipolins_dir, proteins, out_dir):
     return prokka_results_dir
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def include_atts_into_annotation(gquery, prokka_dir, out_dir):
     gb_records = read_seqio_records(file=os.path.join(prokka_dir, gquery.genome.genome_id + '.gbk'),
@@ -278,7 +281,7 @@ def include_atts_into_annotation(gquery, prokka_dir, out_dir):
     return prokka_atts_dir
 
 
-@task(log_stdout=True)
+@task()
 @genome_task
 def easyfig_add_colours(gquery: GQuery, in_dir):
     gb_records = read_seqio_records(file=os.path.join(in_dir, gquery.genome.genome_id + '.gbk'), file_format='genbank')
