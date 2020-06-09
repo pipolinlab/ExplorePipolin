@@ -28,7 +28,8 @@ def get_flow():
                                                    feature_type=unmapped(Constant(FeatureType.PIPOLB)))
 
         t_check_pipolbs = tasks.are_pipolbs_present.map(gquery=gquery)
-        gquery = _DEFAULT_FILTER(tasks.filter_no_pipolbs.map(task_to_filter=gquery, filter_by=t_check_pipolbs))
+        gquery = _DEFAULT_FILTER(tasks.return_result_if_true_else_none.map(result_to_filter=gquery,
+                                                                           filter_by=t_check_pipolbs))
 
         att_blast_dir = tasks.run_blast_against_att.map(gquery=gquery, ref_att=unmapped(_REF_ATT),
                                                         out_dir=unmapped(out_dir))

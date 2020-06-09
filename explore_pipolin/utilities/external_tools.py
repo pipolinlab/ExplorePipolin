@@ -4,15 +4,14 @@ import subprocess
 from explore_pipolin.common import define_genome_id
 
 
-def run_prokka(gquery_id, pipolins_dir, proteins, prokka_dir):
-    os.makedirs(prokka_dir, exist_ok=True)
-    subprocess.run(['prokka', '--outdir', prokka_dir,
-                    '--prefix', gquery_id,
+def run_prokka(genome_id, pipolins_dir, proteins, prokka_results_dir):
+    subprocess.run(['prokka', '--outdir', prokka_results_dir,
+                    '--prefix', genome_id,
                     # TODO: number of CPUs is hardcoded. To pass it as an argument?
                     '--rawproduct', '--cdsrnaolap', '--cpus', '4',
                     '--rfam', '--proteins', proteins, '--force',
-                    '--locustag', gquery_id,
-                    os.path.join(pipolins_dir, gquery_id + '.fa')],
+                    '--locustag', genome_id,
+                    os.path.join(pipolins_dir, genome_id + '.fa')],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 

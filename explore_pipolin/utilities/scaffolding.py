@@ -156,10 +156,10 @@ class Scaffolder:
                                                  genome=self.gquery.genome,
                                                  end=polbs_contigs[1].contig_length)
 
-                polb0_length = sum((i.end - i.start) for i in self.gquery.get_features_of_contig(
+                polb0_length = sum((i.end - i.start) for i in self.gquery.get_features_of_contig_normalized(
                     contig_id=polbs_contigs[0].contig_id,
                     feature_type=FeatureType.PIPOLB))
-                polb1_length = sum((i.end - i.start) for i in self.gquery.get_features_of_contig(
+                polb1_length = sum((i.end - i.start) for i in self.gquery.get_features_of_contig_normalized(
                     contig_id=polbs_contigs[1].contig_id,
                     feature_type=FeatureType.PIPOLB))
                 # TODO: comparing just by length is an unreliable way! REWRITE if possible!
@@ -185,8 +185,8 @@ class Scaffolder:
 
         contigs_to_return = []
         for contig in polbs_contigs:
-            atts_next_polbs = self.gquery.get_features_of_contig(contig_id=contig.contig_id,
-                                                                 feature_type=FeatureType.ATT)
+            atts_next_polbs = self.gquery.get_features_of_contig_normalized(contig_id=contig.contig_id,
+                                                                            feature_type=FeatureType.ATT)
             if len(atts_next_polbs) != 0:
                 contigs_to_return.append(contig)
 
@@ -238,8 +238,8 @@ class Scaffolder:
     def _get_att_only_contigs(self) -> Set[Contig]:
         att_only_contigs = set()
         for att in self.gquery.atts:
-            polbs_next_att = self.gquery.get_features_of_contig(contig_id=att.contig_id,
-                                                                feature_type=FeatureType.PIPOLB)
+            polbs_next_att = self.gquery.get_features_of_contig_normalized(contig_id=att.contig_id,
+                                                                           feature_type=FeatureType.PIPOLB)
             if len(polbs_next_att) == 0:
                 att_only_contigs.add(att.contig)
 

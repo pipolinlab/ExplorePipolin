@@ -33,7 +33,7 @@ class UtilitiesTestCase(unittest.TestCase):
         self.contig2 = Contig(contig_id=self.contig2_id, contig_length=500)
         self.multi_contig_genome.contigs = [self.contig1, self.contig2]
 
-        self.feature = Feature(start=123, end=321, frame=Orientation.REVERSE,
+        self.feature = Feature(start=123, end=321, strand=Orientation.REVERSE,
                                contig_id='boo', genome=self.multi_contig_genome)
 
         self.pipolin = PipolinFragment(contig_id='boo', genome=self.multi_contig_genome, start=300, end=400)
@@ -65,12 +65,12 @@ class UtilitiesTestCase(unittest.TestCase):
 
     def test_feature_start_not_greater_end(self):
         with self.assertRaises(AssertionError):
-            Feature(start=321, end=123, frame=Orientation.REVERSE,
+            Feature(start=321, end=123, strand=Orientation.REVERSE,
                     contig_id='boo', genome=self.multi_contig_genome)
 
     def test_feature_end_not_greater_contig_length(self):
         with self.assertRaises(AssertionError):
-            Feature(start=123, end=321, frame=Orientation.FORWARD,
+            Feature(start=123, end=321, strand=Orientation.FORWARD,
                     contig_id='foo', genome=self.multi_contig_genome)
 
     def test_repeat_start_not_greater_end(self):

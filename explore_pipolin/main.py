@@ -9,7 +9,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--out-dir', type=click.Path(), required=True, help='Specify the output directory!')
 @click.option('--add-colours', is_flag=True,
               help='Add colours to the final Genbank file features. '
-                   'The files can be visualized further using Easyfig.')
+                   'The genomic structure can be visualized further using Easyfig.')
 def explore_pipolin(genomes, out_dir, add_colours):
     """
     ExplorePipolin is a search tool that identifies and analyses pipolin elements within bacterial genome(s).

@@ -31,7 +31,15 @@ products_to_colours = {'Primer-independent DNA polymerase PolB': EasyfigColour.R
                        'other': EasyfigColour.FLORAL_WHITE}
 
 
-def colour_feature(qualifiers):
+def add_colours(record: SeqRecord):
+    for feature in record.features:
+        if feature.type in products_to_colours:
+            feature.qualifiers['colour'] = products_to_colours[feature.type].value
+        else:
+            _colour_feature(feature.qualifiers)
+
+
+def _colour_feature(qualifiers):
     if 'product' in qualifiers:
         for product in qualifiers['product']:
             if product in products_to_colours:
@@ -47,11 +55,3 @@ def colour_feature(qualifiers):
             qualifiers['color'] = [products_to_colours[qualifiers['linkage_evidence'][0]].value]
     else:
         qualifiers['colour'] = [products_to_colours['other'].value]
-
-
-def add_colours(record: SeqRecord):
-    for feature in record.features:
-        if feature.type in products_to_colours:
-            feature.qualifiers['colour'] = products_to_colours[feature.type].value
-        else:
-            colour_feature(feature.qualifiers)

@@ -13,7 +13,7 @@ from typing import Any, Optional
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, Orientation, FeatureType
-from explore_pipolin.utilities.misc import GQuery
+from explore_pipolin.utilities.misc import GQuery, feature_from_blasthit
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
@@ -22,11 +22,11 @@ from explore_pipolin.utilities.external_tools import tblastn_against_ref_pipolb,
 from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
 from explore_pipolin.utilities.misc import create_fragment_record
 from explore_pipolin.utilities.io import read_gff_records
-from explore_pipolin.utilities.misc import create_att_seqfeatures
+from explore_pipolin.utilities.including_atts_into_annotation import include_atts_into_gb
+from explore_pipolin.utilities.including_atts_into_annotation import include_atts_into_gff
 from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities.io import create_genome_from_file
-from explore_pipolin.utilities.misc import add_new_gb_feature
 from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
 
 
@@ -56,7 +56,7 @@ def add_features_from_blast(gquery: GQuery, blast_dir, feature_type: FeatureType
     entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{gquery.genome.genome_id}.fmt5'))
     for entry in entries:
         for hit in entry:
-            feature = gquery.feature_from_blasthit(hit=hit, contig_id=entry.id)
+            feature = feature_from_blasthit(hit=hit, contig_id=entry.id, genome=gquery.genome)
             gquery.get_features_by_type(feature_type).append(feature)
 
     return gquery
@@ -75,7 +75,7 @@ def add_features_from_aragorn(gquery: GQuery, aragorn_results_dir) -> GQuery:
     entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_results_dir, f'{gquery.genome.genome_id}.batch'))
     for contig_id, hits in entries.items():
         for hit in hits:
-            feature = Feature(start=hit[0], end=hit[1], frame=hit[2], contig_id=contig_id, genome=gquery.genome)
+            feature = Feature(start=hit[0], end=hit[1], strand=hit[2], contig_id=contig_id, genome=gquery.genome)
             gquery.trnas.append(feature)
     for att in gquery.atts:
         target_trna = gquery.find_target_trna(att)
@@ -97,9 +97,9 @@ def are_pipolbs_present(gquery: GQuery):
 
 
 @task
-def filter_no_pipolbs(task_to_filter: Any, filter_by: bool) -> Optional[Any]:
+def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> Optional[Any]:
     if filter_by:
-        return task_to_filter
+        return result_to_filter
 
     return None
 
@@ -131,11 +131,11 @@ def add_features_atts_denovo(gquery: GQuery, atts_denovo_dir):
         for line in inf:
             att_pair = [int(i) for i in line.strip().split(sep='\t')]
             gquery.denovo_atts.append(Feature(start=att_pair[0], end=att_pair[1],
-                                              frame=Orientation.FORWARD,
+                                              strand=Orientation.FORWARD,
                                               contig_id=gquery.genome.get_complete_genome_contig_id(),
                                               genome=gquery.genome))
             gquery.denovo_atts.append(Feature(start=att_pair[2], end=att_pair[3],
-                                              frame=Orientation.FORWARD,
+                                              strand=Orientation.FORWARD,
                                               contig_id=gquery.genome.get_complete_genome_contig_id(),
                                               genome=gquery.genome))
 
@@ -159,13 +159,13 @@ def are_atts_present(gquery: GQuery):
                        f'For more details, check the {gquery.genome.genome_id}.atts file '
                        f'in the atts_denovo directory!\n')
         # TODO: check that it's only one repeat! Although, this shouldn't be a problem.
-        atts_frames = [att.frame for att in gquery.denovo_atts]
+        atts_frames = [att.strand for att in gquery.denovo_atts]
         if len(set(atts_frames)) != 1:
             raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
-        if set(atts_frames).pop() == gquery.target_trnas_denovo[0].frame:
+        if set(atts_frames).pop() == gquery.target_trnas_denovo[0].strand:
             reverse_denovo_atts = []
             for att in gquery.denovo_atts:
-                reverse_denovo_atts.append(Feature(start=att.start, end=att.end, frame=-att.frame,
+                reverse_denovo_atts.append(Feature(start=att.start, end=att.end, strand=-att.strand,
                                                    contig_id=att.contig, genome=gquery.genome))
             gquery.atts.extend(reverse_denovo_atts)
         else:
@@ -239,9 +239,11 @@ def extract_pipolin_regions(gquery: GQuery, out_dir):
 
 @task
 def annotate_pipolins(gquery, pipolins_dir, proteins, out_dir):
-    prokka_dir = os.path.join(out_dir, 'prokka')
-    run_prokka(gquery.genome.genome_id, pipolins_dir, proteins, prokka_dir)
-    return prokka_dir
+    prokka_results_dir = os.path.join(out_dir, 'prokka')
+    os.makedirs(prokka_results_dir, exist_ok=True)
+    run_prokka(genome_id=gquery.genome.genome_id, pipolins_dir=pipolins_dir,
+               proteins=proteins, prokka_results_dir=prokka_results_dir)
+    return prokka_results_dir
 
 
 @task
@@ -250,12 +252,8 @@ def include_atts_into_annotation(gquery, prokka_dir, out_dir):
                                     file_format='genbank')
     gff_records = read_gff_records(file=os.path.join(prokka_dir, gquery.genome.genome_id + '.gff'))
 
-    att_seqfeatures = create_att_seqfeatures(record_format='gb', gquery=gquery)
-    for att in att_seqfeatures:
-        add_new_gb_feature(new_feature=att, record=gb_records[gquery.genome.genome_id])
-    att_seqfeatures = create_att_seqfeatures(record_format='gff', gquery=gquery)
-    for att in att_seqfeatures:
-        add_new_gb_feature(new_feature=att, record=gff_records[gquery.genome.genome_id])
+    include_atts_into_gb(gb_records=gb_records, gquery=gquery)
+    include_atts_into_gff(gff_records=gff_records, gquery=gquery)
 
     prokka_atts_dir = os.path.join(out_dir, 'prokka_atts')
     os.makedirs(prokka_atts_dir, exist_ok=True)

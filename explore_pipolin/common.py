@@ -62,10 +62,10 @@ class Genome:
 
 
 class Feature:
-    def __init__(self, start: int, end: int, frame: Orientation, contig_id: str, genome: Genome):
+    def __init__(self, start: int, end: int, strand: Orientation, contig_id: str, genome: Genome):
         self.start = start
         self.end = end
-        self.frame = frame
+        self.strand = strand
         self.contig_id = contig_id
         self.genome = genome
 

@@ -2,10 +2,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 from typing import MutableSequence, Optional, Tuple, Sequence, Mapping, MutableMapping, List
-from random import randrange
-
-from Bio.SeqFeature import SeqFeature, FeatureLocation
-from Bio.SeqRecord import SeqRecord
 
 from explore_pipolin.common import Orientation, Contig, Genome, Feature, PipolinFragment, FeatureType
 
@@ -33,14 +29,9 @@ class GQuery:
     def get_features_dict_by_contig_normalized(self, feature_type: FeatureType) -> Mapping[str, Sequence[Feature]]:
         return self._dict_by_contig_normalized(self.get_features_by_type(feature_type))
 
-    # TODO: replace it with _dict_by_contig_normalized()!
-    def get_features_of_contig(self, contig_id, feature_type: FeatureType) -> MutableSequence[Feature]:
-        features_to_return = []
-        features = self.get_features_by_type(feature_type=feature_type)
-        for feature in features:
-            if feature.contig_id == contig_id:
-                features_to_return.append(feature)
-        return features_to_return
+    def get_features_of_contig_normalized(self, contig_id: str, feature_type: FeatureType) -> Sequence[Feature]:
+        features_dict = self.get_features_dict_by_contig_normalized(feature_type=feature_type)
+        return features_dict[contig_id]
 
     def get_features_by_type(self, feature_type: FeatureType) -> MutableSequence[Feature]:
         if feature_type is FeatureType.PIPOLB:
@@ -53,11 +44,6 @@ class GQuery:
             return self.trnas
         else:
             raise AssertionError(f'Feature must be one of: {list(FeatureType)}, not {feature_type}')
-
-    def feature_from_blasthit(self, hit, contig_id: str) -> Feature:
-        return Feature(start=hit.hit_start, end=hit.hit_end,
-                       frame=Orientation.orientation_from_blast(hit.hit_strand),
-                       contig_id=contig_id, genome=self.genome)
 
     # `add_features_from_aragorn` and `add_features_atts_denovo`
     def find_target_trna(self, att: Feature) -> Optional[Feature]:
@@ -78,18 +64,18 @@ class GQuery:
 
     # `find_atts_denovo` and `scaffold_pipolins`
     def get_left_right_windows(self) -> Tuple[Tuple[int, int], Tuple[int, int]]:
-        polymerases = sorted((i for i in self.pipolbs), key=lambda p: p.start)
+        pipolbs = sorted((i for i in self.pipolbs), key=lambda p: p.start)
 
-        if polymerases[-1].start - polymerases[0].start > 10000:   # TODO: is it small/big enough?
+        if pipolbs[-1].start - pipolbs[0].start > 10000:   # TODO: is it small/big enough?
             raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
-                                 f'within the region ({polymerases[0].start}, {polymerases[-1].end}). It might be, '
+                                 f'within the region ({pipolbs[0].start}, {pipolbs[-1].end}). It might be, '
                                  f'that you have two or more pipolins per genome, but we are expecting only one.')
 
         length = self.genome.get_complete_genome_length()
-        left_edge = polymerases[0].start - 100000
-        left_window = (left_edge if left_edge >= 0 else 0, polymerases[0].start)
-        right_edge = polymerases[-1].end + 100000
-        right_window = (polymerases[-1].end, right_edge if right_edge <= length else length)
+        left_edge = pipolbs[0].start - 100000
+        left_window = (left_edge if left_edge >= 0 else 0, pipolbs[0].start)
+        right_edge = pipolbs[-1].end + 100000
+        right_window = (pipolbs[-1].end, right_edge if right_edge <= length else length)
 
         return left_window, right_window
 
@@ -111,6 +97,12 @@ class GQuery:
                 return True
         return False
 
+    @staticmethod
+    def _is_overlapping(range1, range2):
+        max_start = max(range1[0], range2[0])
+        min_end = min(range1[1], range2[1])
+        return max_start <= min_end
+
     # `analyse_pipolin_orientation`
     def is_single_target_trna_per_contig(self):
         # TODO: don't like this
@@ -121,71 +113,29 @@ class GQuery:
 
     # `analyse_pipolin_orientation`
     def get_contig_orientation(self, contig: Contig) -> Orientation:
-        target_trnas = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.TARGET_TRNA)
-        atts = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.ATT)
-        atts_frames = [att.frame for att in atts]
-        polbs = self.get_features_of_contig(contig_id=contig.contig_id, feature_type=FeatureType.PIPOLB)
-        polbs_frames = [polb.frame for polb in polbs]
+        target_trnas = self.get_features_of_contig_normalized(contig_id=contig.contig_id,
+                                                              feature_type=FeatureType.TARGET_TRNA)
+        atts = self.get_features_of_contig_normalized(contig_id=contig.contig_id, feature_type=FeatureType.ATT)
+        atts_strands = [att.strand for att in atts]
+        polbs = self.get_features_of_contig_normalized(contig_id=contig.contig_id, feature_type=FeatureType.PIPOLB)
+        polbs_strands = [polb.strand for polb in polbs]
 
         if len(target_trnas) != 0:
-            if len(set(atts_frames)) != 1:
+            if len(set(atts_strands)) != 1:
                 raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
-            if set(atts_frames).pop() == target_trnas[0].frame:
+            if set(atts_strands).pop() == target_trnas[0].strand:
                 raise AssertionError('ATT and tRNA are expected to be on the different strands!')
-            return - target_trnas[0].frame
+            return - target_trnas[0].strand
 
         elif len(atts) != 0:
-            if len(set(atts_frames)) != 1:
+            if len(set(atts_strands)) != 1:
                 raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
-            return atts[0].frame
+            return atts[0].strand
 
         if len(polbs) != 0:
-            if len(set(polbs_frames)) != 1:  # an ambiguous case
+            if len(set(polbs_strands)) != 1:  # an ambiguous case
                 return contig.contig_orientation
-            return polbs[0].frame
-
-    @staticmethod
-    def _is_overlapping(range1, range2):
-        max_start = max(range1[0], range2[0])
-        min_end = min(range1[1], range2[1])
-        return max_start <= min_end
-
-    @staticmethod
-    def _is_polymerase_inside(atts, polymerases):
-        return atts[0].start < polymerases[0].start and polymerases[-1].end < atts[-1].end
-
-    def create_att_feature(self, start: int, end: int, frame: Orientation, records_format: str) -> SeqFeature:
-        random_number = randrange(10000, 99999)
-        gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{self.genome.genome_id}_{random_number}'],
-                         'rpt_family': ['Att'], 'rpt_type': ['direct']}
-        gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
-                          'ID': [f'{self.genome.genome_id}_{random_number}'], 'inference': ['HMM:custom'],
-                          'locus_tag': [f'{self.genome.genome_id}_{random_number}'],
-                          'rpt_family': ['Att'], 'rpt_type': ['direct']}
-        att_feature = SeqFeature(type='repeat_region',
-                                 location=FeatureLocation(start=start, end=end, strand=frame.to_pm_one_encoding()),
-                                 qualifiers=gb_qualifiers if records_format == 'gb' else gff_qualifiers)
-        return att_feature
-
-
-def add_new_gb_feature(new_feature: SeqFeature, record: SeqRecord):
-    record.features.append(new_feature)
-    record.features.sort(key=lambda x: x.location.start)
-
-
-def create_att_seqfeatures(record_format: str, gquery: GQuery) -> MutableSequence[SeqFeature]:
-    att_seqfeatures = []
-    in_start = 0
-    for fragment in gquery.pipolin_fragments:
-        fragment_shift = fragment.start if fragment.contig.contig_orientation == Orientation.FORWARD else fragment.end
-        for att in fragment.atts:
-            att_start, att_end = sorted([abs(att.start - fragment_shift), abs(att.end - fragment_shift)])
-            att_feature = gquery.create_att_feature(start=att_start + in_start, end=att_end + in_start,
-                                                    frame=att.frame, records_format=record_format)
-            att_seqfeatures.append(att_feature)
-        in_start += (fragment.end - fragment.start) + 100
-
-    return att_seqfeatures
+            return polbs[0].strand
 
 
 def create_fragment_record(fragment, genome_dict):
@@ -193,3 +143,9 @@ def create_fragment_record(fragment, genome_dict):
     if fragment.contig.contig_orientation == Orientation.REVERSE:
         fragment_record = fragment_record.reverse_complement()
     return fragment_record
+
+
+def feature_from_blasthit(hit, contig_id: str, genome: Genome) -> Feature:
+    return Feature(start=hit.hit_start, end=hit.hit_end,
+                   strand=Orientation.orientation_from_blast(hit.hit_strand),
+                   contig_id=contig_id, genome=genome)
