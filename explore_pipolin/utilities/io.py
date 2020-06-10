@@ -5,7 +5,8 @@ from typing import MutableMapping, MutableSequence, Sequence
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.common import Genome, Orientation, define_genome_id, Repeat, Contig
+from explore_pipolin.common import Genome, Orientation, define_genome_id, RepeatPair, Contig, Feature
+from explore_pipolin.utilities.misc import GQuery
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
@@ -86,20 +87,20 @@ def save_left_right_subsequences(genome, left_window, right_window, repeats_dir)
                 handle=os.path.join(repeats_dir, define_genome_id(genome_path=genome) + '.right'))
 
 
-def write_repeats(gquery, repeats: Sequence[Repeat], repeats_dir):
-    with open(os.path.join(repeats_dir, gquery.genome.genome_id + '.repeats'), 'w') as ouf:
+def write_repeats(gquery: GQuery, repeats: Sequence[RepeatPair], out_dir: str):
+    with open(os.path.join(out_dir, gquery.genome.genome_id + '.repeats'), 'w') as ouf:
         polbs_locations = sorted([(x.start, x.end) for x in gquery.pipolbs], key=lambda x: x[0])
         print('left_repeat', 'right_repeat', 'length', 'polbs',
               'd_to_the_left', 'd_to_the_right', 'sequence', sep='\t', file=ouf)
         for repeat in repeats:
-            print(repeat.left, repeat.right, repeat.left[1] - repeat.left[0],
-                  ','.join([str(i) for i in polbs_locations]),
-                  polbs_locations[0][0] - repeat.left[1], repeat.right[0] - polbs_locations[-1][-1], repeat.seq,
-                  sep='\t', file=ouf)
+            print((repeat.left.start, repeat.left.end), (repeat.right.start, repeat.right.end),
+                  repeat.left.end - repeat.left.start, ','.join([str(i) for i in polbs_locations]),
+                  polbs_locations[0][0] - repeat.left.end, repeat.right.start - polbs_locations[-1][-1],
+                  repeat.seq, sep='\t', file=ouf)
 
 
-def write_atts_denovo(atts_denovo, gquery, repeats_dir):
-    with open(os.path.join(repeats_dir, gquery.genome.genome_id + '.atts'), 'w') as ouf:
-        print('attL_start', 'attL_end', 'attR_start', 'attR_end', sep='\t', file=ouf)
-        for att_pair in atts_denovo:
-            print(att_pair[0][0], att_pair[0][1], att_pair[1][0], att_pair[1][1], sep='\t', file=ouf)
+def write_atts_denovo(atts_denovo: Sequence[Feature], genome: Genome, atts_denovo_dir: str):
+    with open(os.path.join(atts_denovo_dir, genome.genome_id + '.atts_denovo'), 'w') as ouf:
+        print('att_start', 'att_end', sep='\t', file=ouf)
+        for att in atts_denovo:
+            print(att.start, att.end, sep='\t', file=ouf)

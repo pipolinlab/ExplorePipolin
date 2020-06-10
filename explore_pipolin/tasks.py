@@ -8,10 +8,10 @@ from prefect.engine import signals
 
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours
-from explore_pipolin.common import Feature, Orientation, FeatureType
+from explore_pipolin.common import Feature, FeatureType, RepeatPair
 from explore_pipolin.utilities.logging import genome_specific_logging
 from explore_pipolin.utilities.misc import GQuery, feature_from_blasthit
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
@@ -122,35 +122,22 @@ def find_atts_denovo(gquery: GQuery, out_dir):
     atts_denovo_dir = os.path.join(out_dir, 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
-    repeats = find_repeats(gquery, atts_denovo_dir)
-    write_repeats(gquery, repeats, atts_denovo_dir)
+    repeats: Sequence[RepeatPair] = find_repeats(gquery, atts_denovo_dir)
+    write_repeats(gquery=gquery, repeats=repeats, out_dir=atts_denovo_dir)
 
-    atts_denovo = [(rep.left, rep.right) for rep in repeats if gquery.is_att_denovo(rep.left, rep.right)]
-    write_atts_denovo(atts_denovo, gquery, atts_denovo_dir)
-
-    return atts_denovo_dir
-
-
-@task()
-@genome_specific_logging
-def add_features_atts_denovo(gquery: GQuery, atts_denovo_dir):
-    with open(os.path.join(atts_denovo_dir, gquery.genome.genome_id + '.atts')) as inf:
-        _ = inf.readline()
-        for line in inf:
-            att_pair = [int(i) for i in line.strip().split(sep='\t')]
-            gquery.denovo_atts.append(Feature(start=att_pair[0], end=att_pair[1],
-                                              strand=Orientation.FORWARD,
-                                              contig_id=gquery.genome.get_complete_genome_contig_id(),
-                                              genome=gquery.genome))
-            gquery.denovo_atts.append(Feature(start=att_pair[2], end=att_pair[3],
-                                              strand=Orientation.FORWARD,
-                                              contig_id=gquery.genome.get_complete_genome_contig_id(),
-                                              genome=gquery.genome))
+    atts_denovo: Sequence[RepeatPair] = [rep for rep in repeats if gquery.is_att_denovo(rep)]
+    for atts_pair in atts_denovo:
+        gquery.denovo_atts.append(atts_pair.left)
+        gquery.denovo_atts.append(atts_pair.right)
 
     for att in gquery.denovo_atts:
         target_trna = gquery.find_target_trna(att)
         if target_trna is not None:
             gquery.target_trnas_denovo.append(target_trna)
+
+    write_atts_denovo(gquery.denovo_atts, gquery.genome, atts_denovo_dir)
+
+    return atts_denovo_dir
 
 
 @task(skip_on_upstream_skip=False)

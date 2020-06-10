@@ -40,9 +40,8 @@ def get_flow():
         gquery = tasks.add_features_from_aragorn.map(gquery=gquery, aragorn_results_dir=aragorn_results_dir)
 
         atts_denovo = tasks.find_atts_denovo.map(gquery=gquery, out_dir=unmapped(out_dir))
-        task_atts_denovo = tasks.add_features_atts_denovo.map(gquery=gquery, atts_denovo_dir=atts_denovo)
 
-        gquery = tasks.are_atts_present.map(gquery=gquery, upstream_tasks=[task_atts_denovo])
+        gquery = tasks.are_atts_present.map(gquery=gquery, upstream_tasks=[atts_denovo])
 
         gquery = tasks.analyse_pipolin_orientation.map(gquery=gquery)
         gquery = tasks.scaffold_pipolins.map(gquery=gquery)

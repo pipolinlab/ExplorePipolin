@@ -20,15 +20,15 @@ class EasyfigColour(Enum):
 
 
 _products_to_colours = {'Primer-independent DNA polymerase PolB': EasyfigColour.RED,
-                       'Tyrosine recombinase XerC': EasyfigColour.BRICK_RED,
-                       'Type I site-specific deoxyribonuclease (hsdR)': EasyfigColour.YELLOW,
-                       'Type I restriction modification enzyme': EasyfigColour.YELLOW,
-                       'Type I restriction modification system methyltransferase (hsdM)': EasyfigColour.YELLOW,
-                       'metallohydrolase': EasyfigColour.MAGENTA, 'excisionase': EasyfigColour.PURPLE,
-                       'Uracil-DNA glycosylase': EasyfigColour.CYAN, 'tRNA-Leu': EasyfigColour.GREEN,
-                       'repeat_region': EasyfigColour.BLUE, 'pipolin_structure': EasyfigColour.BLACK,
-                       'paired-ends': EasyfigColour.PINK, 'Prophage integrase IntS': EasyfigColour.BROWN,
-                       'other': EasyfigColour.FLORAL_WHITE}
+                        'Tyrosine recombinase XerC': EasyfigColour.BRICK_RED,
+                        'Type I site-specific deoxyribonuclease (hsdR)': EasyfigColour.YELLOW,
+                        'Type I restriction modification enzyme': EasyfigColour.YELLOW,
+                        'Type I restriction modification system methyltransferase (hsdM)': EasyfigColour.YELLOW,
+                        'metallohydrolase': EasyfigColour.MAGENTA, 'excisionase': EasyfigColour.PURPLE,
+                        'Uracil-DNA glycosylase': EasyfigColour.CYAN, 'tRNA-Leu': EasyfigColour.GREEN,
+                        'repeat_region': EasyfigColour.BLUE, 'pipolin_structure': EasyfigColour.BLACK,
+                        'paired-ends': EasyfigColour.PINK, 'Prophage integrase IntS': EasyfigColour.BROWN,
+                        'other': EasyfigColour.FLORAL_WHITE}
 
 
 def add_colours(record: SeqRecord):

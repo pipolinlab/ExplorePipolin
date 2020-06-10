@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from enum import Enum, auto
-from typing import Tuple, MutableSequence, Optional
+from typing import MutableSequence, Optional
 
 
 class Orientation(Enum):
@@ -50,7 +50,7 @@ class Genome:
     def is_single_contig(self):
         return len(self.contigs) == 1
 
-    def get_complete_genome_contig_id(self):
+    def get_complete_genome_contig_id(self) -> str:
         if not self.is_single_contig():
             raise AssertionError('Unsupported! Not a complete genome!')
         return self.contigs[0].contig_id
@@ -79,6 +79,9 @@ class Feature:
     def contig(self):
         return self.genome.get_contig_by_id(self.contig_id)
 
+    def shift(self: Feature, shift) -> Feature:
+        return Feature(self.start + shift, self.end + shift, self.strand, self.contig_id, self.genome)
+
 
 class FeatureType(Enum):
     PIPOLB = auto()
@@ -87,38 +90,31 @@ class FeatureType(Enum):
     TARGET_TRNA = auto()
 
 
-class Repeat:
-    def __init__(self, left: Tuple[int, int], right: Tuple[int, int], seq: str):
+class RepeatPair:
+    def __init__(self, left: Feature, right: Feature, seq: str):
         self.left = left
         self.right = right
         self.seq = seq
 
-        if self.left[0] > self.left[1] or self.right[0] > self.right[1]:
-            raise AssertionError('Repeat start cannot be greater than repeat end!')
-
-        left_repeat_length = self.left[1] - self.left[0]
-        right_repeat_length = self.right[1] - self.right[0]
+        left_repeat_length = self.left.end - self.left.start
+        right_repeat_length = self.right.end - self.right.start
         seq_length = len(self.seq)
         if seq_length > left_repeat_length or seq_length > right_repeat_length:
             raise AssertionError('Repeat sequence length cannot be greater than repeat ranges!')
 
-    def shift(self, left_shift: int, right_shift: int) -> Repeat:
+    def shift(self, left_shift: int, right_shift: int) -> RepeatPair:
         if left_shift > right_shift:
             raise AssertionError('Left shift cannot be greater than right shift!')
 
-        return Repeat(self._shift_range(self.left, left_shift), self._shift_range(self.right, right_shift), self.seq)
-
-    @staticmethod
-    def _shift_range(seq_range: Tuple[int, int], shift):
-        return seq_range[0] + shift, seq_range[1] + shift
+        return RepeatPair(self.left.shift(left_shift), self.right.shift(right_shift), self.seq)
 
 
 class PipolinFragment:
     def __init__(self, contig_id: str, genome: Genome, start: int, end: int):
-        self.contig_id = contig_id
         self.start = start
         self.end = end
         self.atts: MutableSequence[Feature] = []
+        self.contig_id = contig_id
         self.genome = genome
 
         if self.start > self.end:

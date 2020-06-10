@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import MutableSequence, Optional, Tuple, Sequence, Mapping, MutableMapping, List
 
-from explore_pipolin.common import Orientation, Contig, Genome, Feature, PipolinFragment, FeatureType
+from explore_pipolin.common import Orientation, Contig, Genome, Feature, PipolinFragment, FeatureType, RepeatPair
 
 
 class GQuery:
@@ -79,21 +79,23 @@ class GQuery:
 
         return left_window, right_window
 
-    def is_att_denovo(self, left_repeat: Tuple[int, int], right_repeat: Tuple[int, int]) -> bool:
-        if self._is_overlapping_att(left_repeat=left_repeat):
+    def is_att_denovo(self, repeat_pair: RepeatPair) -> bool:
+        if self._is_overlapping_att(left_repeat=repeat_pair.left):
             return False
-        return self._is_overlapping_trna(left_repeat=left_repeat, right_repeat=right_repeat)
+        return self._is_overlapping_trna(repeat_pair)
 
-    def _is_overlapping_att(self, left_repeat):
+    def _is_overlapping_att(self, left_repeat: Feature):
         for att in self.atts:
-            if self._is_overlapping(left_repeat, (att.start, att.end)):
+            if self._is_overlapping((left_repeat.start, left_repeat.end), (att.start, att.end)):
                 return True
         return False
 
-    def _is_overlapping_trna(self, left_repeat, right_repeat):
+    def _is_overlapping_trna(self, repeat_pair: RepeatPair):
         for trna in self.trnas:
             trna_range = (trna.start, trna.end)
-            if self._is_overlapping(left_repeat, trna_range) or self._is_overlapping(right_repeat, trna_range):
+            is_overlapping_left = self._is_overlapping((repeat_pair.left.start, repeat_pair.left.end), trna_range)
+            is_overlapping_right = self._is_overlapping((repeat_pair.right.start, repeat_pair.right.end), trna_range)
+            if is_overlapping_left or is_overlapping_right:
                 return True
         return False
 
