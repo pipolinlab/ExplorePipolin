@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import MutableSequence, Optional, Tuple, Sequence, Mapping, MutableMapping, List
 
-from explore_pipolin.common import Orientation, Contig, Genome, Feature, PipolinFragment, FeatureType, RepeatPair
+from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType, RepeatPair
 
 
 class GQuery:
@@ -15,7 +15,6 @@ class GQuery:
         self.target_trnas: MutableSequence[Feature] = []
         self.denovo_atts: MutableSequence[Feature] = []
         self.target_trnas_denovo: MutableSequence[Feature] = []
-        self.pipolin_fragments: MutableSequence[PipolinFragment] = []
 
     @staticmethod
     def _dict_by_contig_normalized(features: Sequence[Feature]) -> Mapping[str, Sequence[Feature]]:
@@ -138,6 +137,14 @@ class GQuery:
             if len(set(polbs_strands)) != 1:  # an ambiguous case
                 return contig.contig_orientation
             return polbs[0].strand
+
+
+def join_it(iterable, delimiter):
+    it = iter(iterable)
+    yield next(it)
+    for x in it:
+        yield delimiter
+        yield x
 
 
 def create_fragment_record(fragment, genome_dict):

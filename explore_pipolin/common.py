@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from enum import Enum, auto
-from typing import MutableSequence, Optional
+from typing import MutableSequence, Optional, Sequence
 
 
 class Orientation(Enum):
@@ -126,6 +126,11 @@ class PipolinFragment:
     @property
     def contig(self):
         return self.genome.get_contig_by_id(self.contig_id)
+
+
+class Pipolin:
+    def __init__(self, *fragments: PipolinFragment):
+        self.fragments: Sequence[PipolinFragment] = fragments
 
 
 def define_genome_id(genome_path: str):

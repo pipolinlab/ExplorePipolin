@@ -44,12 +44,12 @@ def get_flow():
         gquery = tasks.are_atts_present.map(gquery=gquery, upstream_tasks=[atts_denovo])
 
         gquery = tasks.analyse_pipolin_orientation.map(gquery=gquery)
-        gquery = tasks.scaffold_pipolins.map(gquery=gquery)
+        pipolin = tasks.scaffold_pipolins.map(gquery=gquery)
 
-        pipolin_sequences = tasks.extract_pipolin_regions.map(gquery=gquery, out_dir=unmapped(out_dir))
+        pipolin_sequences = tasks.extract_pipolin_regions.map(gquery=gquery, pipolin=pipolin, out_dir=unmapped(out_dir))
         prokka = tasks.annotate_pipolins.map(gquery=gquery, pipolins_dir=pipolin_sequences,
                                              proteins=unmapped(_PROTEINS), out_dir=unmapped(out_dir))
-        prokka_atts = tasks.include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka,
+        prokka_atts = tasks.include_atts_into_annotation.map(gquery=gquery, prokka_dir=prokka, pipolin=pipolin,
                                                              out_dir=unmapped(out_dir))
         with case(add_colours, True):
             tasks.easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts)

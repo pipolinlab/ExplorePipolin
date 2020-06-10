@@ -4,36 +4,35 @@ from typing import MutableSequence
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 
-from explore_pipolin.common import Orientation
+from explore_pipolin.common import Orientation, Pipolin, Genome
 from explore_pipolin.utilities.io import SeqIORecords
-from explore_pipolin.utilities.misc import GQuery
 
 
-def include_atts_into_gb(gb_records: SeqIORecords, gquery: GQuery):
-    att_seq_features = _generate_att_seq_features(record_format='gb', gquery=gquery)
+def include_atts_into_gb(gb_records: SeqIORecords, genome: Genome, pipolin: Pipolin):
+    att_seq_features = _generate_att_seq_features(record_format='gb', genome=genome, pipolin=pipolin)
     for att in att_seq_features:
-        _add_att_seq_feature(att_seq_feature=att, seq_record=gb_records[gquery.genome.genome_id])
+        _add_att_seq_feature(att_seq_feature=att, seq_record=gb_records[genome.genome_id])
 
 
-def include_atts_into_gff(gff_records: SeqIORecords, gquery: GQuery):
-    att_seq_features = _generate_att_seq_features(record_format='gff', gquery=gquery)
+def include_atts_into_gff(gff_records: SeqIORecords, genome: Genome, pipolin: Pipolin):
+    att_seq_features = _generate_att_seq_features(record_format='gff', genome=genome, pipolin=pipolin)
     for att in att_seq_features:
-        _add_att_seq_feature(att_seq_feature=att, seq_record=gff_records[gquery.genome.genome_id])
+        _add_att_seq_feature(att_seq_feature=att, seq_record=gff_records[genome.genome_id])
 
 
-def _generate_att_seq_features(record_format: str, gquery: GQuery) -> MutableSequence[SeqFeature]:
+def _generate_att_seq_features(record_format: str, genome: Genome, pipolin: Pipolin) -> MutableSequence[SeqFeature]:
     att_seq_features = []
     in_start = 0
-    for fragment in gquery.pipolin_fragments:
+    for fragment in pipolin.fragments:
         fragment_shift = fragment.start if fragment.contig.contig_orientation == Orientation.FORWARD else fragment.end
         for att in fragment.atts:
             att_start, att_end = sorted([abs(att.start - fragment_shift), abs(att.end - fragment_shift)])
             if record_format == 'gb':
                 att_feature = _create_gb_att_seq_feature(start=att_start + in_start, end=att_end + in_start,
-                                                         strand=att.strand, genome_id=gquery.genome.genome_id,)
+                                                         strand=att.strand, genome_id=genome.genome_id,)
             elif record_format == 'gff':
                 att_feature = _create_gff_att_seq_feature(start=att_start + in_start, end=att_end + in_start,
-                                                          strand=att.strand, genome_id=gquery.genome.genome_id)
+                                                          strand=att.strand, genome_id=genome.genome_id)
             else:
                 raise AssertionError
             att_seq_features.append(att_feature)

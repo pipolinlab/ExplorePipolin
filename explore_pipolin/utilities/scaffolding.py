@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from typing import Sequence, MutableSequence, Optional, Set
 
-from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Orientation
+from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Orientation, Pipolin
 from explore_pipolin.utilities.misc import GQuery
 
 
@@ -17,7 +17,7 @@ class Scaffolder:
         self.atts_dict = gquery.get_features_dict_by_contig_normalized(FeatureType.ATT)
         self.target_trnas_dict = gquery.get_features_dict_by_contig_normalized(FeatureType.TARGET_TRNA)
 
-    def try_creating_single_record(self) -> Sequence[PipolinFragment]:
+    def try_creating_single_record(self) -> Pipolin:
         unchangeable_contigs = self._get_unchangeable_contigs()
 
         if len(unchangeable_contigs) == 1:
@@ -39,16 +39,16 @@ class Scaffolder:
                                               start=left_edge if left_edge >= 0 else 0,
                                               end=right_edge if right_edge <= contig_length else contig_length)
                     pipolin.atts.extend(self.atts_dict[unchangeable_contig.contig_id])
-                    return [pipolin]
+                    return Pipolin(pipolin)
                     # TODO: if att_only_contig has a target_trna, it could be added on the right
                 elif direction == 'right':
                     left_fragment = self._create_unchangeable_fragment(unchangeable_contig, direction)
                     right_fragment = self._create_att_contig_fragment(contig_atts=orphan_atts, direction=direction)
-                    return [left_fragment, right_fragment]
+                    return Pipolin(left_fragment, right_fragment)
                 elif direction == 'left':
                     left_fragment = self._create_att_contig_fragment(contig_atts=orphan_atts, direction=direction)
                     right_fragment = self._create_unchangeable_fragment(unchangeable_contig, direction)
-                    return [left_fragment, right_fragment]
+                    return Pipolin(left_fragment, right_fragment)
             elif len(att_only_contigs) == 2:
                 # TODO: the order can be also [middle_fragment, left_fragment, right_fragment]
                 middle_fragment = PipolinFragment(contig_id=unchangeable_contig.contig_id,
@@ -62,7 +62,7 @@ class Scaffolder:
                 right_atts = self.atts_dict[att_only_contigs[1].contig_id]
                 right_fragment = self._create_att_contig_fragment(contig_atts=right_atts, direction=Direction.RIGHT)
 
-                return [left_fragment, middle_fragment, right_fragment]
+                return Pipolin(left_fragment, middle_fragment, right_fragment)
         elif len(unchangeable_contigs) == 2:
             target_trnas_contig0 = self.target_trnas_dict[unchangeable_contigs[0].contig_id]
             target_trnas_contig1 = self.target_trnas_dict[unchangeable_contigs[1].contig_id]
@@ -82,7 +82,7 @@ class Scaffolder:
             right_direction = self._get_direction_of_unchangeable(right_contig.contig_id)
             right_fragment = self._create_unchangeable_fragment(right_contig, right_direction)
 
-            return [left_fragment, right_fragment]
+            return Pipolin(left_fragment, right_fragment)
         elif len(unchangeable_contigs) > 2:
             raise NotImplementedError
         else:
@@ -115,7 +115,7 @@ class Scaffolder:
         fragment.atts.extend(self.atts_dict[contig.contig_id])
         return fragment
 
-    def _try_finish_separate(self) -> Sequence[PipolinFragment]:
+    def _try_finish_separate(self) -> Pipolin:
         polbs_fragments = self._create_polbs_fragments()
 
         if len(self.gquery.target_trnas) != 1:
@@ -141,9 +141,9 @@ class Scaffolder:
         else:
             raise NotImplementedError
 
-        return [left_fragment, polbs_fragments, right_fragment]
+        return Pipolin(left_fragment, *polbs_fragments, right_fragment)
 
-    def _create_polbs_fragments(self) -> MutableSequence[PipolinFragment]:
+    def _create_polbs_fragments(self) -> Sequence[PipolinFragment]:
         polbs_contigs = set([i.contig for i in self.gquery.pipolbs])
         if len(polbs_contigs) == 2:
             print('Two "polb only contigs" were found!')
@@ -164,21 +164,20 @@ class Scaffolder:
                     feature_type=FeatureType.PIPOLB))
                 # TODO: comparing just by length is an unreliable way! REWRITE if possible!
                 if polb0_length < polb1_length:
-                    polbs_fragments = [polb0_fragment, polb1_fragment]
+                    return [polb0_fragment, polb1_fragment]
                 else:
-                    polbs_fragments = [polb1_fragment, polb0_fragment]
+                    return [polb1_fragment, polb0_fragment]
             else:
                 raise NotImplementedError
 
         elif len(polbs_contigs) == 1:
             the_polb_contig, = polbs_contigs
-            polbs_fragments = [PipolinFragment(contig_id=the_polb_contig.contig_id,
-                                               genome=self.gquery.genome,
-                                               start=0, end=the_polb_contig.contig_length)]
-        else:
-            raise NotImplementedError
+            return [PipolinFragment(
+                contig_id=the_polb_contig.contig_id,
+                genome=self.gquery.genome,
+                start=0, end=the_polb_contig.contig_length)]
 
-        return polbs_fragments
+        raise NotImplementedError
 
     def _get_unchangeable_contigs(self) -> MutableSequence[Contig]:
         polbs_contigs = set([i.contig for i in self.gquery.pipolbs])
@@ -266,19 +265,19 @@ class Scaffolder:
         return len(feature_dict[contig_id]) != 0
 
 
-def create_pipolin_fragments_single_contig(gquery: GQuery) -> Sequence[PipolinFragment]:
+def create_pipolin_fragments_single_contig(gquery: GQuery) -> Pipolin:
     if len(gquery.get_features_dict_by_contig_normalized(FeatureType.ATT)) != 0:
         start, end = _get_pipolin_bounds(gquery)
         pipolin = PipolinFragment(contig_id=gquery.pipolbs[0].contig.contig_id, genome=gquery.genome,
                                   start=start, end=end)
 
         pipolin.atts.extend(gquery.atts)
-        return [pipolin]
+        return Pipolin(pipolin)
     else:
         left_window, right_window = gquery.get_left_right_windows()
         pipolin = PipolinFragment(contig_id=gquery.pipolbs[0].contig.contig_id, genome=gquery.genome,
                                   start=left_window[0], end=right_window[1])
-        return [pipolin]
+        return Pipolin(pipolin)
 
 
 def _get_pipolin_bounds(gquery: GQuery):

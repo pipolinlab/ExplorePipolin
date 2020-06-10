@@ -11,9 +11,9 @@ from Bio import SeqIO
 from typing import Any, Optional, Sequence
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours
-from explore_pipolin.common import Feature, FeatureType, RepeatPair
+from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin
 from explore_pipolin.utilities.logging import genome_specific_logging
-from explore_pipolin.utilities.misc import GQuery, feature_from_blasthit
+from explore_pipolin.utilities.misc import GQuery, feature_from_blasthit, join_it
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
@@ -188,27 +188,23 @@ def analyse_pipolin_orientation(gquery: GQuery):
 
 @task()
 @genome_specific_logging
-def scaffold_pipolins(gquery: GQuery):
+def scaffold_pipolins(gquery: GQuery) -> Pipolin:
     # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
     # https://github.com/biopython/biopython/issues/1755
     logger = context.get('logger')
 
     if gquery.genome.is_single_contig() or gquery.is_on_the_same_contig():
         logger.warning('>>> Scaffolding is not required!')
-        gquery.pipolin_fragments = create_pipolin_fragments_single_contig(gquery)
+        return create_pipolin_fragments_single_contig(gquery)
     else:
         logger.warning('>>> Scaffolding is required!')
         scaffolder = Scaffolder(gquery=gquery)
-        gquery.pipolin_fragments = scaffolder.try_creating_single_record()
-
-    return gquery
+        return scaffolder.try_creating_single_record()
 
 
 @task()
 @genome_specific_logging
-def extract_pipolin_regions(gquery: GQuery, out_dir):
-    if gquery.pipolin_fragments is None:
-        raise AssertionError('No pipolin fragments, but should be!!!')
+def extract_pipolin_regions(gquery: GQuery, pipolin: Pipolin, out_dir: str):
     genome_dict = read_seqio_records(file=gquery.genome.genome_file, file_format='fasta')
 
     pipolins_dir = os.path.join(out_dir, 'pipolin_sequences')
@@ -217,18 +213,12 @@ def extract_pipolin_regions(gquery: GQuery, out_dir):
     logger = context.get('logger')
 
     with open(os.path.join(pipolins_dir, gquery.genome.genome_id + '.fa'), 'w') as ouf:
-        record = SeqRecord(seq='')
-        sep_record = SeqRecord(seq='N' * 100)
+        fragment_records = [create_fragment_record(fragment=f, genome_dict=genome_dict) for f in pipolin.fragments]
 
-        for fragment in gquery.pipolin_fragments[:-1]:
-            fragment_record = create_fragment_record(fragment=fragment, genome_dict=genome_dict)
+        for fragment_record, fragment in zip(fragment_records, pipolin.fragments):
             logger.info(f'@pipolin fragment length {len(fragment_record)} from {fragment.contig.contig_id}')
-            record += fragment_record
-            record += sep_record
 
-        last_record = create_fragment_record(fragment=gquery.pipolin_fragments[-1], genome_dict=genome_dict)
-        logger.info(f'@pipolin fragment length {len(last_record)} from {gquery.pipolin_fragments[-1].contig.contig_id}')
-        record += last_record
+        record = sum(join_it(fragment_records, SeqRecord(seq='N' * 100)), SeqRecord(seq=''))
 
         logger.info(f'@@@pipolin record total length {len(record)}')
 
@@ -252,13 +242,13 @@ def annotate_pipolins(gquery, pipolins_dir, proteins, out_dir):
 
 @task()
 @genome_specific_logging
-def include_atts_into_annotation(gquery, prokka_dir, out_dir):
+def include_atts_into_annotation(gquery, prokka_dir, out_dir, pipolin: Pipolin):
     gb_records = read_seqio_records(file=os.path.join(prokka_dir, gquery.genome.genome_id + '.gbk'),
                                     file_format='genbank')
     gff_records = read_gff_records(file=os.path.join(prokka_dir, gquery.genome.genome_id + '.gff'))
 
-    include_atts_into_gb(gb_records=gb_records, gquery=gquery)
-    include_atts_into_gff(gff_records=gff_records, gquery=gquery)
+    include_atts_into_gb(gb_records=gb_records, genome=gquery.genome, pipolin=pipolin)
+    include_atts_into_gff(gff_records=gff_records, genome=gquery.genome, pipolin=pipolin)
 
     prokka_atts_dir = os.path.join(out_dir, 'prokka_atts')
     os.makedirs(prokka_atts_dir, exist_ok=True)
