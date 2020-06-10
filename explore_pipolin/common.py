@@ -75,6 +75,11 @@ class Feature:
         if self.end > self.contig.contig_length:
             raise AssertionError('Feature end cannot be greater than contig length!')
 
+    def is_overlapping(self, other: Feature) -> bool:
+        max_start = max(self.start, other.start)
+        min_end = min(self.end, other.end)
+        return max_start <= min_end
+
     @property
     def contig(self):
         return self.genome.get_contig_by_id(self.contig_id)

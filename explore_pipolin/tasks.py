@@ -17,7 +17,7 @@ from explore_pipolin.utilities.misc import GQuery, feature_from_blasthit, join_i
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
-from explore_pipolin.utilities.atts_denovo_search import find_repeats
+from explore_pipolin.utilities.atts_denovo_search import find_repeats, is_att_denovo
 from explore_pipolin.utilities.external_tools import tblastn_against_ref_pipolb, blastn_against_ref_att
 from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
 from explore_pipolin.utilities.misc import create_fragment_record
@@ -83,7 +83,7 @@ def add_features_from_aragorn(gquery: GQuery, aragorn_results_dir) -> GQuery:
             feature = Feature(start=hit[0], end=hit[1], strand=hit[2], contig_id=contig_id, genome=gquery.genome)
             gquery.trnas.append(feature)
     for att in gquery.atts:
-        target_trna = gquery.find_target_trna(att)
+        target_trna = gquery.find_overlapping_feature(att, FeatureType.TRNA)
         if target_trna is not None:
             gquery.target_trnas.append(target_trna)
 
@@ -125,13 +125,13 @@ def find_atts_denovo(gquery: GQuery, out_dir):
     repeats: Sequence[RepeatPair] = find_repeats(gquery, atts_denovo_dir)
     write_repeats(gquery=gquery, repeats=repeats, out_dir=atts_denovo_dir)
 
-    atts_denovo: Sequence[RepeatPair] = [rep for rep in repeats if gquery.is_att_denovo(rep)]
+    atts_denovo: Sequence[RepeatPair] = [rep for rep in repeats if is_att_denovo(gquery, rep)]
     for atts_pair in atts_denovo:
         gquery.denovo_atts.append(atts_pair.left)
         gquery.denovo_atts.append(atts_pair.right)
 
     for att in gquery.denovo_atts:
-        target_trna = gquery.find_target_trna(att)
+        target_trna = gquery.find_overlapping_feature(att, FeatureType.TRNA)
         if target_trna is not None:
             gquery.target_trnas_denovo.append(target_trna)
 

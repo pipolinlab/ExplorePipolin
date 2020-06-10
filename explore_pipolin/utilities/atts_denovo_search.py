@@ -3,11 +3,19 @@ import os
 
 from typing import Sequence
 
-from explore_pipolin.common import RepeatPair, Feature, Orientation, Genome
+from explore_pipolin.common import RepeatPair, Feature, Orientation, Genome, FeatureType
 from explore_pipolin.utilities.external_tools import blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml
 from explore_pipolin.utilities.io import save_left_right_subsequences
 from explore_pipolin.utilities.misc import GQuery
+
+
+def is_att_denovo(gquery: GQuery, repeat_pair: RepeatPair) -> bool:
+    if gquery.is_overlapping_with(feature=repeat_pair.left, feature_type=FeatureType.ATT):
+        return False
+    left_overlaps = gquery.is_overlapping_with(repeat_pair.left, FeatureType.TRNA)
+    right_overlaps = gquery.is_overlapping_with(repeat_pair.right, FeatureType.TRNA)
+    return left_overlaps or right_overlaps
 
 
 def find_repeats(gquery: GQuery, repeats_dir: str) -> Sequence[RepeatPair]:

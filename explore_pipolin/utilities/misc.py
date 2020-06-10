@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import MutableSequence, Optional, Tuple, Sequence, Mapping, MutableMapping, List
 
-from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType, RepeatPair
+from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType
 
 
 class GQuery:
@@ -44,15 +44,14 @@ class GQuery:
         else:
             raise AssertionError(f'Feature must be one of: {list(FeatureType)}, not {feature_type}')
 
-    # `add_features_from_aragorn` and `add_features_atts_denovo`
-    def find_target_trna(self, att: Feature) -> Optional[Feature]:
-        trna_dict = self.get_features_dict_by_contig_normalized(FeatureType.TRNA)
+    def find_overlapping_feature(self, feature: Feature, feature_type: FeatureType) -> Optional[Feature]:
+        feature_dict = self.get_features_dict_by_contig_normalized(feature_type)
 
-        if att.contig_id in trna_dict:
-            trnas = trna_dict[att.contig_id]
-            for trna in trnas:
-                if self._is_overlapping(range1=(att.start, att.end), range2=(trna.start, trna.end)):
-                    return trna
+        if feature.contig_id in feature_dict:
+            features = feature_dict[feature.contig_id]
+            for other_feature in features:
+                if other_feature.is_overlapping(feature):
+                    return feature
 
     def is_on_the_same_contig(self) -> bool:
         target_contigs = []
@@ -78,31 +77,12 @@ class GQuery:
 
         return left_window, right_window
 
-    def is_att_denovo(self, repeat_pair: RepeatPair) -> bool:
-        if self._is_overlapping_att(left_repeat=repeat_pair.left):
-            return False
-        return self._is_overlapping_trna(repeat_pair)
 
-    def _is_overlapping_att(self, left_repeat: Feature):
-        for att in self.atts:
-            if self._is_overlapping((left_repeat.start, left_repeat.end), (att.start, att.end)):
+    def is_overlapping_with(self, feature: Feature, feature_type: FeatureType):
+        for other_feature in self.get_features_by_type(feature_type):
+            if feature.is_overlapping(other_feature):
                 return True
         return False
-
-    def _is_overlapping_trna(self, repeat_pair: RepeatPair):
-        for trna in self.trnas:
-            trna_range = (trna.start, trna.end)
-            is_overlapping_left = self._is_overlapping((repeat_pair.left.start, repeat_pair.left.end), trna_range)
-            is_overlapping_right = self._is_overlapping((repeat_pair.right.start, repeat_pair.right.end), trna_range)
-            if is_overlapping_left or is_overlapping_right:
-                return True
-        return False
-
-    @staticmethod
-    def _is_overlapping(range1, range2):
-        max_start = max(range1[0], range2[0])
-        min_end = min(range1[1], range2[1])
-        return max_start <= min_end
 
     # `analyse_pipolin_orientation`
     def is_single_target_trna_per_contig(self):
