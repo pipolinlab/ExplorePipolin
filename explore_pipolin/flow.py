@@ -55,4 +55,5 @@ def get_flow():
         with case(add_colours, True):
             tasks.easyfig_add_colours.map(gquery=gquery, in_dir=prokka_atts)
 
+    flow.set_reference_tasks([prokka_atts])
     return flow
