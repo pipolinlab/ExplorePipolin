@@ -32,12 +32,12 @@ def _create_logging_handler(genome: Genome, out_dir: str):
         return 1 if (hasattr(record, 'genome_id') and record.genome_id == genome.genome_id) else 0
 
     handler.addFilter(my_filter)
-    handler.setFormatter(logging.Formatter('{asctime} {levelname}: {name} ({genome_id}) {message}', style='{'))
+    handler.setFormatter(logging.Formatter('{asctime} {levelname}: {name} ( {genome_id} ) {message}', style='{'))
     return handler
 
 
 @contextmanager
-def _add_genome_id_and_handler_to_logger(genome: Genome):
+def _add_genome_id_to_logger(genome: Genome):
     logger: logging.Logger = context['logger']
 
     def log_record_filter(record: LogRecord):
@@ -51,10 +51,10 @@ def _add_genome_id_and_handler_to_logger(genome: Genome):
     logger.removeFilter(log_record_filter)
 
 
-def log_genome_id(func):
+def genome_specific_logging(func):
     @functools.wraps(func)
     def wrapper(gquery, **kwargs):
         _ensure_handler_for(gquery.genome)
-        with _add_genome_id_and_handler_to_logger(gquery.genome):
+        with _add_genome_id_to_logger(gquery.genome):
             return func(gquery, **kwargs)
     return wrapper
