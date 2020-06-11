@@ -13,7 +13,7 @@ from typing import Any, Optional, Sequence
 from explore_pipolin.utilities.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin
 from explore_pipolin.utilities.logging import genome_specific_logging
-from explore_pipolin.utilities.misc import GQuery, feature_from_blasthit, join_it
+from explore_pipolin.utilities.misc import GQuery, feature_from_blasthit, join_it, get_contig_orientation
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
@@ -181,7 +181,7 @@ def are_atts_present(gquery: GQuery):
 def analyse_pipolin_orientation(gquery: GQuery):
     gquery.is_single_target_trna_per_contig()
     for contig in gquery.genome.contigs:
-        contig.contig_orientation = gquery.get_contig_orientation(contig)
+        contig.contig_orientation = get_contig_orientation(contig=contig, gquery=gquery)
 
     return gquery
 

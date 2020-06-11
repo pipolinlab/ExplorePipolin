@@ -77,7 +77,6 @@ class GQuery:
 
         return left_window, right_window
 
-
     def is_overlapping_with(self, feature: Feature, feature_type: FeatureType):
         for other_feature in self.get_features_by_type(feature_type):
             if feature.is_overlapping(other_feature):
@@ -92,31 +91,32 @@ class GQuery:
         if len(self.target_trnas) != len(targeted_contigs):
             raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
 
-    # `analyse_pipolin_orientation`
-    def get_contig_orientation(self, contig: Contig) -> Orientation:
-        target_trnas = self.get_features_of_contig_normalized(contig_id=contig.contig_id,
-                                                              feature_type=FeatureType.TARGET_TRNA)
-        atts = self.get_features_of_contig_normalized(contig_id=contig.contig_id, feature_type=FeatureType.ATT)
-        atts_strands = [att.strand for att in atts]
-        polbs = self.get_features_of_contig_normalized(contig_id=contig.contig_id, feature_type=FeatureType.PIPOLB)
-        polbs_strands = [polb.strand for polb in polbs]
 
-        if len(target_trnas) != 0:
-            if len(set(atts_strands)) != 1:
-                raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
-            if set(atts_strands).pop() == target_trnas[0].strand:
-                raise AssertionError('ATT and tRNA are expected to be on the different strands!')
-            return - target_trnas[0].strand
+def get_contig_orientation(contig: Contig, gquery: GQuery) -> Orientation:
+    target_trnas = gquery.get_features_of_contig_normalized(contig_id=contig.contig_id,
+                                                            feature_type=FeatureType.TARGET_TRNA)
+    atts = gquery.get_features_of_contig_normalized(contig_id=contig.contig_id, feature_type=FeatureType.ATT)
+    atts_strands = [att.strand for att in atts]
+    polbs = gquery.get_features_of_contig_normalized(contig_id=contig.contig_id, feature_type=FeatureType.PIPOLB)
+    polbs_strands = [polb.strand for polb in polbs]
 
-        elif len(atts) != 0:
-            if len(set(atts_strands)) != 1:
-                raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
-            return atts[0].strand
+    if len(target_trnas) != 0:
+        if len(set(atts_strands)) != 1:
+            raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
+        if set(atts_strands).pop() == target_trnas[0].strand:
+            raise AssertionError(f'ATT and tRNA are expected to be on the different strands! '
+                                 f'{set(atts_strands).pop()}, {target_trnas[0].strand}, {gquery.genome.genome_id}')
+        return - target_trnas[0].strand
 
-        if len(polbs) != 0:
-            if len(set(polbs_strands)) != 1:  # an ambiguous case
-                return contig.contig_orientation
-            return polbs[0].strand
+    elif len(atts) != 0:
+        if len(set(atts_strands)) != 1:
+            raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
+        return atts[0].strand
+
+    if len(polbs) != 0:
+        if len(set(polbs_strands)) != 1:  # an ambiguous case
+            return contig.contig_orientation
+        return polbs[0].strand
 
 
 def join_it(iterable, delimiter):
