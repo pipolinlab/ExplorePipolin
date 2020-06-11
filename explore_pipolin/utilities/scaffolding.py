@@ -1,8 +1,7 @@
 from enum import Enum, auto
 from typing import Sequence, MutableSequence, Optional, Set
 
-from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Orientation, Pipolin, \
-    GenomeFeatures
+from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Orientation, Pipolin, Genome
 from explore_pipolin.utilities.misc import get_left_right_windows
 
 
@@ -12,11 +11,11 @@ class Direction(Enum):
 
 
 class Scaffolder:
-    def __init__(self, features_container: GenomeFeatures):
-        self.features_container = features_container
-        self.polbs_dict = features_container.get_features_dict_by_contig_normalized(FeatureType.PIPOLB)
-        self.atts_dict = features_container.get_features_dict_by_contig_normalized(FeatureType.ATT)
-        self.target_trnas_dict = features_container.get_features_dict_by_contig_normalized(FeatureType.TARGET_TRNA)
+    def __init__(self, genome: Genome):
+        self.genome = genome
+        self.polbs_dict = genome.features.get_features_dict_by_contig_normalized(FeatureType.PIPOLB)
+        self.atts_dict = genome.features.get_features_dict_by_contig_normalized(FeatureType.ATT)
+        self.target_trnas_dict = genome.features.get_features_dict_by_contig_normalized(FeatureType.TARGET_TRNA)
 
     def try_creating_single_record(self) -> Pipolin:
         unchangeable_contigs = self._get_unchangeable_contigs()
@@ -35,8 +34,7 @@ class Scaffolder:
                     contig_length = unchangeable_contig.contig_length
                     left_edge = self.atts_dict[unchangeable_contig.contig_id][0].start - 50
                     right_edge = self.atts_dict[unchangeable_contig.contig_id][-1].end + 50
-                    pipolin = PipolinFragment(contig_id=unchangeable_contig.contig_id,
-                                              genome=self.features_container.genome,
+                    pipolin = PipolinFragment(contig_id=unchangeable_contig.contig_id, genome=self.genome,
                                               start=left_edge if left_edge >= 0 else 0,
                                               end=right_edge if right_edge <= contig_length else contig_length)
                     pipolin.atts.extend(self.atts_dict[unchangeable_contig.contig_id])
@@ -52,8 +50,7 @@ class Scaffolder:
                     return Pipolin(left_fragment, right_fragment)
             elif len(att_only_contigs) == 2:
                 # TODO: the order can be also [middle_fragment, left_fragment, right_fragment]
-                middle_fragment = PipolinFragment(contig_id=unchangeable_contig.contig_id,
-                                                  genome=self.features_container.genome,
+                middle_fragment = PipolinFragment(contig_id=unchangeable_contig.contig_id, genome=self.genome,
                                                   start=0, end=unchangeable_contig.contig_length)
                 middle_fragment.atts.extend(self.atts_dict[unchangeable_contig.contig_id])
 
@@ -93,24 +90,20 @@ class Scaffolder:
         if direction is Direction.RIGHT:
             if contig.contig_orientation == Orientation.FORWARD:
                 edge = self.atts_dict[contig.contig_id][0].start - 50
-                fragment = PipolinFragment(contig_id=contig.contig_id,
-                                           genome=self.features_container.genome,
+                fragment = PipolinFragment(contig_id=contig.contig_id, genome=self.genome,
                                            start=edge if edge >= 0 else 0, end=contig.contig_length)
             else:
                 edge = self.atts_dict[contig.contig_id][-1].end + 50
-                fragment = PipolinFragment(contig_id=contig.contig_id, start=0,
-                                           genome=self.features_container.genome,
+                fragment = PipolinFragment(contig_id=contig.contig_id, start=0, genome=self.genome,
                                            end=edge if edge <= contig.contig_length else contig.contig_length)
         else:
             if contig.contig_orientation == Orientation.FORWARD:
                 edge = self.atts_dict[contig.contig_id][-1].end + 50
-                fragment = PipolinFragment(contig_id=contig.contig_id, start=0,
-                                           genome=self.features_container.genome,
+                fragment = PipolinFragment(contig_id=contig.contig_id, start=0, genome=self.genome,
                                            end=edge if edge <= contig.contig_length else contig.contig_length)
             else:
                 edge = self.atts_dict[contig.contig_id][0].start - 50
-                fragment = PipolinFragment(contig_id=contig.contig_id,
-                                           genome=self.features_container.genome,
+                fragment = PipolinFragment(contig_id=contig.contig_id, genome=self.genome,
                                            start=edge if edge >= 0 else 0, end=contig.contig_length)
 
         fragment.atts.extend(self.atts_dict[contig.contig_id])
@@ -119,15 +112,15 @@ class Scaffolder:
     def _try_finish_separate(self) -> Pipolin:
         polbs_fragments = self._create_polbs_fragments()
 
-        if len(self.features_container.get_features(FeatureType.TARGET_TRNA)) != 1:
+        if len(self.genome.features.get_features(FeatureType.TARGET_TRNA)) != 1:
             raise NotImplementedError('At the moment I can only handle one target tRNA')
 
-        the_target_trna, = self.features_container.get_features(FeatureType.TARGET_TRNA)
+        the_target_trna, = self.genome.features.get_features(FeatureType.TARGET_TRNA)
 
         right_fragment = self._create_att_contig_fragment(contig_atts=self.atts_dict[the_target_trna.contig_id],
                                                           direction=Direction.RIGHT)
 
-        atts_contigs = set([i.contig for i in self.features_container.get_features(FeatureType.ATT)])
+        atts_contigs = set([i.contig for i in self.genome.features.get_features(FeatureType.ATT)])
         if len(atts_contigs) == 2:
             print('The single record can be created!!!\n')
 
@@ -145,24 +138,22 @@ class Scaffolder:
         return Pipolin(left_fragment, *polbs_fragments, right_fragment)
 
     def _create_polbs_fragments(self) -> Sequence[PipolinFragment]:
-        polbs_contigs = set([i.contig for i in self.features_container.get_features(FeatureType.PIPOLB)])
+        polbs_contigs = set([i.contig for i in self.genome.features.get_features(FeatureType.PIPOLB)])
         if len(polbs_contigs) == 2:
             print('Two "polb only contigs" were found!')
             polbs_contigs = list(polbs_contigs)
             if polbs_contigs[0].contig_length + polbs_contigs[1].contig_length < 15000:
-                polb0_fragment = PipolinFragment(contig_id=polbs_contigs[0].contig_id, start=0,
-                                                 genome=self.features_container.genome,
+                polb0_fragment = PipolinFragment(contig_id=polbs_contigs[0].contig_id, start=0, genome=self.genome,
                                                  end=polbs_contigs[0].contig_length)
-                polb1_fragment = PipolinFragment(contig_id=polbs_contigs[1].contig_id, start=0,
-                                                 genome=self.features_container.genome,
+                polb1_fragment = PipolinFragment(contig_id=polbs_contigs[1].contig_id, start=0, genome=self.genome,
                                                  end=polbs_contigs[1].contig_length)
 
-                polb0_length = sum((i.end - i.start) for i in self.features_container.get_features_of_contig_normalized(
-                    contig_id=polbs_contigs[0].contig_id,
-                    feature_type=FeatureType.PIPOLB))
-                polb1_length = sum((i.end - i.start) for i in self.features_container.get_features_of_contig_normalized(
-                    contig_id=polbs_contigs[1].contig_id,
-                    feature_type=FeatureType.PIPOLB))
+                contig_features = self.genome.features.get_features_of_contig_normalized(
+                    contig_id=polbs_contigs[0].contig_id, feature_type=FeatureType.PIPOLB)
+                polb0_length = sum((i.end - i.start) for i in contig_features)
+                contig_features = self.genome.features.get_features_of_contig_normalized(
+                    contig_id=polbs_contigs[1].contig_id, feature_type=FeatureType.PIPOLB)
+                polb1_length = sum((i.end - i.start) for i in contig_features)
                 # TODO: comparing just by length is an unreliable way! REWRITE if possible!
                 if polb0_length < polb1_length:
                     return [polb0_fragment, polb1_fragment]
@@ -173,20 +164,18 @@ class Scaffolder:
 
         elif len(polbs_contigs) == 1:
             the_polb_contig, = polbs_contigs
-            return [PipolinFragment(
-                contig_id=the_polb_contig.contig_id,
-                genome=self.features_container.genome,
-                start=0, end=the_polb_contig.contig_length)]
+            return [PipolinFragment(contig_id=the_polb_contig.contig_id, genome=self.genome,
+                                    start=0, end=the_polb_contig.contig_length)]
 
         raise NotImplementedError
 
     def _get_unchangeable_contigs(self) -> MutableSequence[Contig]:
-        polbs_contigs = set([i.contig for i in self.features_container.get_features(FeatureType.PIPOLB)])
+        polbs_contigs = set([i.contig for i in self.genome.features.get_features(FeatureType.PIPOLB)])
 
         contigs_to_return = []
         for contig in polbs_contigs:
-            atts_next_polbs = self.features_container.get_features_of_contig_normalized(contig_id=contig.contig_id,
-                                                                                        feature_type=FeatureType.ATT)
+            atts_next_polbs = self.genome.features.get_features_of_contig_normalized(contig_id=contig.contig_id,
+                                                                                     feature_type=FeatureType.ATT)
             if len(atts_next_polbs) != 0:
                 contigs_to_return.append(contig)
 
@@ -211,7 +200,7 @@ class Scaffolder:
                 left_edge = 0
                 right_edge = contig_atts[-1].end + 50
 
-        fragment = PipolinFragment(contig_id=contig.contig_id, genome=self.features_container.genome,
+        fragment = PipolinFragment(contig_id=contig.contig_id, genome=self.genome,
                                    start=left_edge if left_edge >= 0 else 0,
                                    end=right_edge if right_edge <= contig_length else contig_length)
         fragment.atts.extend(contig_atts)
@@ -237,9 +226,9 @@ class Scaffolder:
 
     def _get_att_only_contigs(self) -> Set[Contig]:
         att_only_contigs = set()
-        for att in self.features_container.get_features(FeatureType.ATT):
-            polbs_next_att = self.features_container.get_features_of_contig_normalized(contig_id=att.contig_id,
-                                                                                       feature_type=FeatureType.PIPOLB)
+        for att in self.genome.features.get_features(FeatureType.ATT):
+            polbs_next_att = self.genome.features.get_features_of_contig_normalized(contig_id=att.contig_id,
+                                                                                    feature_type=FeatureType.PIPOLB)
             if len(polbs_next_att) == 0:
                 att_only_contigs.add(att.contig)
 
@@ -262,30 +251,30 @@ class Scaffolder:
             return None
 
     def _contig_has_feature_type(self, contig_id: str, feature_type: FeatureType) -> bool:
-        feature_dict = self.features_container.get_features_dict_by_contig_normalized(feature_type)
+        feature_dict = self.genome.features.get_features_dict_by_contig_normalized(feature_type)
         return len(feature_dict[contig_id]) != 0
 
 
-def create_pipolin_fragments_single_contig(features_container: GenomeFeatures) -> Pipolin:
-    if len(features_container.get_features_dict_by_contig_normalized(FeatureType.ATT)) != 0:
-        start, end = _get_pipolin_bounds(features_container)
-        pipolin = PipolinFragment(contig_id=features_container.get_features(FeatureType.PIPOLB)[0].contig.contig_id,
-                                  genome=features_container.genome, start=start, end=end)
+def create_pipolin_fragments_single_contig(genome: Genome) -> Pipolin:
+    if len(genome.features.get_features_dict_by_contig_normalized(FeatureType.ATT)) != 0:
+        start, end = _get_pipolin_bounds(genome)
+        pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB)[0].contig.contig_id,
+                                  genome=genome, start=start, end=end)
 
-        pipolin.atts.extend(features_container.get_features(FeatureType.ATT))
+        pipolin.atts.extend(genome.features.get_features(FeatureType.ATT))
         return Pipolin(pipolin)
     else:
-        left_window, right_window = get_left_right_windows(features_container, FeatureType.PIPOLB)
-        pipolin = PipolinFragment(contig_id=features_container.get_features(FeatureType.PIPOLB)[0].contig.contig_id,
-                                  genome=features_container.genome, start=left_window.start, end=right_window.end)
+        left_window, right_window = get_left_right_windows(genome, FeatureType.PIPOLB)
+        pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB)[0].contig.contig_id,
+                                  genome=genome, start=left_window.start, end=right_window.end)
         return Pipolin(pipolin)
 
 
-def _get_pipolin_bounds(features_container: GenomeFeatures):
-    polymerases = sorted((i for i in features_container.get_features(FeatureType.PIPOLB)), key=lambda p: p.start)
-    atts = sorted((i for i in features_container.get_features(FeatureType.ATT)), key=lambda p: p.start)
+def _get_pipolin_bounds(genome: Genome):
+    pipolbs = sorted((i for i in genome.features.get_features(FeatureType.PIPOLB)), key=lambda p: p.start)
+    atts = sorted((i for i in genome.features.get_features(FeatureType.ATT)), key=lambda p: p.start)
 
-    length = polymerases[0].contig.contig_length
-    left_edge = atts[0].start - 50 if atts[0].start < polymerases[0].start else polymerases[0].start - 50
-    right_edge = atts[-1].end + 50 if atts[-1].end > polymerases[-1].end else polymerases[-1].end + 50
+    length = pipolbs[0].contig.contig_length
+    left_edge = atts[0].start - 50 if atts[0].start < pipolbs[0].start else pipolbs[0].start - 50
+    right_edge = atts[-1].end + 50 if atts[-1].end > pipolbs[-1].end else pipolbs[-1].end + 50
     return left_edge if left_edge >= 0 else 0, right_edge if right_edge <= length else length

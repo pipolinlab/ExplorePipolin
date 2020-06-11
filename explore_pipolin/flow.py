@@ -20,47 +20,41 @@ def get_flow():
         out_dir = Parameter('out_dir')
         add_colours = Parameter('add_colours')
 
-        features_container = tasks.create_features_container.map(genome_file=genome)
+        genome = tasks.create_genome.map(genome_file=genome)
 
-        pipolb_blast_dir = tasks.run_blast_against_pipolb.map(features_container=features_container,
-                                                              ref_pipolb=unmapped(_REF_PIPOLB),
+        pipolb_blast_dir = tasks.run_blast_against_pipolb.map(genome=genome, ref_pipolb=unmapped(_REF_PIPOLB),
                                                               out_dir=unmapped(out_dir))
-        features_container = tasks.add_features_from_blast.map(features_container=features_container,
-                                                               blast_dir=pipolb_blast_dir,
-                                                               feature_type=unmapped(Constant(FeatureType.PIPOLB)))
+        genome = tasks.add_features_from_blast.map(genome=genome, blast_dir=pipolb_blast_dir,
+                                                   feature_type=unmapped(Constant(FeatureType.PIPOLB)))
 
-        t_check_pipolbs = tasks.are_pipolbs_present.map(features_container=features_container)
-        features_container = _DEFAULT_FILTER(tasks.return_result_if_true_else_none.map(
-            result_to_filter=features_container, filter_by=t_check_pipolbs))
+        t_check_pipolbs = tasks.are_pipolbs_present.map(genome=genome)
+        genome = _DEFAULT_FILTER(tasks.return_result_if_true_else_none.map(
+            result_to_filter=genome, filter_by=t_check_pipolbs)
+        )
 
-        att_blast_dir = tasks.run_blast_against_att.map(features_container=features_container,
-                                                        ref_att=unmapped(_REF_ATT),
+        att_blast_dir = tasks.run_blast_against_att.map(genome=genome, ref_att=unmapped(_REF_ATT),
                                                         out_dir=unmapped(out_dir))
-        features_container = tasks.add_features_from_blast.map(features_container=features_container,
-                                                               blast_dir=att_blast_dir,
-                                                               feature_type=unmapped(Constant(FeatureType.ATT)))
+        genome = tasks.add_features_from_blast.map(genome=genome, blast_dir=att_blast_dir,
+                                                   feature_type=unmapped(Constant(FeatureType.ATT)))
 
-        aragorn_results_dir = tasks.detect_trnas_with_aragorn.map(features_container=features_container,
-                                                                  out_dir=unmapped(out_dir))
-        features_container = tasks.add_features_from_aragorn.map(features_container=features_container,
-                                                                 aragorn_results_dir=aragorn_results_dir)
+        aragorn_results_dir = tasks.detect_trnas_with_aragorn.map(genome=genome, out_dir=unmapped(out_dir))
+        genome = tasks.add_features_from_aragorn.map(genome=genome, aragorn_results_dir=aragorn_results_dir)
 
-        atts_denovo = tasks.find_atts_denovo.map(features_container=features_container, out_dir=unmapped(out_dir))
+        atts_denovo = tasks.find_atts_denovo.map(genome=genome, out_dir=unmapped(out_dir))
 
-        features_container = tasks.are_atts_present.map(features_container=features_container,
-                                                        upstream_tasks=[atts_denovo])
+        genome = tasks.are_atts_present.map(genome=genome, upstream_tasks=[atts_denovo])
 
-        features_container = tasks.analyse_pipolin_orientation.map(features_container=features_container)
-        pipolin = tasks.scaffold_pipolins.map(features_container=features_container)
+        genome = tasks.analyse_pipolin_orientation.map(genome=genome)
+        pipolin = tasks.scaffold_pipolins.map(genome=genome)
 
-        pipolin_sequences = tasks.extract_pipolin_regions.map(features_container=features_container, pipolin=pipolin,
+        pipolin_sequences = tasks.extract_pipolin_regions.map(genome=genome, pipolin=pipolin,
                                                               out_dir=unmapped(out_dir))
-        prokka = tasks.annotate_pipolins.map(features_container=features_container, pipolins_dir=pipolin_sequences,
+        prokka = tasks.annotate_pipolins.map(genome=genome, pipolins_dir=pipolin_sequences,
                                              proteins=unmapped(_PROTEINS), out_dir=unmapped(out_dir))
-        prokka_atts = tasks.include_atts_into_annotation.map(features_container=features_container, prokka_dir=prokka,
+        prokka_atts = tasks.include_atts_into_annotation.map(genome=genome, prokka_dir=prokka,
                                                              pipolin=pipolin, out_dir=unmapped(out_dir))
         with case(add_colours, True):
-            tasks.easyfig_add_colours.map(features_container=features_container, in_dir=prokka_atts)
+            tasks.easyfig_add_colours.map(genome=genome, in_dir=prokka_atts)
 
     flow.set_reference_tasks([prokka_atts])
     return flow

@@ -37,10 +37,11 @@ class Contig:
 
 
 class Genome:
-    def __init__(self, genome_id: str, genome_file: str):
+    def __init__(self, genome_id: str, genome_file: str, contigs: MutableSequence[Contig]):
         self.genome_id = genome_id
         self.genome_file = genome_file
-        self.contigs: MutableSequence[Contig] = []
+        self.contigs = contigs
+        self.features: FeaturesContainer = FeaturesContainer()
 
     def get_contig_by_id(self, contig_id: str) -> Optional[Contig]:
         for contig in self.contigs:
@@ -98,9 +99,8 @@ class FeatureType(Enum):
     TARGET_TRNA_DENOVO = auto()
 
 
-class GenomeFeatures:
-    def __init__(self, genome: Genome):
-        self.genome = genome
+class FeaturesContainer:
+    def __init__(self):
         self._features: Mapping[FeatureType, MutableSequence[Feature]] = defaultdict(list)
 
     @staticmethod
@@ -121,6 +121,9 @@ class GenomeFeatures:
 
     def get_features(self, feature_type: FeatureType) -> MutableSequence[Feature]:
         return self._features[feature_type]
+
+    def add_feature(self, feature, feature_type):
+        self.get_features(feature_type).append(feature)
 
     def find_overlapping_feature(self, feature: Feature, feature_type: FeatureType) -> Optional[Feature]:
         feature_dict = self.get_features_dict_by_contig_normalized(feature_type)

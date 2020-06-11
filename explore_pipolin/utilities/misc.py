@@ -1,25 +1,25 @@
 from __future__ import annotations
 
-from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType, GenomeFeatures
+from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType
 
 
-def is_single_target_trna_per_contig(features_container: GenomeFeatures):
+def is_single_target_trna_per_contig(genome: Genome):
     # TODO: don't like this
     # there was one case with two target trnas per genome, although usually only one
-    target_trnas_dict = features_container.get_features_dict_by_contig_normalized(feature_type=FeatureType.TARGET_TRNA)
-    target_trnas = features_container.get_features(feature_type=FeatureType.TARGET_TRNA)
+    target_trnas_dict = genome.features.get_features_dict_by_contig_normalized(feature_type=FeatureType.TARGET_TRNA)
+    target_trnas = genome.features.get_features(feature_type=FeatureType.TARGET_TRNA)
     if len(target_trnas) != len(target_trnas_dict):
         raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
 
 
-def get_contig_orientation(contig: Contig, features_container: GenomeFeatures) -> Orientation:
-    target_trnas = features_container.get_features_of_contig_normalized(contig_id=contig.contig_id,
-                                                                        feature_type=FeatureType.TARGET_TRNA)
-    atts = features_container.get_features_of_contig_normalized(contig_id=contig.contig_id,
-                                                                feature_type=FeatureType.ATT)
+def get_contig_orientation(contig: Contig, genome: Genome) -> Orientation:
+    target_trnas = genome.features.get_features_of_contig_normalized(contig_id=contig.contig_id,
+                                                                     feature_type=FeatureType.TARGET_TRNA)
+    atts = genome.features.get_features_of_contig_normalized(contig_id=contig.contig_id,
+                                                             feature_type=FeatureType.ATT)
     atts_strands = [att.strand for att in atts]
-    polbs = features_container.get_features_of_contig_normalized(contig_id=contig.contig_id,
-                                                                 feature_type=FeatureType.PIPOLB)
+    polbs = genome.features.get_features_of_contig_normalized(contig_id=contig.contig_id,
+                                                              feature_type=FeatureType.PIPOLB)
     polbs_strands = [polb.strand for polb in polbs]
 
     if len(target_trnas) != 0:
@@ -61,8 +61,8 @@ def feature_from_blasthit(hit, contig_id: str, genome: Genome) -> Feature:
                    contig_id=contig_id, genome=genome)
 
 
-def get_left_right_windows(features_container: GenomeFeatures, feature_type) -> [Feature, Feature]:
-    features = features_container.get_features(feature_type=feature_type)
+def get_left_right_windows(genome: Genome, feature_type) -> [Feature, Feature]:
+    features = genome.features.get_features(feature_type=feature_type)
     features = sorted(features, key=lambda x: x.start)
 
     if features[-1].start - features[0].start > 10000:   # TODO: This should be changed!
@@ -70,16 +70,14 @@ def get_left_right_windows(features_container: GenomeFeatures, feature_type) -> 
                              f'within the region ({features[0].start}, {features[-1].end}). It might be, '
                              f'that you have two or more pipolins per genome, but we are expecting only one.')
 
-    length = features_container.genome.get_complete_genome_length()
+    length = genome.get_complete_genome_length()
     left_edge = features[0].start - 100000
     left_window = Feature(start=left_edge if left_edge >= 0 else 0, end=features[0].start,
                           strand=Orientation.FORWARD,
-                          contig_id=features_container.genome.get_complete_genome_contig_id(),
-                          genome=features_container.genome)
+                          contig_id=genome.get_complete_genome_contig_id(), genome=genome)
     right_edge = features[-1].end + 100000
     right_window = Feature(start=features[-1].end, end=right_edge if right_edge <= length else length,
                            strand=Orientation.FORWARD,
-                           contig_id=features_container.genome.get_complete_genome_contig_id(),
-                           genome=features_container.genome)
+                           contig_id=genome.get_complete_genome_contig_id(), genome=genome)
 
     return left_window, right_window

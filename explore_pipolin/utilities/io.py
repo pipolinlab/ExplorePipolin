@@ -5,19 +5,17 @@ from typing import MutableMapping, MutableSequence, Sequence
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.common import Genome, Orientation, define_genome_id, RepeatPair, Contig, Feature, FeatureType, \
-    GenomeFeatures
+from explore_pipolin.common import Genome, Orientation, RepeatPair, Contig, Feature, FeatureType
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
 
-def create_genome_from_file(genome_file: str) -> Genome:
-    genome = Genome(genome_id=define_genome_id(genome_file), genome_file=genome_file)
+def read_genome_contigs_from_file(genome_file: str) -> MutableSequence[Contig]:
     genome_dict = read_seqio_records(file=genome_file, file_format='fasta')
+    contigs = []
     for key, value in genome_dict.items():
-        contig = Contig(contig_id=key, contig_length=len(value.seq))
-        genome.contigs.append(contig)
-    return genome
+        contigs.append(Contig(contig_id=key, contig_length=len(value.seq)))
+    return contigs
 
 
 def read_seqio_records(file, file_format) -> SeqIORecords:
@@ -87,9 +85,9 @@ def save_left_right_subsequences(left_window: Feature, right_window: Feature, re
                 handle=os.path.join(repeats_dir, left_window.genome.genome_id + '.right'))
 
 
-def write_repeats(features_container: GenomeFeatures, repeats: Sequence[RepeatPair], out_dir: str):
-    with open(os.path.join(out_dir, features_container.genome.genome_id + '.repeats'), 'w') as ouf:
-        polbs_locations = sorted([(x.start, x.end) for x in features_container.get_features(
+def write_repeats(genome: Genome, repeats: Sequence[RepeatPair], out_dir: str):
+    with open(os.path.join(out_dir, genome.genome_id + '.repeats'), 'w') as ouf:
+        polbs_locations = sorted([(x.start, x.end) for x in genome.features.get_features(
             FeatureType.PIPOLB)], key=lambda x: x[0])
         print('left_repeat', 'right_repeat', 'length', 'polbs',
               'd_to_the_left', 'd_to_the_right', 'sequence', sep='\t', file=ouf)

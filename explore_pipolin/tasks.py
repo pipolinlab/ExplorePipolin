@@ -11,7 +11,8 @@ from Bio import SeqIO
 from typing import Any, Optional, Sequence
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours
-from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, GenomeFeatures
+from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, Genome, \
+    define_genome_id
 from explore_pipolin.utilities.logging import genome_specific_logging
 from explore_pipolin.utilities.misc import feature_from_blasthit, join_it, get_contig_orientation, \
     is_single_target_trna_per_contig
@@ -27,79 +28,79 @@ from explore_pipolin.utilities.including_atts_into_annotation import include_att
 from explore_pipolin.utilities.including_atts_into_annotation import include_atts_into_gff
 from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
-from explore_pipolin.utilities.io import create_genome_from_file
+from explore_pipolin.utilities.io import read_genome_contigs_from_file
 from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
 
 
 @task
-def create_features_container(genome_file) -> GenomeFeatures:
-    return GenomeFeatures(genome=create_genome_from_file(genome_file))
+def create_genome(genome_file) -> Genome:
+    contigs = read_genome_contigs_from_file(genome_file=genome_file)
+    genome_id = define_genome_id(genome_file)
+    return Genome(genome_id=genome_id, genome_file=genome_file, contigs=contigs)
 
 
 @task()
 @genome_specific_logging
-def run_blast_against_pipolb(features_container, ref_pipolb, out_dir):
+def run_blast_against_pipolb(genome: Genome, ref_pipolb, out_dir):
     blast_results_dir = os.path.join(out_dir, 'polb_blast')
     os.makedirs(blast_results_dir, exist_ok=True)
-    tblastn_against_ref_pipolb(genome=features_container.genome.genome_file, ref_pipolb=ref_pipolb,
+    tblastn_against_ref_pipolb(genome=genome.genome_file, ref_pipolb=ref_pipolb,
                                out_dir=blast_results_dir)
     return blast_results_dir
 
 
 @task()
 @genome_specific_logging
-def run_blast_against_att(features_container, ref_att, out_dir):
+def run_blast_against_att(genome: Genome, ref_att, out_dir):
     blast_results_dir = os.path.join(out_dir, 'att_blast')
     os.makedirs(blast_results_dir, exist_ok=True)
-    blastn_against_ref_att(genome=features_container.genome.genome_file, ref_att=ref_att, out_dir=blast_results_dir)
+    blastn_against_ref_att(genome=genome.genome_file, ref_att=ref_att, out_dir=blast_results_dir)
     return blast_results_dir
 
 
 @task()
 @genome_specific_logging
-def add_features_from_blast(features_container: GenomeFeatures, blast_dir, feature_type: FeatureType) -> GenomeFeatures:
-    entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{features_container.genome.genome_id}.fmt5'))
+def add_features_from_blast(genome: Genome, blast_dir, feature_type: FeatureType) -> Genome:
+    entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{genome.genome_id}.fmt5'))
     for entry in entries:
         for hit in entry:
-            feature = feature_from_blasthit(hit=hit, contig_id=entry.id, genome=features_container.genome)
-            features_container.get_features(feature_type).append(feature)
+            feature = feature_from_blasthit(hit=hit, contig_id=entry.id, genome=genome)
+            genome.features.add_feature(feature=feature, feature_type=feature_type)
 
-    return features_container
+    return genome
 
 
 @task()
 @genome_specific_logging
-def detect_trnas_with_aragorn(features_container, out_dir):
+def detect_trnas_with_aragorn(genome: Genome, out_dir):
     aragorn_results_dir = os.path.join(out_dir, 'aragorn_results')
     os.makedirs(aragorn_results_dir, exist_ok=True)
-    run_aragorn(genome=features_container.genome.genome_file, aragorn_results_dir=aragorn_results_dir)
+    run_aragorn(genome=genome.genome_file, aragorn_results_dir=aragorn_results_dir)
     return aragorn_results_dir
 
 
 @task()
 @genome_specific_logging
-def add_features_from_aragorn(features_container: GenomeFeatures, aragorn_results_dir) -> GenomeFeatures:
-    entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_results_dir,
-                                                            f'{features_container.genome.genome_id}.batch'))
+def add_features_from_aragorn(genome: Genome, aragorn_results_dir) -> Genome:
+    entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_results_dir, f'{genome.genome_id}.batch'))
     for contig_id, hits in entries.items():
         for hit in hits:
-            feature = Feature(start=hit[0], end=hit[1], strand=hit[2], contig_id=contig_id,
-                              genome=features_container.genome)
-            features_container.get_features(FeatureType.TRNA).append(feature)
-    for att in features_container.get_features(FeatureType.ATT):
-        target_trna = features_container.find_overlapping_feature(att, FeatureType.TRNA)
+            feature = Feature(start=hit[0], end=hit[1], strand=hit[2], contig_id=contig_id, genome=genome)
+            genome.features.add_feature(feature=feature, feature_type=FeatureType.TRNA)
+    for att in genome.features.get_features(FeatureType.ATT):
+        target_trna = genome.features.find_overlapping_feature(att, FeatureType.TRNA)
         if target_trna is not None:
-            features_container.get_features(FeatureType.TARGET_TRNA).append(target_trna)
+            genome.features.add_feature(feature=target_trna, feature_type=FeatureType.TARGET_TRNA)
 
-    return features_container
+    return genome
 
 
 @task()
 @genome_specific_logging
-def are_pipolbs_present(features_container: GenomeFeatures):
+def are_pipolbs_present(genome: Genome):
     logger = context.get('logger')
 
-    if len(features_container.get_features(FeatureType.PIPOLB)) == 0:
+    if len(genome.features.get_features(FeatureType.PIPOLB)) == 0:
         logger.warning('No piPolBs were found!')
         return False
 
@@ -116,111 +117,111 @@ def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> O
 
 @task()
 @genome_specific_logging
-def find_atts_denovo(features_container: GenomeFeatures, out_dir):
+def find_atts_denovo(genome: Genome, out_dir):
     logger = context.get('logger')
 
-    if not features_container.genome.is_single_contig():
+    if not genome.is_single_contig():
         logger.warning('This step is only for complete genomes. Skip...')
         raise signals.SKIP()
 
     atts_denovo_dir = os.path.join(out_dir, 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
-    repeats: Sequence[RepeatPair] = find_repeats(features_container, atts_denovo_dir)
-    write_repeats(features_container=features_container, repeats=repeats, out_dir=atts_denovo_dir)
+    repeats: Sequence[RepeatPair] = find_repeats(genome, atts_denovo_dir)
+    write_repeats(genome=genome, repeats=repeats, out_dir=atts_denovo_dir)
 
-    atts_denovo: Sequence[RepeatPair] = [rep for rep in repeats if is_att_denovo(features_container, rep)]
+    atts_denovo: Sequence[RepeatPair] = [rep for rep in repeats if is_att_denovo(genome, rep)]
     for atts_pair in atts_denovo:
-        features_container.get_features(FeatureType.ATT_DENOVO).append(atts_pair.left)
-        features_container.get_features(FeatureType.ATT_DENOVO).append(atts_pair.right)
+        genome.features.add_feature(feature=atts_pair.left, feature_type=FeatureType.ATT_DENOVO)
+        genome.features.add_feature(feature=atts_pair.right, feature_type=FeatureType.ATT_DENOVO)
 
-    for att in features_container.get_features(FeatureType.ATT_DENOVO):
-        target_trna = features_container.find_overlapping_feature(att, FeatureType.TRNA)
+    for att in genome.features.get_features(FeatureType.ATT_DENOVO):
+        target_trna = genome.features.find_overlapping_feature(att, FeatureType.TRNA)
         if target_trna is not None:
-            features_container.get_features(FeatureType.TARGET_TRNA_DENOVO).append(target_trna)
+            genome.features.add_feature(feature=target_trna, feature_type=FeatureType.TARGET_TRNA_DENOVO)
 
-    write_atts_denovo(features_container.get_features(FeatureType.ATT_DENOVO),
-                      features_container.genome, atts_denovo_dir)
+    write_atts_denovo(genome.features.get_features(FeatureType.ATT_DENOVO), genome, atts_denovo_dir)
 
     return atts_denovo_dir
 
 
 @task(skip_on_upstream_skip=False)
 @genome_specific_logging
-def are_atts_present(features_container: GenomeFeatures):
+def are_atts_present(genome: Genome) -> Genome:
     logger = context.get('logger')
 
-    if len(features_container.get_features(
-            FeatureType.ATT)) == 0 and len(features_container.get_features(FeatureType.ATT_DENOVO)) == 0:
+    num_atts = len(genome.features.get_features(FeatureType.ATT))
+    num_atts_denovo = len(genome.features.get_features(FeatureType.ATT_DENOVO))
+    if num_atts == 0 and num_atts_denovo == 0:
         logger.warning('\n\n>>>There is piPolB, but no atts were found! Not able to define pipolin bounds!\n')
         # TODO: probably, it makes sense to output piPolB(s) alone
         # raise signals.SKIP() # let's try cutting from both sides and proceed with annotation
 
-    elif len(features_container.get_features(FeatureType.ATT)) == 0:
+    elif len(genome.features.get_features(FeatureType.ATT)) == 0:
         logger.warning(f'\n\n>>>No "usual" atts were found, but some atts were found by denovo search!'
-                       f'For more details, check the {features_container.genome.genome_id}.atts file '
+                       f'For more details, check the {genome.genome_id}.atts file '
                        f'in the atts_denovo directory!\n')
         # TODO: check that it's only one repeat! Although, this shouldn't be a problem.
-        atts_frames = [att.strand for att in features_container.get_features(FeatureType.ATT_DENOVO)]
+        atts_frames = [att.strand for att in genome.features.get_features(FeatureType.ATT_DENOVO)]
         if len(set(atts_frames)) != 1:
             raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
-        if set(atts_frames).pop() == features_container.get_features(FeatureType.TARGET_TRNA_DENOVO)[0].strand:
+        if set(atts_frames).pop() == genome.features.get_features(FeatureType.TARGET_TRNA_DENOVO)[0].strand:
             reverse_denovo_atts = []
-            for att in features_container.get_features(FeatureType.ATT_DENOVO):
+            for att in genome.features.get_features(FeatureType.ATT_DENOVO):
                 reverse_denovo_atts.append(Feature(start=att.start, end=att.end, strand=-att.strand,
-                                                   contig_id=att.contig, genome=features_container.genome))
-            features_container.get_features(FeatureType.ATT).extend(reverse_denovo_atts)
+                                                   contig_id=att.contig, genome=genome))
+            [genome.features.add_feature(feature=i, feature_type=FeatureType.ATT) for i in reverse_denovo_atts]
         else:
-            features_container.get_features(FeatureType.ATT).extend(
-                features_container.get_features(FeatureType.ATT_DENOVO))
-        features_container.get_features(FeatureType.TARGET_TRNA).extend(
-            features_container.get_features(FeatureType.TARGET_TRNA_DENOVO))
+            atts_denovo = genome.features.get_features(FeatureType.ATT_DENOVO)
+            [genome.features.add_feature(feature=i, feature_type=FeatureType.ATT) for i in atts_denovo]
+        target_trnas_denovo = genome.features.get_features(FeatureType.TARGET_TRNA_DENOVO)
+        [genome.features.add_feature(feature=i, feature_type=FeatureType.TARGET_TRNA) for i in target_trnas_denovo]
 
-    elif len(features_container.get_features(FeatureType.ATT_DENOVO)) != 0:
+    elif len(genome.features.get_features(FeatureType.ATT_DENOVO)) != 0:
         logger.warning(f'\n\n>>>Some atts were found by denovo search, but we are not going to use them!'
-                       f'For more details, check the {features_container.genome.genome_id}.atts file '
+                       f'For more details, check the {genome.genome_id}.atts file '
                        f'in the atts_denovo directory!\n')
 
-    return features_container
+    return genome
 
 
 @task()
 @genome_specific_logging
-def analyse_pipolin_orientation(features_container: GenomeFeatures):
-    is_single_target_trna_per_contig(features_container=features_container)
-    for contig in features_container.genome.contigs:
-        contig.contig_orientation = get_contig_orientation(contig=contig, features_container=features_container)
+def analyse_pipolin_orientation(genome: Genome) -> Genome:
+    is_single_target_trna_per_contig(genome=genome)
+    for contig in genome.contigs:
+        contig.contig_orientation = get_contig_orientation(contig=contig, genome=genome)
 
-    return features_container
+    return genome
 
 
 @task()
 @genome_specific_logging
-def scaffold_pipolins(features_container: GenomeFeatures) -> Pipolin:
+def scaffold_pipolins(genome: Genome) -> Pipolin:
     # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
     # https://github.com/biopython/biopython/issues/1755
     logger = context.get('logger')
 
-    if features_container.is_on_the_same_contig(FeatureType.PIPOLB, FeatureType.ATT, FeatureType.TARGET_TRNA):
+    if genome.features.is_on_the_same_contig(FeatureType.PIPOLB, FeatureType.ATT, FeatureType.TARGET_TRNA):
         logger.warning('>>> Scaffolding is not required!')
-        return create_pipolin_fragments_single_contig(features_container)
+        return create_pipolin_fragments_single_contig(genome)
     else:
         logger.warning('>>> Scaffolding is required!')
-        scaffolder = Scaffolder(features_container=features_container)
+        scaffolder = Scaffolder(genome=genome)
         return scaffolder.try_creating_single_record()
 
 
 @task()
 @genome_specific_logging
-def extract_pipolin_regions(features_container: GenomeFeatures, pipolin: Pipolin, out_dir: str):
-    genome_dict = read_seqio_records(file=features_container.genome.genome_file, file_format='fasta')
+def extract_pipolin_regions(genome: Genome, pipolin: Pipolin, out_dir: str):
+    genome_dict = read_seqio_records(file=genome.genome_file, file_format='fasta')
 
     pipolins_dir = os.path.join(out_dir, 'pipolin_sequences')
     os.makedirs(pipolins_dir, exist_ok=True)
 
     logger = context.get('logger')
 
-    with open(os.path.join(pipolins_dir, features_container.genome.genome_id + '.fa'), 'w') as ouf:
+    with open(os.path.join(pipolins_dir, genome.genome_id + '.fa'), 'w') as ouf:
         fragment_records = [create_fragment_record(fragment=f, genome_dict=genome_dict) for f in pipolin.fragments]
 
         for fragment_record, fragment in zip(fragment_records, pipolin.fragments):
@@ -230,9 +231,9 @@ def extract_pipolin_regions(features_container: GenomeFeatures, pipolin: Pipolin
 
         logger.info(f'@@@pipolin record total length {len(record)}')
 
-        record.id = features_container.genome.genome_id
-        record.name = features_container.genome.genome_id
-        record.description = features_container.genome.genome_id
+        record.id = genome.genome_id
+        record.name = genome.genome_id
+        record.description = genome.genome_id
         SeqIO.write(sequences=record, handle=ouf, format='fasta')
 
     return pipolins_dir
@@ -240,37 +241,37 @@ def extract_pipolin_regions(features_container: GenomeFeatures, pipolin: Pipolin
 
 @task()
 @genome_specific_logging
-def annotate_pipolins(features_container, pipolins_dir, proteins, out_dir):
+def annotate_pipolins(genome: Genome, pipolins_dir, proteins, out_dir):
     prokka_results_dir = os.path.join(out_dir, 'prokka')
     os.makedirs(prokka_results_dir, exist_ok=True)
-    run_prokka(genome_id=features_container.genome.genome_id, pipolins_dir=pipolins_dir,
+    run_prokka(genome_id=genome.genome_id, pipolins_dir=pipolins_dir,
                proteins=proteins, prokka_results_dir=prokka_results_dir)
     return prokka_results_dir
 
 
 @task()
 @genome_specific_logging
-def include_atts_into_annotation(features_container, prokka_dir, out_dir, pipolin: Pipolin):
-    gb_records = read_seqio_records(file=os.path.join(prokka_dir, features_container.genome.genome_id + '.gbk'),
+def include_atts_into_annotation(genome: Genome, prokka_dir, out_dir, pipolin: Pipolin):
+    gb_records = read_seqio_records(file=os.path.join(prokka_dir, genome.genome_id + '.gbk'),
                                     file_format='genbank')
-    gff_records = read_gff_records(file=os.path.join(prokka_dir, features_container.genome.genome_id + '.gff'))
+    gff_records = read_gff_records(file=os.path.join(prokka_dir, genome.genome_id + '.gff'))
 
-    include_atts_into_gb(gb_records=gb_records, genome=features_container.genome, pipolin=pipolin)
-    include_atts_into_gff(gff_records=gff_records, genome=features_container.genome, pipolin=pipolin)
+    include_atts_into_gb(gb_records=gb_records, genome=genome, pipolin=pipolin)
+    include_atts_into_gff(gff_records=gff_records, genome=genome, pipolin=pipolin)
 
     prokka_atts_dir = os.path.join(out_dir, 'prokka_atts')
     os.makedirs(prokka_atts_dir, exist_ok=True)
 
-    write_genbank_records(gb_records=gb_records, out_dir=prokka_atts_dir, genome=features_container.genome)
-    write_gff_records(gff_records=gff_records, out_dir=prokka_atts_dir, genome=features_container.genome)
+    write_genbank_records(gb_records=gb_records, out_dir=prokka_atts_dir, genome=genome)
+    write_gff_records(gff_records=gff_records, out_dir=prokka_atts_dir, genome=genome)
 
     return prokka_atts_dir
 
 
 @task()
 @genome_specific_logging
-def easyfig_add_colours(features_container: GenomeFeatures, in_dir):
-    gb_records = read_seqio_records(file=os.path.join(in_dir, features_container.genome.genome_id + '.gbk'),
+def easyfig_add_colours(genome: Genome, in_dir):
+    gb_records = read_seqio_records(file=os.path.join(in_dir, genome.genome_id + '.gbk'),
                                     file_format='genbank')
-    add_colours(gb_records[features_container.genome.genome_id])
-    write_genbank_records(gb_records=gb_records, out_dir=in_dir, genome=features_container.genome)
+    add_colours(gb_records[genome.genome_id])
+    write_genbank_records(gb_records=gb_records, out_dir=in_dir, genome=genome)

@@ -23,12 +23,12 @@ class UtilitiesTestCase(unittest.TestCase):
         self.assertEqual(Contig('foo', 100).contig_orientation, Orientation.FORWARD)
 
     def setUp(self) -> None:
-        self.single_contig_genome = Genome(genome_id='bar', genome_file='dir/bar.fa')
+        self.single_contig_genome = Genome(genome_id='bar', genome_file='dir/bar.fa', contigs=[])
         self.contig1_id = 'foo'
         self.contig1 = Contig(contig_id=self.contig1_id, contig_length=100)
         self.single_contig_genome.contigs = [self.contig1]
 
-        self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa')
+        self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa', contigs=[])
         self.contig2_id = 'boo'
         self.contig2 = Contig(contig_id=self.contig2_id, contig_length=500)
         self.multi_contig_genome.contigs = [self.contig1, self.contig2]
