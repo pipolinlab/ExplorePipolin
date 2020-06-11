@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
+from collections import defaultdict
 from enum import Enum, auto
-from typing import MutableSequence, Optional, Sequence
+from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List
 
 
 class Orientation(Enum):
@@ -93,6 +94,75 @@ class FeatureType(Enum):
     ATT = auto()
     TRNA = auto()
     TARGET_TRNA = auto()
+    ATT_DENOVO = auto()
+    TARGET_TRNA_DENOVO = auto()
+
+
+class FeaturesContainer:
+    def __init__(self, genome: Genome):
+        self.genome = genome
+        self._features: Mapping[FeatureType, MutableSequence[Feature]] = defaultdict(list)
+
+    @staticmethod
+    def _dict_by_contig_normalized(features: Sequence[Feature]) -> Mapping[str, Sequence[Feature]]:
+        result: MutableMapping[str, List[Feature]] = defaultdict(list)
+        for feature in features:
+            result[feature.contig_id].append(feature)
+        for _, features in result.items():
+            features.sort(key=lambda p: p.start)
+        return result
+
+    def get_features_dict_by_contig_normalized(self, feature_type: FeatureType) -> Mapping[str, Sequence[Feature]]:
+        return self._dict_by_contig_normalized(self.get_features(feature_type))
+
+    def get_features_of_contig_normalized(self, contig_id: str, feature_type: FeatureType) -> Sequence[Feature]:
+        features_dict = self.get_features_dict_by_contig_normalized(feature_type=feature_type)
+        return features_dict[contig_id]
+
+    def get_features(self, feature_type: FeatureType) -> MutableSequence[Feature]:
+        return self._features[feature_type]
+
+    def find_overlapping_feature(self, feature: Feature, feature_type: FeatureType) -> Optional[Feature]:
+        feature_dict = self.get_features_dict_by_contig_normalized(feature_type)
+
+        if feature.contig_id in feature_dict:
+            features = feature_dict[feature.contig_id]
+            for other_feature in features:
+                if other_feature.is_overlapping(feature):
+                    return other_feature
+
+    def is_on_the_same_contig(self, *feature_types: FeatureType) -> bool:
+        target_contigs = []
+        for feature_type in feature_types:
+            target_contigs.extend(f.contig_id for f in self.get_features(feature_type))
+        return len(set(target_contigs)) == 1
+
+    def get_left_right_windows(self, feature_type) -> [Feature, Feature]:
+        features = self.get_features(feature_type=feature_type)
+        features = sorted(features, key=lambda x: x.start)
+
+        if features[-1].start - features[0].start > 10000:   # TODO: This should be changed!
+            raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
+                                 f'within the region ({features[0].start}, {features[-1].end}). It might be, '
+                                 f'that you have two or more pipolins per genome, but we are expecting only one.')
+
+        length = self.genome.get_complete_genome_length()
+        left_edge = features[0].start - 100000
+        left_window = Feature(start=left_edge if left_edge >= 0 else 0, end=features[0].start,
+                              strand=Orientation.FORWARD,
+                              contig_id=self.genome.get_complete_genome_contig_id(), genome=self.genome)
+        right_edge = features[-1].end + 100000
+        right_window = Feature(start=features[-1].end, end=right_edge if right_edge <= length else length,
+                               strand=Orientation.FORWARD,
+                               contig_id=self.genome.get_complete_genome_contig_id(), genome=self.genome)
+
+        return left_window, right_window
+
+    def is_overlapping_with(self, feature: Feature, feature_type: FeatureType):
+        for other_feature in self.get_features(feature_type):
+            if feature.is_overlapping(other_feature):
+                return True
+        return False
 
 
 class RepeatPair:

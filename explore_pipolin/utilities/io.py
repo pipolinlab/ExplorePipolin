@@ -5,8 +5,8 @@ from typing import MutableMapping, MutableSequence, Sequence
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.common import Genome, Orientation, define_genome_id, RepeatPair, Contig, Feature
-from explore_pipolin.utilities.misc import GQuery
+from explore_pipolin.common import Genome, Orientation, define_genome_id, RepeatPair, Contig, Feature, FeatureType, \
+    FeaturesContainer
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
@@ -87,9 +87,10 @@ def save_left_right_subsequences(left_window: Feature, right_window: Feature, re
                 handle=os.path.join(repeats_dir, left_window.genome.genome_id + '.right'))
 
 
-def write_repeats(gquery: GQuery, repeats: Sequence[RepeatPair], out_dir: str):
-    with open(os.path.join(out_dir, gquery.genome.genome_id + '.repeats'), 'w') as ouf:
-        polbs_locations = sorted([(x.start, x.end) for x in gquery.pipolbs], key=lambda x: x[0])
+def write_repeats(features_container: FeaturesContainer, repeats: Sequence[RepeatPair], out_dir: str):
+    with open(os.path.join(out_dir, features_container.genome.genome_id + '.repeats'), 'w') as ouf:
+        polbs_locations = sorted([(x.start, x.end) for x in features_container.get_features(
+            FeatureType.PIPOLB)], key=lambda x: x[0])
         print('left_repeat', 'right_repeat', 'length', 'polbs',
               'd_to_the_left', 'd_to_the_right', 'sequence', sep='\t', file=ouf)
         for repeat in repeats:

@@ -41,10 +41,10 @@ def run_prokka(genome_id, pipolins_dir, proteins, prokka_results_dir):
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def blast_for_repeats(gquery_id, repeats_dir):
-    with open(os.path.join(repeats_dir, gquery_id + '.fmt5'), 'w') as ouf:
-        subprocess.run(['blastn', '-query', os.path.join(repeats_dir, gquery_id + '.left'),
-                        '-subject', os.path.join(repeats_dir, gquery_id + '.right'),
+def blast_for_repeats(genome_id, repeats_dir):
+    with open(os.path.join(repeats_dir, genome_id + '.fmt5'), 'w') as ouf:
+        subprocess.run(['blastn', '-query', os.path.join(repeats_dir, genome_id + '.left'),
+                        '-subject', os.path.join(repeats_dir, genome_id + '.right'),
                         '-outfmt', '5', '-perc_identity', '100', '-word_size', '6',
                         '-strand', 'plus'], stdout=ouf)
 

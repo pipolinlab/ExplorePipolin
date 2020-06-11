@@ -53,8 +53,8 @@ def _add_genome_id_to_logger(genome: Genome):
 
 def genome_specific_logging(func):
     @functools.wraps(func)
-    def wrapper(gquery, **kwargs):
-        _ensure_handler_for(gquery.genome)
-        with _add_genome_id_to_logger(gquery.genome):
-            return func(gquery, **kwargs)
+    def wrapper(features_container, **kwargs):
+        _ensure_handler_for(features_container.genome)
+        with _add_genome_id_to_logger(features_container.genome):
+            return func(features_container, **kwargs)
     return wrapper
