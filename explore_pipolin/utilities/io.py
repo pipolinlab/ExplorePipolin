@@ -76,15 +76,15 @@ def read_blastxml(blast_xml):
     return SearchIO.read(blast_xml, 'blast-xml')
 
 
-def save_left_right_subsequences(genome, left_window, right_window, repeats_dir):
-    genome_seq = SeqIO.read(handle=genome, format='fasta')
+def save_left_right_subsequences(left_window: Feature, right_window: Feature, repeats_dir: str):
+    genome_seq = SeqIO.read(handle=left_window.genome.genome_file, format='fasta')
 
-    left_seq = genome_seq[left_window[0]:left_window[1]]
-    right_seq = genome_seq[right_window[0]:right_window[1]]
+    left_seq = genome_seq[left_window.start:left_window.end]
+    right_seq = genome_seq[right_window.start:right_window.end]
     SeqIO.write(sequences=left_seq, format='fasta',
-                handle=os.path.join(repeats_dir, define_genome_id(genome_path=genome) + '.left'))
+                handle=os.path.join(repeats_dir, left_window.genome.genome_id + '.left'))
     SeqIO.write(sequences=right_seq, format='fasta',
-                handle=os.path.join(repeats_dir, define_genome_id(genome_path=genome) + '.right'))
+                handle=os.path.join(repeats_dir, left_window.genome.genome_id + '.right'))
 
 
 def write_repeats(gquery: GQuery, repeats: Sequence[RepeatPair], out_dir: str):

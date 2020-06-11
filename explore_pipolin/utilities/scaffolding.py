@@ -274,9 +274,9 @@ def create_pipolin_fragments_single_contig(gquery: GQuery) -> Pipolin:
         pipolin.atts.extend(gquery.atts)
         return Pipolin(pipolin)
     else:
-        left_window, right_window = gquery.get_left_right_windows()
+        left_window, right_window = gquery.get_left_right_windows(feature_type=FeatureType.PIPOLB)
         pipolin = PipolinFragment(contig_id=gquery.pipolbs[0].contig.contig_id, genome=gquery.genome,
-                                  start=left_window[0], end=right_window[1])
+                                  start=left_window.start, end=right_window.end)
         return Pipolin(pipolin)
 
 

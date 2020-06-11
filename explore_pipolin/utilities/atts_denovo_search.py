@@ -19,13 +19,12 @@ def is_att_denovo(gquery: GQuery, repeat_pair: RepeatPair) -> bool:
 
 
 def find_repeats(gquery: GQuery, repeats_dir: str) -> Sequence[RepeatPair]:
-    left_window, right_window = gquery.get_left_right_windows()
-    save_left_right_subsequences(genome=gquery.genome.genome_file, left_window=left_window, right_window=right_window,
-                                 repeats_dir=repeats_dir)
+    left_window, right_window = gquery.get_left_right_windows(feature_type=FeatureType.PIPOLB)
+    save_left_right_subsequences(left_window, right_window, repeats_dir)
     blast_for_repeats(gquery_id=gquery.genome.genome_id, repeats_dir=repeats_dir)
     repeats = _extract_repeats(file=os.path.join(repeats_dir, gquery.genome.genome_id + '.fmt5'),
                                genome=gquery.genome)
-    repeats = [rep.shift(left_window[0], right_window[0]) for rep in repeats]
+    repeats = [rep.shift(left_window.start, right_window.start) for rep in repeats]
     return repeats
 
 

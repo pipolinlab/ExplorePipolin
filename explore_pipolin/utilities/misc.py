@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import MutableSequence, Optional, Tuple, Sequence, Mapping, MutableMapping, List
+from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List
 
 from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType
 
@@ -9,6 +9,7 @@ from explore_pipolin.common import Orientation, Contig, Genome, Feature, Feature
 class GQuery:
     def __init__(self, genome: Genome):
         self.genome = genome
+        #self.features: Mapping[FeatureType, MutableSequence[Feature]] = {}
         self.pipolbs: MutableSequence[Feature] = []
         self.atts: MutableSequence[Feature] = []
         self.trnas: MutableSequence[Feature] = []
@@ -53,27 +54,30 @@ class GQuery:
                 if other_feature.is_overlapping(feature):
                     return other_feature
 
-    def is_on_the_same_contig(self) -> bool:
+    def is_on_the_same_contig(self, *feature_types: FeatureType) -> bool:
         target_contigs = []
-        target_contigs.extend(f.contig_id for f in self.pipolbs)
-        target_contigs.extend(f.contig_id for f in self.atts)
-        target_contigs.extend(f.contig_id for f in self.target_trnas)
+        for feature_type in feature_types:
+            target_contigs.extend(f.contig_id for f in self.get_features_by_type(feature_type))
         return len(set(target_contigs)) == 1
 
-    # `find_atts_denovo` and `scaffold_pipolins`
-    def get_left_right_windows(self) -> Tuple[Tuple[int, int], Tuple[int, int]]:
-        pipolbs = sorted((i for i in self.pipolbs), key=lambda p: p.start)
+    def get_left_right_windows(self, feature_type) -> [Feature, Feature]:
+        features = self.get_features_by_type(feature_type=feature_type)
+        features = sorted(features, key=lambda x: x.start)
 
-        if pipolbs[-1].start - pipolbs[0].start > 10000:   # TODO: is it small/big enough?
+        if features[-1].start - features[0].start > 10000:   # TODO: This should be changed!
             raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
-                                 f'within the region ({pipolbs[0].start}, {pipolbs[-1].end}). It might be, '
+                                 f'within the region ({features[0].start}, {features[-1].end}). It might be, '
                                  f'that you have two or more pipolins per genome, but we are expecting only one.')
 
         length = self.genome.get_complete_genome_length()
-        left_edge = pipolbs[0].start - 100000
-        left_window = (left_edge if left_edge >= 0 else 0, pipolbs[0].start)
-        right_edge = pipolbs[-1].end + 100000
-        right_window = (pipolbs[-1].end, right_edge if right_edge <= length else length)
+        left_edge = features[0].start - 100000
+        left_window = Feature(start=left_edge if left_edge >= 0 else 0, end=features[0].start,
+                              strand=Orientation.FORWARD,
+                              contig_id=self.genome.get_complete_genome_contig_id(), genome=self.genome)
+        right_edge = features[-1].end + 100000
+        right_window = Feature(start=features[-1].end, end=right_edge if right_edge <= length else length,
+                               strand=Orientation.FORWARD,
+                               contig_id=self.genome.get_complete_genome_contig_id(), genome=self.genome)
 
         return left_window, right_window
 
@@ -83,13 +87,14 @@ class GQuery:
                 return True
         return False
 
-    # `analyse_pipolin_orientation`
-    def is_single_target_trna_per_contig(self):
-        # TODO: don't like this
-        # there was one case with two target trnas per genome, although usually only one
-        targeted_contigs = [trna.contig_id for trna in self.target_trnas]
-        if len(self.target_trnas) != len(targeted_contigs):
-            raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
+
+def is_single_target_trna_per_contig(gquery: GQuery):
+    # TODO: don't like this
+    # there was one case with two target trnas per genome, although usually only one
+    target_trnas_dict = gquery.get_features_dict_by_contig_normalized(feature_type=FeatureType.TARGET_TRNA)
+    target_trnas = gquery.get_features_by_type(feature_type=FeatureType.TARGET_TRNA)
+    if len(target_trnas) != len(target_trnas_dict):
+        raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
 
 
 def get_contig_orientation(contig: Contig, gquery: GQuery) -> Orientation:
