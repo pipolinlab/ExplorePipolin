@@ -2,7 +2,8 @@ from enum import Enum, auto
 from typing import Sequence, MutableSequence, Optional, Set
 
 from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Orientation, Pipolin, \
-    FeaturesContainer
+    GenomeFeatures
+from explore_pipolin.utilities.misc import get_left_right_windows
 
 
 class Direction(Enum):
@@ -11,7 +12,7 @@ class Direction(Enum):
 
 
 class Scaffolder:
-    def __init__(self, features_container: FeaturesContainer):
+    def __init__(self, features_container: GenomeFeatures):
         self.features_container = features_container
         self.polbs_dict = features_container.get_features_dict_by_contig_normalized(FeatureType.PIPOLB)
         self.atts_dict = features_container.get_features_dict_by_contig_normalized(FeatureType.ATT)
@@ -265,7 +266,7 @@ class Scaffolder:
         return len(feature_dict[contig_id]) != 0
 
 
-def create_pipolin_fragments_single_contig(features_container: FeaturesContainer) -> Pipolin:
+def create_pipolin_fragments_single_contig(features_container: GenomeFeatures) -> Pipolin:
     if len(features_container.get_features_dict_by_contig_normalized(FeatureType.ATT)) != 0:
         start, end = _get_pipolin_bounds(features_container)
         pipolin = PipolinFragment(contig_id=features_container.get_features(FeatureType.PIPOLB)[0].contig.contig_id,
@@ -274,13 +275,13 @@ def create_pipolin_fragments_single_contig(features_container: FeaturesContainer
         pipolin.atts.extend(features_container.get_features(FeatureType.ATT))
         return Pipolin(pipolin)
     else:
-        left_window, right_window = features_container.get_left_right_windows(feature_type=FeatureType.PIPOLB)
+        left_window, right_window = get_left_right_windows(features_container, FeatureType.PIPOLB)
         pipolin = PipolinFragment(contig_id=features_container.get_features(FeatureType.PIPOLB)[0].contig.contig_id,
                                   genome=features_container.genome, start=left_window.start, end=right_window.end)
         return Pipolin(pipolin)
 
 
-def _get_pipolin_bounds(features_container: FeaturesContainer):
+def _get_pipolin_bounds(features_container: GenomeFeatures):
     polymerases = sorted((i for i in features_container.get_features(FeatureType.PIPOLB)), key=lambda p: p.start)
     atts = sorted((i for i in features_container.get_features(FeatureType.ATT)), key=lambda p: p.start)
 

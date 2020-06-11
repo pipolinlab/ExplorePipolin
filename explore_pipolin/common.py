@@ -98,7 +98,7 @@ class FeatureType(Enum):
     TARGET_TRNA_DENOVO = auto()
 
 
-class FeaturesContainer:
+class GenomeFeatures:
     def __init__(self, genome: Genome):
         self.genome = genome
         self._features: Mapping[FeatureType, MutableSequence[Feature]] = defaultdict(list)
@@ -136,27 +136,6 @@ class FeaturesContainer:
         for feature_type in feature_types:
             target_contigs.extend(f.contig_id for f in self.get_features(feature_type))
         return len(set(target_contigs)) == 1
-
-    def get_left_right_windows(self, feature_type) -> [Feature, Feature]:
-        features = self.get_features(feature_type=feature_type)
-        features = sorted(features, key=lambda x: x.start)
-
-        if features[-1].start - features[0].start > 10000:   # TODO: This should be changed!
-            raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
-                                 f'within the region ({features[0].start}, {features[-1].end}). It might be, '
-                                 f'that you have two or more pipolins per genome, but we are expecting only one.')
-
-        length = self.genome.get_complete_genome_length()
-        left_edge = features[0].start - 100000
-        left_window = Feature(start=left_edge if left_edge >= 0 else 0, end=features[0].start,
-                              strand=Orientation.FORWARD,
-                              contig_id=self.genome.get_complete_genome_contig_id(), genome=self.genome)
-        right_edge = features[-1].end + 100000
-        right_window = Feature(start=features[-1].end, end=right_edge if right_edge <= length else length,
-                               strand=Orientation.FORWARD,
-                               contig_id=self.genome.get_complete_genome_contig_id(), genome=self.genome)
-
-        return left_window, right_window
 
     def is_overlapping_with(self, feature: Feature, feature_type: FeatureType):
         for other_feature in self.get_features(feature_type):

@@ -11,7 +11,7 @@ from Bio import SeqIO
 from typing import Any, Optional, Sequence
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours
-from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, FeaturesContainer
+from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, GenomeFeatures
 from explore_pipolin.utilities.logging import genome_specific_logging
 from explore_pipolin.utilities.misc import feature_from_blasthit, join_it, get_contig_orientation, \
     is_single_target_trna_per_contig
@@ -32,8 +32,8 @@ from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fra
 
 
 @task
-def create_features_container(genome_file) -> FeaturesContainer:
-    return FeaturesContainer(genome=create_genome_from_file(genome_file))
+def create_features_container(genome_file) -> GenomeFeatures:
+    return GenomeFeatures(genome=create_genome_from_file(genome_file))
 
 
 @task()
@@ -57,7 +57,7 @@ def run_blast_against_att(features_container, ref_att, out_dir):
 
 @task()
 @genome_specific_logging
-def add_features_from_blast(features_container: FeaturesContainer, blast_dir, feature_type: FeatureType) -> FeaturesContainer:
+def add_features_from_blast(features_container: GenomeFeatures, blast_dir, feature_type: FeatureType) -> GenomeFeatures:
     entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{features_container.genome.genome_id}.fmt5'))
     for entry in entries:
         for hit in entry:
@@ -78,7 +78,7 @@ def detect_trnas_with_aragorn(features_container, out_dir):
 
 @task()
 @genome_specific_logging
-def add_features_from_aragorn(features_container: FeaturesContainer, aragorn_results_dir) -> FeaturesContainer:
+def add_features_from_aragorn(features_container: GenomeFeatures, aragorn_results_dir) -> GenomeFeatures:
     entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_results_dir,
                                                             f'{features_container.genome.genome_id}.batch'))
     for contig_id, hits in entries.items():
@@ -96,7 +96,7 @@ def add_features_from_aragorn(features_container: FeaturesContainer, aragorn_res
 
 @task()
 @genome_specific_logging
-def are_pipolbs_present(features_container: FeaturesContainer):
+def are_pipolbs_present(features_container: GenomeFeatures):
     logger = context.get('logger')
 
     if len(features_container.get_features(FeatureType.PIPOLB)) == 0:
@@ -116,7 +116,7 @@ def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> O
 
 @task()
 @genome_specific_logging
-def find_atts_denovo(features_container: FeaturesContainer, out_dir):
+def find_atts_denovo(features_container: GenomeFeatures, out_dir):
     logger = context.get('logger')
 
     if not features_container.genome.is_single_contig():
@@ -147,7 +147,7 @@ def find_atts_denovo(features_container: FeaturesContainer, out_dir):
 
 @task(skip_on_upstream_skip=False)
 @genome_specific_logging
-def are_atts_present(features_container: FeaturesContainer):
+def are_atts_present(features_container: GenomeFeatures):
     logger = context.get('logger')
 
     if len(features_container.get_features(
@@ -186,7 +186,7 @@ def are_atts_present(features_container: FeaturesContainer):
 
 @task()
 @genome_specific_logging
-def analyse_pipolin_orientation(features_container: FeaturesContainer):
+def analyse_pipolin_orientation(features_container: GenomeFeatures):
     is_single_target_trna_per_contig(features_container=features_container)
     for contig in features_container.genome.contigs:
         contig.contig_orientation = get_contig_orientation(contig=contig, features_container=features_container)
@@ -196,7 +196,7 @@ def analyse_pipolin_orientation(features_container: FeaturesContainer):
 
 @task()
 @genome_specific_logging
-def scaffold_pipolins(features_container: FeaturesContainer) -> Pipolin:
+def scaffold_pipolins(features_container: GenomeFeatures) -> Pipolin:
     # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
     # https://github.com/biopython/biopython/issues/1755
     logger = context.get('logger')
@@ -212,7 +212,7 @@ def scaffold_pipolins(features_container: FeaturesContainer) -> Pipolin:
 
 @task()
 @genome_specific_logging
-def extract_pipolin_regions(features_container: FeaturesContainer, pipolin: Pipolin, out_dir: str):
+def extract_pipolin_regions(features_container: GenomeFeatures, pipolin: Pipolin, out_dir: str):
     genome_dict = read_seqio_records(file=features_container.genome.genome_file, file_format='fasta')
 
     pipolins_dir = os.path.join(out_dir, 'pipolin_sequences')
@@ -269,7 +269,7 @@ def include_atts_into_annotation(features_container, prokka_dir, out_dir, pipoli
 
 @task()
 @genome_specific_logging
-def easyfig_add_colours(features_container: FeaturesContainer, in_dir):
+def easyfig_add_colours(features_container: GenomeFeatures, in_dir):
     gb_records = read_seqio_records(file=os.path.join(in_dir, features_container.genome.genome_id + '.gbk'),
                                     file_format='genbank')
     add_colours(gb_records[features_container.genome.genome_id])

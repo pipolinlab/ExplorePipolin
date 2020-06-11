@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType, FeaturesContainer
+from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType, GenomeFeatures
 
 
-def is_single_target_trna_per_contig(features_container: FeaturesContainer):
+def is_single_target_trna_per_contig(features_container: GenomeFeatures):
     # TODO: don't like this
     # there was one case with two target trnas per genome, although usually only one
     target_trnas_dict = features_container.get_features_dict_by_contig_normalized(feature_type=FeatureType.TARGET_TRNA)
@@ -12,7 +12,7 @@ def is_single_target_trna_per_contig(features_container: FeaturesContainer):
         raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
 
 
-def get_contig_orientation(contig: Contig, features_container: FeaturesContainer) -> Orientation:
+def get_contig_orientation(contig: Contig, features_container: GenomeFeatures) -> Orientation:
     target_trnas = features_container.get_features_of_contig_normalized(contig_id=contig.contig_id,
                                                                         feature_type=FeatureType.TARGET_TRNA)
     atts = features_container.get_features_of_contig_normalized(contig_id=contig.contig_id,
@@ -59,3 +59,27 @@ def feature_from_blasthit(hit, contig_id: str, genome: Genome) -> Feature:
     return Feature(start=hit.hit_start, end=hit.hit_end,
                    strand=Orientation.orientation_from_blast(hit.hit_strand),
                    contig_id=contig_id, genome=genome)
+
+
+def get_left_right_windows(features_container: GenomeFeatures, feature_type) -> [Feature, Feature]:
+    features = features_container.get_features(feature_type=feature_type)
+    features = sorted(features, key=lambda x: x.start)
+
+    if features[-1].start - features[0].start > 10000:   # TODO: This should be changed!
+        raise AssertionError(f'You have several piPolBs per genome and they are too far from each other: '
+                             f'within the region ({features[0].start}, {features[-1].end}). It might be, '
+                             f'that you have two or more pipolins per genome, but we are expecting only one.')
+
+    length = features_container.genome.get_complete_genome_length()
+    left_edge = features[0].start - 100000
+    left_window = Feature(start=left_edge if left_edge >= 0 else 0, end=features[0].start,
+                          strand=Orientation.FORWARD,
+                          contig_id=features_container.genome.get_complete_genome_contig_id(),
+                          genome=features_container.genome)
+    right_edge = features[-1].end + 100000
+    right_window = Feature(start=features[-1].end, end=right_edge if right_edge <= length else length,
+                           strand=Orientation.FORWARD,
+                           contig_id=features_container.genome.get_complete_genome_contig_id(),
+                           genome=features_container.genome)
+
+    return left_window, right_window
