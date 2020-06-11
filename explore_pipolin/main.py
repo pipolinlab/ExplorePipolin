@@ -42,7 +42,7 @@ def explore_pipolin(genome, out_dir, add_colours):
 
     check_external_dependencies()
     set_logging_dir(out_dir)
-    state = get_flow().run(genome=genome, out_dir=out_dir, add_colours=add_colours)
+    state = get_flow().run(genome_file=genome, out_dir=out_dir, add_colours=add_colours)
     assert state.is_successful()
 
 

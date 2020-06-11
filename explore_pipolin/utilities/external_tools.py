@@ -2,8 +2,6 @@ import logging
 import os
 import subprocess
 
-from explore_pipolin.common import define_genome_id
-
 
 def check_blast():
     try:
@@ -49,18 +47,18 @@ def blast_for_repeats(genome_id, repeats_dir):
                         '-strand', 'plus'], stdout=ouf)
 
 
-def run_aragorn(genome, aragorn_results_dir):
-    with open(os.path.join(aragorn_results_dir, define_genome_id(genome_path=genome) + '.batch'), 'w') as ouf:
-        subprocess.run(['aragorn', '-l', '-w', genome], stdout=ouf)
+def run_aragorn(genome_file, output_file):
+    with open(output_file, 'w') as ouf:
+        subprocess.run(['aragorn', '-l', '-w', genome_file], stdout=ouf)
 
 
-def tblastn_against_ref_pipolb(genome, ref_pipolb, out_dir):
-    with open(os.path.join(out_dir, define_genome_id(genome_path=genome) + '.fmt5'), 'w') as ouf:
-        subprocess.run(['tblastn', '-query', ref_pipolb, '-subject', genome, '-evalue', '0.1', '-outfmt', '5'],
+def tblastn_against_ref_pipolb(genome_file, ref_pipolb, output_file):
+    with open(output_file, 'w') as ouf:
+        subprocess.run(['tblastn', '-query', ref_pipolb, '-subject', genome_file, '-evalue', '0.1', '-outfmt', '5'],
                        stdout=ouf)
 
 
-def blastn_against_ref_att(genome, ref_att, out_dir):
-    with open(os.path.join(out_dir, define_genome_id(genome_path=genome) + '.fmt5'), 'w') as ouf:
-        subprocess.run(['blastn', '-query', ref_att, '-subject', genome, '-evalue', '0.1', '-outfmt', '5'],
+def blastn_against_ref_att(genome_file, ref_att, output_file):
+    with open(output_file, 'w') as ouf:
+        subprocess.run(['blastn', '-query', ref_att, '-subject', genome_file, '-evalue', '0.1', '-outfmt', '5'],
                        stdout=ouf)

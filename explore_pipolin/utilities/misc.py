@@ -81,3 +81,10 @@ def get_left_right_windows(genome: Genome, feature_type) -> [Feature, Feature]:
                            contig_id=genome.get_complete_genome_contig_id(), genome=genome)
 
     return left_window, right_window
+
+
+def add_features_from_blast_entries(entries, feature_type: FeatureType, genome: Genome,):
+    for entry in entries:
+        for hit in entry:
+            feature = feature_from_blasthit(hit=hit, contig_id=entry.id, genome=genome)
+            genome.features.add_feature(feature=feature, feature_type=feature_type)

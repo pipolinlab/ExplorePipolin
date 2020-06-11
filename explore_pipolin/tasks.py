@@ -2,6 +2,8 @@
 All the tasks should be defined in this file!
 """
 import os
+
+import pkg_resources
 from prefect import task
 from prefect import context
 from prefect.engine import signals
@@ -12,10 +14,10 @@ from typing import Any, Optional, Sequence
 
 from explore_pipolin.utilities.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, Genome, \
-    define_genome_id
+    define_genome_id, FeaturesContainer
 from explore_pipolin.utilities.logging import genome_specific_logging
-from explore_pipolin.utilities.misc import feature_from_blasthit, join_it, get_contig_orientation, \
-    is_single_target_trna_per_contig
+from explore_pipolin.utilities.misc import join_it, get_contig_orientation, \
+    is_single_target_trna_per_contig, add_features_from_blast_entries
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
@@ -31,6 +33,9 @@ from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities.io import read_genome_contigs_from_file
 from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
 
+_REF_PIPOLB = pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB.faa')
+_REF_ATT = pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa')
+
 
 @task
 def create_genome(genome_file) -> Genome:
@@ -39,60 +44,64 @@ def create_genome(genome_file) -> Genome:
     return Genome(genome_id=genome_id, genome_file=genome_file, contigs=contigs)
 
 
-@task()
+@task
 @genome_specific_logging
-def run_blast_against_pipolb(genome: Genome, ref_pipolb, out_dir):
+def find_pipolbs(genome: Genome, out_dir) -> Genome:
     blast_results_dir = os.path.join(out_dir, 'polb_blast')
     os.makedirs(blast_results_dir, exist_ok=True)
-    tblastn_against_ref_pipolb(genome=genome.genome_file, ref_pipolb=ref_pipolb,
-                               out_dir=blast_results_dir)
-    return blast_results_dir
+
+    output_file = os.path.join(blast_results_dir, genome.genome_id) + '.fmt5'
+    tblastn_against_ref_pipolb(genome_file=genome.genome_file, ref_pipolb=_REF_PIPOLB, output_file=output_file)
+    entries = read_blastxml(blast_xml=output_file)
+
+    add_features_from_blast_entries(entries=entries, feature_type=FeatureType.PIPOLB, genome=genome)
+
+    return genome
 
 
-@task()
+@task
 @genome_specific_logging
-def run_blast_against_att(genome: Genome, ref_att, out_dir):
+def find_atts(genome: Genome, out_dir) -> Genome:
     blast_results_dir = os.path.join(out_dir, 'att_blast')
     os.makedirs(blast_results_dir, exist_ok=True)
-    blastn_against_ref_att(genome=genome.genome_file, ref_att=ref_att, out_dir=blast_results_dir)
-    return blast_results_dir
 
+    output_file = os.path.join(blast_results_dir, genome.genome_id) + '.fmt5'
+    blastn_against_ref_att(genome_file=genome.genome_file, ref_att=_REF_ATT, output_file=output_file)
+    entries = read_blastxml(blast_xml=output_file)
 
-@task()
-@genome_specific_logging
-def add_features_from_blast(genome: Genome, blast_dir, feature_type: FeatureType) -> Genome:
-    entries = read_blastxml(blast_xml=os.path.join(blast_dir, f'{genome.genome_id}.fmt5'))
-    for entry in entries:
-        for hit in entry:
-            feature = feature_from_blasthit(hit=hit, contig_id=entry.id, genome=genome)
-            genome.features.add_feature(feature=feature, feature_type=feature_type)
+    add_features_from_blast_entries(entries=entries, feature_type=FeatureType.ATT, genome=genome)
 
     return genome
 
 
-@task()
+@task
 @genome_specific_logging
-def detect_trnas_with_aragorn(genome: Genome, out_dir):
+def find_trnas(genome: Genome, out_dir) -> Genome:
     aragorn_results_dir = os.path.join(out_dir, 'aragorn_results')
     os.makedirs(aragorn_results_dir, exist_ok=True)
-    run_aragorn(genome=genome.genome_file, aragorn_results_dir=aragorn_results_dir)
-    return aragorn_results_dir
 
+    output_file = os.path.join(aragorn_results_dir, genome.genome_id + '.batch')
+    run_aragorn(genome_file=genome.genome_file, output_file=output_file)
+    entries = read_aragorn_batch(aragorn_batch=output_file)
 
-@task()
-@genome_specific_logging
-def add_features_from_aragorn(genome: Genome, aragorn_results_dir) -> Genome:
-    entries = read_aragorn_batch(aragorn_batch=os.path.join(aragorn_results_dir, f'{genome.genome_id}.batch'))
-    for contig_id, hits in entries.items():
-        for hit in hits:
-            feature = Feature(start=hit[0], end=hit[1], strand=hit[2], contig_id=contig_id, genome=genome)
-            genome.features.add_feature(feature=feature, feature_type=FeatureType.TRNA)
-    for att in genome.features.get_features(FeatureType.ATT):
-        target_trna = genome.features.find_overlapping_feature(att, FeatureType.TRNA)
-        if target_trna is not None:
-            genome.features.add_feature(feature=target_trna, feature_type=FeatureType.TARGET_TRNA)
+    add_trna_features_from_aragorn_entries(entries=entries, genome=genome)
+    find_and_add_target_trnas_features(genome.features)
 
     return genome
+
+
+def add_trna_features_from_aragorn_entries(entries, genome: Genome):
+    for contig_id, hits in entries.items():
+        for hit in hits:
+            trna_feature = Feature(start=hit[0], end=hit[1], strand=hit[2], contig_id=contig_id, genome=genome)
+            genome.features.add_feature(feature=trna_feature, feature_type=FeatureType.TRNA)
+
+
+def find_and_add_target_trnas_features(features: FeaturesContainer):
+    for att in features.get_features(FeatureType.ATT):
+        target_trna = features.find_overlapping_feature(att, FeatureType.TRNA)
+        if target_trna is not None:
+            features.add_feature(feature=target_trna, feature_type=FeatureType.TARGET_TRNA)
 
 
 @task()
