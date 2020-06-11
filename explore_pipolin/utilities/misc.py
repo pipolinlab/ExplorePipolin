@@ -51,7 +51,7 @@ class GQuery:
             features = feature_dict[feature.contig_id]
             for other_feature in features:
                 if other_feature.is_overlapping(feature):
-                    return feature
+                    return other_feature
 
     def is_on_the_same_contig(self) -> bool:
         target_contigs = []
