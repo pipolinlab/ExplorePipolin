@@ -6,7 +6,6 @@ import os
 import pkg_resources
 from prefect import task
 from prefect import context
-from prefect.engine import signals
 
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
@@ -131,7 +130,7 @@ def find_atts_denovo(genome: Genome, out_dir):
 
     if not genome.is_single_contig():
         logger.warning('This step is only for complete genomes. Skip...')
-        raise signals.SKIP()
+        return genome
 
     atts_denovo_dir = os.path.join(out_dir, 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
@@ -151,10 +150,10 @@ def find_atts_denovo(genome: Genome, out_dir):
 
     write_atts_denovo(genome.features.get_features(FeatureType.ATT_DENOVO), genome, atts_denovo_dir)
 
-    return atts_denovo_dir
+    return genome
 
 
-@task(skip_on_upstream_skip=False)
+@task()
 @genome_specific_logging
 def are_atts_present(genome: Genome) -> Genome:
     logger = context.get('logger')
