@@ -7,7 +7,7 @@ from explore_pipolin.common import RepeatPair, Feature, Orientation, Genome, Fea
 from explore_pipolin.utilities.external_tools import blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml
 from explore_pipolin.utilities.io import save_left_right_subsequences
-from explore_pipolin.utilities.misc import get_left_right_windows
+from explore_pipolin.tasks_related.misc import get_left_right_windows
 
 
 def is_att_denovo(genome: Genome, repeat_pair: RepeatPair) -> bool:

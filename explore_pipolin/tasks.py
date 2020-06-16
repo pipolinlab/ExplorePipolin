@@ -11,26 +11,26 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 from typing import Any, Optional, Sequence
 
-from explore_pipolin.utilities.easyfig_coloring import add_colours
+from explore_pipolin.tasks_related.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, Genome, \
     define_genome_id, FeaturesContainer
 from explore_pipolin.utilities.logging import genome_specific_logging
-from explore_pipolin.utilities.misc import join_it, get_contig_orientation, \
+from explore_pipolin.tasks_related.misc import join_it, get_contig_orientation, \
     is_single_target_trna_per_contig, add_features_from_blast_entries
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
-from explore_pipolin.utilities.atts_denovo_search import find_repeats, is_att_denovo
+from explore_pipolin.tasks_related.atts_denovo_search import find_repeats, is_att_denovo
 from explore_pipolin.utilities.external_tools import tblastn_against_ref_pipolb, blastn_against_ref_att
 from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
-from explore_pipolin.utilities.misc import create_fragment_record
+from explore_pipolin.tasks_related.misc import create_fragment_record
 from explore_pipolin.utilities.io import read_gff_records
-from explore_pipolin.utilities.including_atts_into_annotation import include_atts_into_gb
-from explore_pipolin.utilities.including_atts_into_annotation import include_atts_into_gff
+from explore_pipolin.tasks_related.including_atts import include_atts_into_gb
+from explore_pipolin.tasks_related.including_atts import include_atts_into_gff
 from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities.io import read_genome_contigs_from_file
-from explore_pipolin.utilities.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
+from explore_pipolin.tasks_related.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
 
 _REF_PIPOLB = pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB.faa')
 _REF_ATT = pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa')
@@ -195,7 +195,7 @@ def are_atts_present(genome: Genome) -> Genome:
 
 @task()
 @genome_specific_logging
-def analyse_pipolin_orientation(genome: Genome) -> Genome:
+def analyse_orientation(genome: Genome) -> Genome:
     is_single_target_trna_per_contig(genome=genome)
     for contig in genome.contigs:
         contig.contig_orientation = get_contig_orientation(contig=contig, genome=genome)
@@ -216,7 +216,7 @@ def scaffold_pipolins(genome: Genome) -> Pipolin:
     else:
         logger.warning('>>> Scaffolding is required!')
         scaffolder = Scaffolder(genome=genome)
-        return scaffolder.try_creating_single_record()
+        return scaffolder.scaffold()
 
 
 @task()

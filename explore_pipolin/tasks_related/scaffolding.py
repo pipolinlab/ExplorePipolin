@@ -2,7 +2,7 @@ from enum import Enum, auto
 from typing import Sequence, MutableSequence, Optional, Set
 
 from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Orientation, Pipolin, Genome
-from explore_pipolin.utilities.misc import get_left_right_windows
+from explore_pipolin.tasks_related.misc import get_left_right_windows
 
 
 class Direction(Enum):
@@ -17,7 +17,7 @@ class Scaffolder:
         self.atts_dict = genome.features.get_features_dict_by_contig_normalized(FeatureType.ATT)
         self.target_trnas_dict = genome.features.get_features_dict_by_contig_normalized(FeatureType.TARGET_TRNA)
 
-    def try_creating_single_record(self) -> Pipolin:
+    def scaffold(self) -> Pipolin:
         unchangeable_contigs = self._get_unchangeable_contigs()
 
         if len(unchangeable_contigs) == 1:
