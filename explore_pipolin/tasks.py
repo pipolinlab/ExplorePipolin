@@ -46,7 +46,7 @@ def create_genome(genome_file) -> Genome:
 @task
 @genome_specific_logging
 def find_pipolbs(genome: Genome, out_dir) -> Genome:
-    blast_results_dir = os.path.join(out_dir, 'polb_blast')
+    blast_results_dir = os.path.join(out_dir, 'pipolbs_search')
     os.makedirs(blast_results_dir, exist_ok=True)
 
     output_file = os.path.join(blast_results_dir, genome.genome_id) + '.fmt5'
@@ -61,7 +61,7 @@ def find_pipolbs(genome: Genome, out_dir) -> Genome:
 @task
 @genome_specific_logging
 def find_atts(genome: Genome, out_dir) -> Genome:
-    blast_results_dir = os.path.join(out_dir, 'att_blast')
+    blast_results_dir = os.path.join(out_dir, 'atts_search')
     os.makedirs(blast_results_dir, exist_ok=True)
 
     output_file = os.path.join(blast_results_dir, genome.genome_id) + '.fmt5'
@@ -76,7 +76,7 @@ def find_atts(genome: Genome, out_dir) -> Genome:
 @task
 @genome_specific_logging
 def find_trnas(genome: Genome, out_dir) -> Genome:
-    aragorn_results_dir = os.path.join(out_dir, 'aragorn_results')
+    aragorn_results_dir = os.path.join(out_dir, 'trnas_search')
     os.makedirs(aragorn_results_dir, exist_ok=True)
 
     output_file = os.path.join(aragorn_results_dir, genome.genome_id + '.batch')
@@ -132,7 +132,7 @@ def find_atts_denovo(genome: Genome, out_dir):
         logger.warning('This step is only for complete genomes. Skip...')
         return genome
 
-    atts_denovo_dir = os.path.join(out_dir, 'atts_denovo')
+    atts_denovo_dir = os.path.join(out_dir, 'atts_denovo_search')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
     repeats: Sequence[RepeatPair] = find_repeats(genome, atts_denovo_dir)
@@ -163,7 +163,6 @@ def are_atts_present(genome: Genome) -> Genome:
     if num_atts == 0 and num_atts_denovo == 0:
         logger.warning('\n\n>>>There is piPolB, but no atts were found! Not able to define pipolin bounds!\n')
         # TODO: probably, it makes sense to output piPolB(s) alone
-        # raise signals.SKIP() # let's try cutting from both sides and proceed with annotation
 
     elif len(genome.features.get_features(FeatureType.ATT)) == 0:
         logger.warning(f'\n\n>>>No "usual" atts were found, but some atts were found by denovo search!'
@@ -250,7 +249,7 @@ def extract_pipolin_regions(genome: Genome, pipolin: Pipolin, out_dir: str):
 @task()
 @genome_specific_logging
 def annotate_pipolins(genome: Genome, pipolins_dir, proteins, out_dir):
-    prokka_results_dir = os.path.join(out_dir, 'prokka')
+    prokka_results_dir = os.path.join(out_dir, 'prokka_results')
     os.makedirs(prokka_results_dir, exist_ok=True)
     run_prokka(genome_id=genome.genome_id, pipolins_dir=pipolins_dir,
                proteins=proteins, prokka_results_dir=prokka_results_dir)
@@ -259,7 +258,7 @@ def annotate_pipolins(genome: Genome, pipolins_dir, proteins, out_dir):
 
 @task()
 @genome_specific_logging
-def include_atts_into_annotation(genome: Genome, prokka_dir, out_dir, pipolin: Pipolin):
+def include_atts(genome: Genome, prokka_dir, out_dir, pipolin: Pipolin):
     gb_records = read_seqio_records(file=os.path.join(prokka_dir, genome.genome_id + '.gbk'),
                                     file_format='genbank')
     gff_records = read_gff_records(file=os.path.join(prokka_dir, genome.genome_id + '.gff'))
@@ -267,7 +266,7 @@ def include_atts_into_annotation(genome: Genome, prokka_dir, out_dir, pipolin: P
     include_atts_into_gb(gb_records=gb_records, genome=genome, pipolin=pipolin)
     include_atts_into_gff(gff_records=gff_records, genome=genome, pipolin=pipolin)
 
-    prokka_atts_dir = os.path.join(out_dir, 'prokka_atts')
+    prokka_atts_dir = os.path.join(out_dir, 'results')
     os.makedirs(prokka_atts_dir, exist_ok=True)
 
     write_genbank_records(gb_records=gb_records, out_dir=prokka_atts_dir, genome=genome)

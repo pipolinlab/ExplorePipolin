@@ -103,13 +103,13 @@ The output directory will contain several folders:
  
  | Folder | Content description |
  |--------|---------------------|
- | `polb_blast` | BLAST results of searching for the "reference" piPolB |
- | `att_blast` | BLAST results of searching for the "reference" att |
- | `atts_denovo` | Results of *de novo* search of atts |
- | `aragorn_results` | Results of searching for tRNAs/tmRNAs using ARAGORN |
+ | `pipolbs_search` | BLAST search results for piPolB genes |
+ | `atts_search` | BLAST search results for the known *att* sites |
+ | `atts_denovo_search` | Results of *att* sites *de novo* search |
+ | `trnas_search` | ARAGORN search results for tRNAs/tmRNAs |
  | `pipolin_sequences` | extracted pipolin sequences in FASTA format |
- | `prokka` | Prokka's annotation pipeline output (check files description [here](https://github.com/tseemann/prokka/blob/master/README.md#output-files))|
- | `prokka_atts` | Since Prokka doesn't find atts, att features are added separately to the annotation files (.gbk and .gff) |
+ | `prokka_results` | Prokka annotation results (check files description [here](https://github.com/tseemann/prokka/blob/master/README.md#output-files))|
+ | `results` | GenBank and GFF annotation results with the *att*s included, log files |
 
 
 # Running with Docker
