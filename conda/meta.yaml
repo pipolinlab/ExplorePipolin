@@ -24,7 +24,6 @@ requirements:
     - bcbio-gff
     - prefect
     - blast
-    - entrez-direct
     - aragorn
     - prokka
 

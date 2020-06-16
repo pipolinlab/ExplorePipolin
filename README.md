@@ -27,8 +27,6 @@ phyla and mitochondria.
 # Requirements
 
  * pip
- * [Entrez Direct](https://www.ncbi.nlm.nih.gov/books/NBK179288/) 
- (not required to run the main script)
  * [BLAST+](https://www.ncbi.nlm.nih.gov/books/NBK279690/)
  * [ARAGORN](https://github.com/TheSEED/aragorn)
  * [Prokka](https://github.com/tseemann/prokka)

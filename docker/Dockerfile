@@ -1,7 +1,6 @@
 FROM debian:buster
 
 RUN apt-get update && apt-get install -y \
-    ncbi-entrez-direct \
     ncbi-blast+ \
     aragorn \
     python3-pip \

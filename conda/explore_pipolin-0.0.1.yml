@@ -33,7 +33,6 @@ dependencies:
   - distributed=2.16.0=py36h9f0ad1d_0
   - docker-py=4.2.0=py36h9f0ad1d_1
   - docker-pycreds=0.4.0=py_0
-  - entrez-direct=13.3=pl526h375a9b1_0
   - expat=2.2.9=he1b5a44_2
   - fontconfig=2.13.1=h1056068_1002
   - freetype=2.10.2=he06d7ca_0
