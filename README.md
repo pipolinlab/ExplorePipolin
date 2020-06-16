@@ -105,7 +105,7 @@ The output directory will contain several folders:
  |--------|---------------------|
  | `pipolbs_search` | BLAST search results for piPolB genes |
  | `atts_search` | BLAST search results for the known *att* sites |
- | `atts_denovo_search` | Results of *att* sites *de novo* search |
+ | `atts_denovo_search` | Results of *de novo* search for *att* sites |
  | `trnas_search` | ARAGORN search results for tRNAs/tmRNAs |
  | `pipolin_sequences` | extracted pipolin sequences in FASTA format |
  | `prokka_results` | Prokka annotation results (check files description [here](https://github.com/tseemann/prokka/blob/master/README.md#output-files))|
@@ -124,38 +124,3 @@ sudo docker run --rm explore_pipolin -h
 sudo docker run --rm -v $(pwd):/output -w /output explore_pipolin 
  --out-dir output ./input_genomes/*.fa   #(example run)
 ```
-
-
-<!---
-Prediction of ATTs:
-
- 1. Prepared ATT sequences with `prepare_atts_for_msa.py`
- ```
-The total number of atts is 198
-> Maximum att length is 132
-> Minimum att length is 121
-```
- 1. Built a MSA with att sequences using MAFFT, MUSCLE
- and T-Coffee (https://www.ebi.ac.uk/Tools/msa). 
- The output format -- Pearson FASTA, otherwise long
- sequence names might be truncated.
- 1. Compared the alignments. Modified them, using 
- Jalview: deleted not conserved regions from both ends.
- 1. Created HMM profile with `hmmbuild` and `hmmpress`.
-
-
-To extract the subsequence from a genome:
- * `get_subsequence.py`
- 
- `$ get_subsequence.py genomes/NZ_JNMI01000006.1.fa 80191 82792 pi-polB.fa`
- 
- `$ get_subsequence.py genomes/NZ_JNMI01000006.1.fa 64241 64373 attL.fa`
-
- `$ get_subsequence.py genome/NZ_JNMI010000006.1.fa 90094 90008 tRNA.fa`
-
- For Saskia's strains: 
- * `edit_contig_names.sh <in-dir>` -- to shorten the long contig names
-
-To get the sequences from roary groups:
- * `extract_roary_groups.py`
--->
