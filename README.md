@@ -22,7 +22,6 @@ phyla and mitochondria.
 * [Quick usage](#quick-usage)
     * [Test run](#test-run)
     * [Output files](#output-files)
-    * [Additional scripts](#additional-scripts)
 * [Running with Docker](#running-with-docker)
 
 # Requirements
@@ -114,15 +113,6 @@ The output directory will contain several folders:
  | `prokka` | Prokka's annotation pipeline output (check files description [here](https://github.com/tseemann/prokka/blob/master/README.md#output-files))|
  | `prokka_atts` | Since Prokka doesn't find atts, att features are added separately to the annotation files (.gbk and .gff) |
 
-### Additional scripts
-
-TODO: install as console scripts
-
- * `download_metadata_ncbi.py` -- downloads the metadata for the analysed 
- genomes, such as accessions, organism and strain names
- * `download_genomes_ncbi.py` -- downloads genome (chromosome) sequences 
- given NCBI assembly accession (i.e. for a non-complete genome, it 
- downloads all its contigs)
 
 # Running with Docker
 
