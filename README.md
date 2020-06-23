@@ -35,8 +35,8 @@ phyla and mitochondria.
 ### Install from source
 
  1. Install the requirements (see above).
- 1. TODO: `wget <from_release>`
- 1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master` 
+ 1. `wget https://github.com/liubovch/ExplorePipolin/archive/0.0.a1.zip`
+ 1. `unzip 0.0.a1.zip && cd ExplorePipolin-0.0.a1` 
  1. `pip install .` (install in user site-package) or
  `sudo pip install .` (requires superuser privileges)
  
@@ -59,23 +59,23 @@ NOTE: before installing, it is possible to run unit tests:
  * Create a new environment that is specific for ExplorePipolin. You can 
  choose whatever name you'd like for the environment.
  
- `wget github/TODO/explore_pipolin-0.0.1.yml`
+ `wget https://github.com/liubovch/ExplorePipolin/releases/download/0.0.a1/explore-pipolin-0.0.a1-py_0.yml`
  
- `conda env create -n ExplorePipolin-0.0.1 --file explore_pipolin-0.0.1.yml`
+ `conda env create -n ExplorePipolin-0.0.a1 --file explore-pipolin-0.0.a1-py_0.yml`
  
  * Download and install ExplorePipolin into the created environment:
  
- `wget github/TODO/explore-pipolin-0.0.1-py_0.tar.bz2`
+ `wget https://github.com/liubovch/ExplorePipolin/releases/download/0.0.a1/explore-pipolin-0.0.a1-py_0.tar.bz2`
  
- `conda install -n ExplorePipolin-0.0.1 explore-pipolin-0.0.1-py_0.tar.bz2`
+ `conda install -n ExplorePipolin-0.0.a1 explore-pipolin-0.0.a1-py_0.tar.bz2`
  
   * Clean up (optional):
  
- `rm explore_pipolin-0.0.1.yml explore-pipolin-0.0.1-py_0.tar.bz2`
+ `rm explore-pipolin-0.0.a1-py_0.yml explore-pipolin-0.0.a1-py_0.tar.bz2`
  
  * Activate the environment and check the installation:
  
- `conda activate ExplorePipolin-0.0.1`
+ `conda activate ExplorePipolin-0.0.a1`
  
  `explore_pipolin -h`
 
@@ -97,8 +97,6 @@ Options:
   --out-dir PATH  [required]
   -h, --help      Show this message and exit.
 ```
-
-TODO: test run.
 
 ### Output files
 
