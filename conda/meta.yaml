@@ -10,19 +10,19 @@ build:
 
 requirements:
   build:
-    - python >=3.6
+    - python >=3.7
     - setuptools
     - click
-    - biopython
+    - biopython <=1.76
     - bcbio-gff
-    - prefect
+    - prefect >=0.11.5
 
   run:
-    - python >=3.6
+    - python >=3.7
     - click
-    - biopython
+    - biopython <=1.76
     - bcbio-gff
-    - prefect
+    - prefect >=0.11.5
     - blast
     - aragorn
     - prokka
