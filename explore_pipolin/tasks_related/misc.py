@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType
 
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 from collections import defaultdict
 from enum import Enum, auto
@@ -77,7 +75,7 @@ class Feature:
         if self.end > self.contig.contig_length:
             raise AssertionError('Feature end cannot be greater than contig length!')
 
-    def is_overlapping(self, other: Feature) -> bool:
+    def is_overlapping(self, other) -> bool:
         max_start = max(self.start, other.start)
         min_end = min(self.end, other.end)
         return max_start <= min_end
@@ -86,7 +84,7 @@ class Feature:
     def contig(self):
         return self.genome.get_contig_by_id(self.contig_id)
 
-    def shift(self: Feature, shift) -> Feature:
+    def shift(self, shift):
         return Feature(self.start + shift, self.end + shift, self.strand, self.contig_id, self.genome)
 
 
@@ -159,7 +157,7 @@ class RepeatPair:
         if seq_length > left_repeat_length or seq_length > right_repeat_length:
             raise AssertionError('Repeat sequence length cannot be greater than repeat ranges!')
 
-    def shift(self, left_shift: int, right_shift: int) -> RepeatPair:
+    def shift(self, left_shift: int, right_shift: int):
         if left_shift > right_shift:
             raise AssertionError('Left shift cannot be greater than right shift!')
 
