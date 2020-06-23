@@ -35,12 +35,12 @@ phyla and mitochondria.
 ### Install from source
 
  1. Install the requirements (see above).
- 1. Click green button on the right "Clone or Download" => "Download zip"
+ 1. TODO: `wget <from_release>`
  1. `unzip ExplorePipolin-master.zip && cd ExplorePipolin-master` 
  1. `pip install .` (install in user site-package) or
  `sudo pip install .` (requires superuser privileges)
  
-NOTE: before installing, it is possible to run unittests:
+NOTE: before installing, it is possible to run unit tests:
 `pytest` or `python setup.py test` (from the source root directory).
  
 **How to uninstall:**
