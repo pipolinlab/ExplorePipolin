@@ -3,9 +3,12 @@ package:
   version: 0.0.a1
 
 source:
-  path: ..
+  git_url: https://github.com/liubovch/ExplorePipolin.git
+  git_rev: 0.0.a1
+  git_depth: 1
 
 build:
+  noarch: python
   script: {{PYTHON}} -m pip install . --no-deps
 
 requirements:
