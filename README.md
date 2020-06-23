@@ -122,7 +122,8 @@ See https://docs.docker.com/install/ to install Docker.
 **NOTE:** superuser privileges are required to run the analysis and around 3GB of disk space for the image.
 
 ```
-sudo docker pull link/TODO/to/the/image/on/DockerHub
+sudo docker pull docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.a1
+sudo docker tag docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.a1 explore_pipolin
 sudo docker run --rm explore_pipolin -h
 sudo docker run --rm -v $(pwd):/output -w /output explore_pipolin 
  --out-dir output ./input_genomes/*.fa   #(example run)
