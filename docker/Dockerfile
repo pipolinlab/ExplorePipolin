@@ -27,9 +27,8 @@ RUN wget -O /prokka.zip https://github.com/tseemann/prokka/archive/v1.14.6.zip; 
 ENV PATH="$PATH:/prokka-1.14.6/bin"
 
 # install ExplorePipolin
-COPY ExplorePipolin-master.zip .
-# TODO: replace COPY with wget when the repo is public
-RUN unzip -d / /ExplorePipolin-master.zip; rm /ExplorePipolin-master.zip; \
+RUN wget -O /ExplorePipolin-master.zip https://github.com/liubovch/ExplorePipolin/archive/master.zip; \
+    unzip -d / /ExplorePipolin-master.zip; rm /ExplorePipolin-master.zip; \
     pip3 install /ExplorePipolin-master; rm -r /ExplorePipolin-master
 
 ENTRYPOINT ["explore_pipolin"]
