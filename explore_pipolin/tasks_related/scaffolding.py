@@ -30,7 +30,7 @@ class Scaffolder:
 
                 orphan_atts = self.atts_dict[att_only_contigs[0].contig_id]
 
-                if direction == 'none':
+                if direction is None:
                     contig_length = unchangeable_contig.contig_length
                     left_edge = self.atts_dict[unchangeable_contig.contig_id][0].start - 50
                     right_edge = self.atts_dict[unchangeable_contig.contig_id][-1].end + 50
@@ -40,11 +40,11 @@ class Scaffolder:
                     pipolin.atts.extend(self.atts_dict[unchangeable_contig.contig_id])
                     return Pipolin(pipolin)
                     # TODO: if att_only_contig has a target_trna, it could be added on the right
-                elif direction == 'right':
+                if direction.RIGHT:
                     left_fragment = self._create_unchangeable_fragment(unchangeable_contig, direction)
                     right_fragment = self._create_att_contig_fragment(contig_atts=orphan_atts, direction=direction)
                     return Pipolin(left_fragment, right_fragment)
-                elif direction == 'left':
+                else:
                     left_fragment = self._create_att_contig_fragment(contig_atts=orphan_atts, direction=direction)
                     right_fragment = self._create_unchangeable_fragment(unchangeable_contig, direction)
                     return Pipolin(left_fragment, right_fragment)
@@ -61,6 +61,8 @@ class Scaffolder:
                 right_fragment = self._create_att_contig_fragment(contig_atts=right_atts, direction=Direction.RIGHT)
 
                 return Pipolin(left_fragment, middle_fragment, right_fragment)
+            else:
+                raise NotImplementedError
         elif len(unchangeable_contigs) == 2:
             target_trnas_contig0 = self.target_trnas_dict[unchangeable_contigs[0].contig_id]
             target_trnas_contig1 = self.target_trnas_dict[unchangeable_contigs[1].contig_id]
