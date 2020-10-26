@@ -10,7 +10,8 @@ setuptools.setup(
         'explore_pipolin': ['data/attL.fa', 'data/HHpred_proteins.faa', 'data/pi-polB.faa']
     },
     entry_points={
-        'console_scripts': ['explore_pipolin=explore_pipolin.main:explore_pipolin']
+        'console_scripts': ['explore_pipolin=explore_pipolin.main:explore_pipolin',
+                            'download_metadata_ncbi=explore_pipolin.download_metadata_ncbi:download_metadata_ncbi']
     },
     test_suite='tests',
     url='https://github.com/liubovch/ExplorePipolin',
