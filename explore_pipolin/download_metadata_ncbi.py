@@ -1,23 +1,12 @@
-from enum import Enum, auto
-
 import click
 import subprocess
-from Bio import SearchIO
 from explore_pipolin.common import CONTEXT_SETTINGS
 from explore_pipolin.utilities.external_tools import subprocess_with_retries
 
-# TODO: write tests!
 
-
-def get_gb_ids(acc_file, acc_type):
-    if acc_type is AccType.LIST:
-        with open(acc_file) as inf:
-            gb_ids = [line.strip() for line in inf]
-    else:
-        blast_result = SearchIO.read(acc_file, 'blast-tab', comments=True)
-        gb_ids = [i.id for i in blast_result]  # acc_ids are all unique here!
-        gb_ids.append(blast_result.id)  # add also the query id
-    return gb_ids
+def read_gb_ids(input_file):
+    with open(input_file) as inf:
+        return [line.strip() for line in inf if line != '']
 
 
 def get_assembly_info(acc_id):
@@ -68,26 +57,15 @@ def get_strain_and_acc_ids(seqs_info):
     return strain, acc_ids
 
 
-class AccType(Enum):
-    LIST = auto()
-    HITTABLE = auto()
-
-
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('acc-file', type=click.Path(exists=True))
+@click.argument('in-file', type=click.Path(exists=True))
 @click.argument('out-file', type=click.Path())
-@click.option('--acc-type', default=AccType.LIST.name.lower(), show_default=True,
-              type=click.Choice([acc.name.lower() for acc in AccType]))
-def download_metadata_ncbi(acc_file: str, out_file: str, acc_type):
+def download_metadata_ncbi(in_file, out_file):
     """
-    TODO: rewrite
-    BLAST_TAB is a tabular file (hittable or outfmt=7) that was generated when searching E. coli genomes_ecoli
-    against "reference" pi-polB from E. coli 3-373-03_S1_C2 (NZ_JNMI01000006.1). E. coli genome accessions
-    will be extracted from the file and the required metadata will be fetch from NCBI into the OUT_FILE.
+    IN_FILE -- contains a list of GenBank ids each on its own line
     NOTE: requires "ncbi-entrez-direct" package!
     """
-    acc_type = AccType[acc_type.upper()]
-    gb_ids = get_gb_ids(acc_file, acc_type)
+    gb_ids = read_gb_ids(in_file)
 
     column_names = ['AssemblyAccession', 'SpeciesName', 'Strain', 'GenBank']
 
@@ -102,10 +80,10 @@ def download_metadata_ncbi(acc_file: str, out_file: str, acc_type):
 
             print('\t'.join([assembly_acc, species_name, strain, ','.join(acc_ids)]), file=ouf)
 
-    # # add the info about LREC strains
-    # metadata.append(Metadata('chr_LREC237', 'Escherichia coli', 'LREC237', '-'))
-    # for i in range(239, 263):
-    #     metadata.append(Metadata(f'chr_LREC{i}', 'Escherichia coli', f'LREC{i}', '-'))
+        # # add the info about LREC strains
+        # print('\t'.join('chr_LREC237', 'Escherichia coli', 'LREC237', '-'), file=ouf)
+        # for i in range(239, 263):
+        #     print('\t'.join(f'chr_LREC{i}', 'Escherichia coli', f'LREC{i}', '-'))
 
 
 if __name__ == '__main__':

@@ -6,8 +6,6 @@ from io import StringIO
 from explore_pipolin.common import CONTEXT_SETTINGS
 from explore_pipolin.utilities.external_tools import subprocess_with_retries
 
-# TODO: write tests!
-
 
 def read_metadata_file(metadata_file):
     with open(metadata_file) as inf:
@@ -47,9 +45,9 @@ def download_genomes_ncbi(metadata_file, out_dir):
     """
     os.makedirs(out_dir, exist_ok=True)
     metadata_file_lines = read_metadata_file(metadata_file=metadata_file)
-    strain_names, gb_ids = get_strain_names_and_gb_ids(metadata_file_lines=metadata_file_lines)
+    strains, gb_ids = get_strain_names_and_gb_ids(metadata_file_lines=metadata_file_lines)
 
-    for strain, gb in zip(strain_names, gb_ids):
+    for strain, gb in zip(strains, gb_ids):
         print(f'>>> Downloading sequences for the strain {strain}')
         seqs = download_genome_seqs(gb_ids=gb)
         with open(os.path.join(out_dir, strain + '.fa'), 'w') as ouf:
