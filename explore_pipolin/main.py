@@ -7,8 +7,7 @@ from explore_pipolin.flow import get_flow
 
 from explore_pipolin.utilities.external_tools import check_aragorn, check_blast, check_prokka
 from explore_pipolin.utilities.logging import set_logging_dir
-
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+from explore_pipolin.common import CONTEXT_SETTINGS
 
 
 def check_external_dependencies():

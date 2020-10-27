@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+from time import sleep
 
 
 def check_blast():
@@ -62,3 +63,18 @@ def blastn_against_ref_att(genome_file, ref_att, output_file):
     with open(output_file, 'w') as ouf:
         subprocess.run(['blastn', '-query', ref_att, '-subject', genome_file, '-evalue', '0.1', '-outfmt', '5'],
                        stdout=ouf)
+
+
+def subprocess_with_retries(*args, **kwargs):
+    num_retries = 5
+    sleep_time = 0.5
+    for i in range(num_retries):
+        proc = subprocess.run(*args, **kwargs)
+        try:
+            proc.check_returncode()
+            return proc
+        except subprocess.CalledProcessError:
+            print('FAILED to retrieve the data! Trying again...')
+            sleep(sleep_time)
+            sleep_time = sleep_time * 2
+            continue

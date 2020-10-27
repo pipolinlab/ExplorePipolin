@@ -12,7 +12,7 @@ setuptools.setup(
     entry_points={
         'console_scripts': ['explore_pipolin=explore_pipolin.main:explore_pipolin',
                             'download_metadata_ncbi=explore_pipolin.download_metadata_ncbi:download_metadata_ncbi',
-                            'download_genomes_ncbi=explore_pipolin.download_genomes_ncbi:main']
+                            'download_genomes_ncbi=explore_pipolin.download_genomes_ncbi:download_genomes_ncbi']
     },
     test_suite='tests',
     url='https://github.com/liubovch/ExplorePipolin',

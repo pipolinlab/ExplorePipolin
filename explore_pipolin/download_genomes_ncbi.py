@@ -3,10 +3,10 @@ import click
 import subprocess
 from Bio import SeqIO
 from io import StringIO
+from explore_pipolin.common import CONTEXT_SETTINGS
+from explore_pipolin.utilities.external_tools import subprocess_with_retries
 
 # TODO: write tests!
-
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 def read_metadata_file(metadata_file):
@@ -24,13 +24,12 @@ def get_strain_names_and_gb_ids(metadata_file_lines):
 
 def download_genome_seqs(gb_ids):
     seqs = []
-    seqs_batch_request = subprocess.run(['epost', '-id', gb_ids, '-db', 'nucleotide'],
-                                        input='', stdout=subprocess.PIPE)
-    seqs_batch_fetched = subprocess.run(['efetch', '-format', 'fasta'], input=seqs_batch_request.stdout,
-                                        stdout=subprocess.PIPE)
+    seqs_batch_request = subprocess_with_retries(['epost', '-id', gb_ids, '-db', 'nucleotide'],
+                                                 input='', stdout=subprocess.PIPE)
+    seqs_batch_fetched = subprocess_with_retries(['efetch', '-format', 'fasta'], input=seqs_batch_request.stdout,
+                                                 stdout=subprocess.PIPE)
     seqs.extend(SeqIO.parse(StringIO(seqs_batch_fetched.stdout.decode(encoding='UTF8')), format='fasta'))
 
-    # TODO: rewrite: number of retries
     if len(gb_ids.split(sep=',')) != len(seqs):
         raise AssertionError('The number of downloaded sequences (contigs) is wrong!!!')
 

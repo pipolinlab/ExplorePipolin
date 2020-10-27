@@ -4,6 +4,9 @@ from enum import Enum, auto
 from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List
 
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
 class Orientation(Enum):
     FORWARD = auto()
     REVERSE = auto()
