@@ -5,6 +5,8 @@ import subprocess
 from Bio import SearchIO
 
 
+# TODO: write tests!
+
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
@@ -79,7 +81,7 @@ class AccType(Enum):
 def download_metadata_ncbi(acc_file: str, out_file: str, acc_type):
     """
     TODO: rewrite
-    BLAST_TAB is a tabular file (hittable or outfmt=7) that was generated when searching E. coli genomes
+    BLAST_TAB is a tabular file (hittable or outfmt=7) that was generated when searching E. coli genomes_ecoli
     against "reference" pi-polB from E. coli 3-373-03_S1_C2 (NZ_JNMI01000006.1). E. coli genome accessions
     will be extracted from the file and the required metadata will be fetch from NCBI into the OUT_FILE.
     NOTE: requires "ncbi-entrez-direct" package!
@@ -94,7 +96,7 @@ def download_metadata_ncbi(acc_file: str, out_file: str, acc_type):
         for num, blast_id in enumerate(gb_ids):
 
             print(f'{num + 1} Fetching metadata for {blast_id}...')
-            # TODO: rewrite retries
+            # TODO: rewrite: independent retry for each query
             num_retries = 5
             for i in range(num_retries):
                 try:
