@@ -65,17 +65,25 @@ def blastn_against_ref_att(genome_file, ref_att, output_file):
                        stdout=ouf)
 
 
+class EmptyResult(Exception):
+    pass
+
+
 def subprocess_with_retries(*args, **kwargs):
     num_retries = 5
     sleep_time = 0.5
     for i in range(num_retries):
         proc = subprocess.run(*args, **kwargs)
+
         try:
             proc.check_returncode()
             return proc
         except subprocess.CalledProcessError:
-            print('FAILED to retrieve the data! Trying again...')
+            if 'Empty result - nothing to do' in proc.stdout:
+                raise EmptyResult
+            print('FAILED to retrieve the data! Retrying ...')
             sleep(sleep_time)
             sleep_time = sleep_time * 2
             continue
-    print('Maximum number of tries is exceeded. FAILED to download the data!!!')
+
+    print('FAILED!!! Maximum number of retries is exceeded.')

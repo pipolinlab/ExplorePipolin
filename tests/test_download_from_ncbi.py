@@ -20,7 +20,7 @@ class DownloadFromNCBITestCase(unittest.TestCase):
         self.gb_id = 'CP019051.1'
 
     def test_entrez(self):
-        assembly_info = get_assembly_info(acc_id=self.gb_id)
+        assembly_info = get_assembly_info(gb_id=self.gb_id)
         assembly_acc, species_name = get_assembly_acc_and_species_name(assembly_info)
         seqs_info = get_and_filter_seqs_info(assembly_info)
         strain, acc_ids = get_strain_and_acc_ids(seqs_info)
