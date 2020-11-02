@@ -69,6 +69,10 @@ class EmptyResult(Exception):
     pass
 
 
+class NoAssembly(Exception):
+    pass
+
+
 def subprocess_with_retries(*args, **kwargs):
     num_retries = 5
     sleep_time = 0.5
@@ -81,6 +85,8 @@ def subprocess_with_retries(*args, **kwargs):
         except subprocess.CalledProcessError:
             if 'Empty result - nothing to do' in proc.stdout:
                 raise EmptyResult
+            if 'Query failed on MegaLink server' in proc.stdout:
+                raise NoAssembly
             print('FAILED to retrieve the data! Retrying ...')
             sleep(sleep_time)
             sleep_time = sleep_time * 2

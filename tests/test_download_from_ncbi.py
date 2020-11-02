@@ -4,7 +4,7 @@ import tempfile
 from explore_pipolin.download_metadata_ncbi import read_gb_ids
 from explore_pipolin.download_metadata_ncbi import get_assembly_info
 from explore_pipolin.download_metadata_ncbi import get_assembly_acc_and_species_name
-from explore_pipolin.download_metadata_ncbi import get_and_filter_seqs_info
+from explore_pipolin.download_metadata_ncbi import get_and_filter_assembly_info
 from explore_pipolin.download_metadata_ncbi import get_strain_and_acc_ids
 
 from explore_pipolin.download_genomes_ncbi import download_genome_seqs
@@ -22,7 +22,7 @@ class DownloadFromNCBITestCase(unittest.TestCase):
     def test_entrez(self):
         assembly_info = get_assembly_info(gb_id=self.gb_id)
         assembly_acc, species_name = get_assembly_acc_and_species_name(assembly_info)
-        seqs_info = get_and_filter_seqs_info(assembly_info)
+        seqs_info = get_and_filter_assembly_info(assembly_info)
         strain, acc_ids = get_strain_and_acc_ids(seqs_info)
 
         self.assertEqual(assembly_acc, self.assembly)
