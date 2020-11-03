@@ -1,5 +1,6 @@
 import unittest
 import tempfile
+import os
 
 from explore_pipolin.download_metadata_ncbi import read_gb_ids
 from explore_pipolin.download_metadata_ncbi import get_assembly_info
@@ -9,7 +10,7 @@ from explore_pipolin.download_metadata_ncbi import get_strain_and_acc_ids
 
 from explore_pipolin.download_genomes_ncbi import download_genome_seqs
 from explore_pipolin.download_genomes_ncbi import read_metadata_file
-from explore_pipolin.download_genomes_ncbi import get_strain_names_and_gb_ids
+from explore_pipolin.download_genomes_ncbi import extract_data
 
 
 class DownloadFromNCBITestCase(unittest.TestCase):
@@ -40,12 +41,14 @@ class DownloadFromNCBITestCase(unittest.TestCase):
         self.assertEqual(ids, ['LKJH12345', 'POIU_09876'])
 
     def test_read_metadata_file(self):
-        in_line = '\t'.join([self.assembly, self.species, self.strain, self.gb_id])
+        in_line = '\t'.join([self.gb_id, self.assembly, self.species, self.strain, str(False), self.gb_id])
         with tempfile.NamedTemporaryFile('w') as inf:
             print(f'header\n{in_line}', file=inf)
             inf.flush()
             out_line = read_metadata_file(metadata_file=inf.name)
 
-        strains, gb_ids = get_strain_names_and_gb_ids(out_line)
+        assembly_accs, strains, is_plasmid, gb_ids = extract_data(out_line)
         self.assertEqual(strains, [self.strain])
         self.assertEqual(gb_ids, [self.gb_id])
+        self.assertEqual(assembly_accs, [self.assembly])
+        self.assertEqual(is_plasmid, [str(False)])
