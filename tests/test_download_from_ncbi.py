@@ -20,13 +20,13 @@ class DownloadFromNCBITestCase(unittest.TestCase):
         self.gb_id = 'CP019051.1'
 
     def test_entrez(self):
-        assembly_info = get_assembly_info(gb_id=self.gb_id)
+        assembly_info, is_plasmid, title = get_assembly_info(gb_id=self.gb_id, id_type='nucleotide')
         assembly_acc, species_name = get_assembly_acc_and_species_name(assembly_info)
-        seqs_info = get_and_filter_assembly_info(assembly_info)
+        seqs_info = get_and_filter_assembly_info(self.assembly, is_plasmid, title)
         strain, acc_ids = get_strain_and_acc_ids(seqs_info)
 
-        self.assertEqual(assembly_acc, self.assembly)
-        self.assertEqual(species_name, self.species)
+        self.assertEqual(assembly_acc[0], self.assembly)
+        self.assertEqual(species_name[0], self.species)
         self.assertEqual(strain, self.strain)
         self.assertEqual(acc_ids, [self.gb_id])
 

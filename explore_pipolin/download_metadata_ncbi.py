@@ -14,7 +14,7 @@ def read_gb_ids(input_file):
         return [line.strip() for line in inf if line != '']
 
 
-def get_assembly_info(gb_id, id_type):
+def get_assembly_info(gb_id, id_type) -> Tuple[str, bool, str]:
     if id_type == 'nucleotide':
         id_info = subprocess_with_retries(['esearch', '-db', 'nuccore', '-query', f'{gb_id}'],
                                           text=True, input='', stdout=subprocess.PIPE)
@@ -62,7 +62,7 @@ def get_assembly_acc_and_species_name(assembly_info: str) -> Tuple[Sequence, Seq
             raise NotImplementedError
 
 
-def get_and_filter_assembly_info(assembly_acc, is_plasmid, title):
+def get_and_filter_assembly_info(assembly_acc, is_plasmid, title) -> str:
     assembly = subprocess_with_retries(['esearch', '-db', 'assembly', '-query', assembly_acc],
                                        text=True, input='', stdout=subprocess.PIPE)
     assembly_info = subprocess_with_retries(['elink', '-target', 'nucleotide', '-name', 'assembly_nuccore_insdc'],

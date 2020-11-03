@@ -83,9 +83,9 @@ def subprocess_with_retries(*args, **kwargs):
             proc.check_returncode()
             return proc
         except subprocess.CalledProcessError:
-            if 'Empty result - nothing to do' in proc.stdout:
+            if proc.stdout is not None and 'Empty result - nothing to do' in proc.stdout:
                 raise EmptyResult
-            if 'Query failed on MegaLink server' in proc.stdout:
+            if proc.stdout is not None and 'Query failed on MegaLink server' in proc.stdout:
                 raise NoAssembly
             print('FAILED to retrieve the data! Retrying ...')
             sleep(sleep_time)
