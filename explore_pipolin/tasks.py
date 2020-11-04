@@ -92,7 +92,10 @@ def find_trnas(genome: Genome, out_dir) -> Genome:
 def add_trna_features_from_aragorn_entries(entries, genome: Genome):
     for contig_id, hits in entries.items():
         for hit in hits:
-            trna_feature = Feature(start=hit[0], end=hit[1], strand=hit[2], contig_id=contig_id, genome=genome)
+            # "correct strange coordinates in -l mode" as in Prokka
+            start = max(hit[0], 1)
+            end = min(hit[1], genome.get_contig_by_id(contig_id=contig_id).contig_length)
+            trna_feature = Feature(start=start, end=end, strand=hit[2], contig_id=contig_id, genome=genome)
             genome.features.add_feature(feature=trna_feature, feature_type=FeatureType.TRNA)
 
 
@@ -162,7 +165,7 @@ def are_atts_present(genome: Genome) -> Genome:
     num_atts_denovo = len(genome.features.get_features(FeatureType.ATT_DENOVO))
     if num_atts == 0 and num_atts_denovo == 0:
         logger.warning('\n\n>>>There is piPolB, but no atts were found! Not able to define pipolin bounds!\n')
-        # TODO: probably, it makes sense to output piPolB(s) alone
+        # TODO: probably, it makes sense to output_ecoli piPolB(s) alone
 
     elif len(genome.features.get_features(FeatureType.ATT)) == 0:
         logger.warning(f'\n\n>>>No "usual" atts were found, but some atts were found by denovo search!'
