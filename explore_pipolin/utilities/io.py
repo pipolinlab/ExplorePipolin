@@ -103,3 +103,20 @@ def write_atts_denovo(atts_denovo: Sequence[Feature], genome: Genome, atts_denov
         print('att_start', 'att_end', sep='\t', file=ouf)
         for att in atts_denovo:
             print(att.start, att.end, sep='\t', file=ouf)
+
+
+def create_pipolb_entries(hmmsearch_table, proteins_file):
+    hit_names = []
+    with open(hmmsearch_table) as inf:
+        for line in inf:
+            if line[0] != '#':
+                entry = line.strip().split()
+                hit_names.append(entry[0])
+
+    proteins = SeqIO.to_dict(SeqIO.parse(handle=proteins_file, format='fasta'))
+    entries = []
+    for hit in hit_names:
+        description = proteins[hit].description.split(sep=' ')
+        entries.append((hit.split(sep='_')[0], int(description[2]), int(description[4]), int(description[6])))
+
+    return entries

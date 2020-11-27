@@ -7,7 +7,7 @@ setuptools.setup(
     install_requires=['click', 'biopython <= 1.76', 'bcbio-gff', 'prefect >= 0.11.5'],
     python_requires='>=3.6',
     package_data={
-        'explore_pipolin': ['data/attL.fa', 'data/HHpred_proteins.faa', 'data/pi-polB.faa']
+        'explore_pipolin': ['data']
     },
     entry_points={
         'console_scripts': ['explore_pipolin=explore_pipolin.main:explore_pipolin',

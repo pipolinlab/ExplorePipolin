@@ -13,15 +13,15 @@ from typing import Any, Optional, Sequence
 
 from explore_pipolin.tasks_related.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, Genome, \
-    define_genome_id, FeaturesContainer
+    define_genome_id, FeaturesContainer, Orientation
 from explore_pipolin.utilities.logging import genome_specific_logging
 from explore_pipolin.tasks_related.misc import join_it, get_contig_orientation, \
     is_single_target_trna_per_contig, add_features_from_blast_entries
-from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo
+from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo, create_pipolb_entries
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
 from explore_pipolin.tasks_related.atts_denovo_search import find_repeats, is_att_denovo
-from explore_pipolin.utilities.external_tools import tblastn_against_ref_pipolb, blastn_against_ref_att
+from explore_pipolin.utilities.external_tools import blastn_against_ref_att, run_prodigal, run_hmmsearch
 from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
 from explore_pipolin.tasks_related.misc import create_fragment_record
 from explore_pipolin.utilities.io import read_gff_records
@@ -32,8 +32,6 @@ from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities.io import read_genome_contigs_from_file
 from explore_pipolin.tasks_related.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
 
-# _REF_PIPOLB_HMM = pkg_resources.resource_filename('explore_pipolin', 'data/pipolb_nucl.hmm')
-_REF_PIPOLB = pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB.faa')
 _REF_ATT = pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa')
 
 
@@ -47,14 +45,19 @@ def create_genome(genome_file) -> Genome:
 @task
 @genome_specific_logging
 def find_pipolbs(genome: Genome, out_dir) -> Genome:
-    blast_results_dir = os.path.join(out_dir, 'pipolbs_search')
-    os.makedirs(blast_results_dir, exist_ok=True)
+    results_dir = os.path.join(out_dir, 'pipolbs_search')
+    os.makedirs(results_dir, exist_ok=True)
 
-    output_file = os.path.join(blast_results_dir, genome.genome_id) + '.fmt5'
-    tblastn_against_ref_pipolb(genome_file=genome.genome_file, ref_pipolb=_REF_PIPOLB, output_file=output_file)
-    entries = read_blastxml(blast_xml=output_file)
+    prodigal_output_file = os.path.join(results_dir, genome.genome_id + '.faa')
+    run_prodigal(genome_file=genome.genome_file, output_file=prodigal_output_file)
+    hmm_output_file = os.path.join(results_dir, genome.genome_id + '.tbl')
+    run_hmmsearch(proteins=prodigal_output_file, output_file=hmm_output_file)
 
-    add_features_from_blast_entries(entries=entries, feature_type=FeatureType.PIPOLB, genome=genome)
+    entries = create_pipolb_entries(hmmsearch_table=hmm_output_file, proteins_file=prodigal_output_file)
+    for entry in entries:
+        feature = Feature(start=entry[1], end=entry[2], strand=Orientation.orientation_from_blast(entry[3]),
+                          contig_id=entry[0], genome=genome)
+        genome.features.add_feature(feature=feature, feature_type=FeatureType.PIPOLB)
 
     return genome
 
