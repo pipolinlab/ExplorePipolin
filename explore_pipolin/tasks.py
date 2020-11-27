@@ -32,6 +32,7 @@ from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities.io import read_genome_contigs_from_file
 from explore_pipolin.tasks_related.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
 
+# _REF_PIPOLB_HMM = pkg_resources.resource_filename('explore_pipolin', 'data/pipolb_nucl.hmm')
 _REF_PIPOLB = pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB.faa')
 _REF_ATT = pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa')
 
