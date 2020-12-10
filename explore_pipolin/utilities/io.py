@@ -117,6 +117,7 @@ def create_pipolb_entries(hmmsearch_table, proteins_file):
     entries = []
     for hit in hit_names:
         description = proteins[hit].description.split(sep=' ')
-        entries.append((hit.split(sep='_')[0], int(description[2]), int(description[4]), int(description[6])))
+        hit_name = '_'.join(hit.split(sep='_')[:-1])
+        entries.append((hit_name, int(description[2]), int(description[4]), int(description[6])))
 
     return entries
