@@ -5,6 +5,7 @@ from time import sleep
 import pkg_resources
 
 _PIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/pipolb_expanded_definitive.hmm')
+_NOPIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/nopipolb_expanded_definitive.hmm')
 
 
 def check_blast():
@@ -103,6 +104,10 @@ def run_prodigal(genome_file, output_file):
                    stdout=subprocess.DEVNULL)
 
 
-def run_hmmsearch(proteins, output_file):
-    subprocess.run(['hmmsearch', '--tblout', output_file, '-E', '0.01', _PIPOLB_HMM_PROFILE, proteins],
-                   stdout=subprocess.DEVNULL)
+def run_hmmsearch(proteins, output_file, is_pipolb=True):
+    if is_pipolb:
+        subprocess.run(['hmmsearch', '--tblout', output_file, '-E', '0.01', _PIPOLB_HMM_PROFILE, proteins],
+                       stdout=subprocess.DEVNULL)
+    else:
+        subprocess.run(['hmmsearch', '--tblout', output_file, '-E', '0.01', _NOPIPOLB_HMM_PROFILE, proteins],
+                       stdout=subprocess.DEVNULL)

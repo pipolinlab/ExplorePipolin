@@ -1,6 +1,6 @@
 import os
 from collections import defaultdict
-from typing import MutableMapping, MutableSequence, Sequence
+from typing import MutableMapping, MutableSequence, Sequence, Tuple
 
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
@@ -105,7 +105,7 @@ def write_atts_denovo(atts_denovo: Sequence[Feature], genome: Genome, atts_denov
             print(att.start, att.end, sep='\t', file=ouf)
 
 
-def create_pipolb_entries(hmmsearch_table, proteins_file):
+def create_pipolb_entries(hmmsearch_table, proteins_file) -> Sequence[Tuple[str, int, int, int]]:
     hit_names = []
     with open(hmmsearch_table) as inf:
         for line in inf:
