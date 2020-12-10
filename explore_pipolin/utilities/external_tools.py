@@ -3,6 +3,7 @@ import os
 import subprocess
 from time import sleep
 import pkg_resources
+from Bio import SeqIO
 
 _PIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/pipolb_expanded_definitive.hmm')
 _NOPIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/nopipolb_expanded_definitive.hmm')
@@ -99,8 +100,17 @@ def subprocess_with_retries(*args, **kwargs):
     print('FAILED!!! Maximum number of retries is exceeded.')
 
 
+def is_long_enough(genome_file):
+    records = SeqIO.parse(handle=genome_file, format='fasta')
+    length = 0
+    for record in records:
+        length += len(record.seq)
+    return True if length >= 100000 else False
+
+
 def run_prodigal(genome_file, output_file):
-    subprocess.run(['prodigal', '-c', '-m', '-q', '-a', output_file, '-i', genome_file],
+    mode = 'single' if is_long_enough(genome_file) else 'meta'
+    subprocess.run(['prodigal', '-c', '-m', '-q', '-p', mode, '-a', output_file, '-i', genome_file],
                    stdout=subprocess.DEVNULL)
 
 
