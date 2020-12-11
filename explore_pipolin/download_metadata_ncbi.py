@@ -142,6 +142,11 @@ def download_metadata_ncbi(in_file, out_file, id_type, ncbi_api_key):
                 print('\t'.join([gb_id, message]), file=ouf)
                 print(message)
                 continue
+            except NoAssembly:
+                message = f'Cannot download assembly info for {gb_id}!!!'
+                print('\t'.join([gb_id, message]), file=ouf)
+                print(message)
+                continue
 
         # # add the info about LREC strains
         # print('\t'.join('chr_LREC237', 'Escherichia coli', 'LREC237', '-'), file=ouf)
