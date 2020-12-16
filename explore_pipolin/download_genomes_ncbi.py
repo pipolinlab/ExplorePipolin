@@ -66,10 +66,10 @@ def download_genomes_ncbi(metadata_file, out_dir, ncbi_api_key):
         print(f'>>> Downloading sequences for the assembly {assembly_acc}')
         seqs = download_genome_seqs(gb_ids=gb)
         if is_plasmid == 'True':
-            with open(os.path.join(plasmids_dir, assembly_acc + '_' + strain + '.fa'), 'w') as ouf:
+            with open(os.path.join(plasmids_dir, assembly_acc + '.fa'), 'w') as ouf:
                 SeqIO.write(seqs, ouf, format='fasta')
         else:
-            with open(os.path.join(out_dir, assembly_acc + '_' + strain + '.fa'), 'w') as ouf:
+            with open(os.path.join(out_dir, assembly_acc + '.fa'), 'w') as ouf:
                 SeqIO.write(seqs, ouf, format='fasta')
 
 
