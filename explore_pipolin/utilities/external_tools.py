@@ -44,7 +44,7 @@ def blast_for_repeats(genome_id, repeats_dir):
     with open(os.path.join(repeats_dir, genome_id + '.fmt5'), 'w') as ouf:
         subprocess.run(['blastn', '-query', os.path.join(repeats_dir, genome_id + '.left'),
                         '-subject', os.path.join(repeats_dir, genome_id + '.right'),
-                        '-outfmt', '5', '-perc_identity', '100', '-word_size', '6',
+                        '-outfmt', '5', '-perc_identity', '90', '-word_size', '6',
                         '-strand', 'plus'], stdout=ouf)
 
 

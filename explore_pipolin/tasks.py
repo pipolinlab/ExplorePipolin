@@ -170,8 +170,8 @@ def are_atts_present(genome: Genome) -> Genome:
 
     elif len(genome.features.get_features(FeatureType.ATT)) == 0:
         logger.warning(f'\n\n>>>No "usual" atts were found, but some atts were found by denovo search!'
-                       f'For more details, check the {genome.genome_id}.atts file '
-                       f'in the atts_denovo directory!\n')
+                       f'For more details, check the {genome.genome_id}.atts_denovo file '
+                       f'in the atts_denovo_search directory!\n')
         # TODO: check that it's only one repeat! Although, this shouldn't be a problem.
         atts_frames = [att.strand for att in genome.features.get_features(FeatureType.ATT_DENOVO)]
         if len(set(atts_frames)) != 1:

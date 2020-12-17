@@ -35,5 +35,6 @@ def _extract_repeats(file: str, genome: Genome) -> Sequence[RepeatPair]:
                                   contig_id=genome.get_complete_genome_contig_id(), genome=genome)
             right_repeat = Feature(start=hit.hit_start, end=hit.hit_end, strand=Orientation.FORWARD,
                                    contig_id=genome.get_complete_genome_contig_id(), genome=genome)
-            repeats.append(RepeatPair(left=left_repeat, right=right_repeat, seq=str(hit.hit.seq)))
+            repeats.append(RepeatPair(left=left_repeat, right=right_repeat,
+                                      left_seq=str(hit.query.seq.ungap("-")), right_seq=str(hit.hit.seq.ungap("-"))))
     return repeats

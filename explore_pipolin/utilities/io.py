@@ -89,13 +89,13 @@ def write_repeats(genome: Genome, repeats: Sequence[RepeatPair], out_dir: str):
     with open(os.path.join(out_dir, genome.genome_id + '.repeats'), 'w') as ouf:
         polbs_locations = sorted([(x.start, x.end) for x in genome.features.get_features(
             FeatureType.PIPOLB)], key=lambda x: x[0])
-        print('left_repeat', 'right_repeat', 'length', 'polbs',
-              'd_to_the_left', 'd_to_the_right', 'sequence', sep='\t', file=ouf)
+        print('left_rep_range', 'right_rep_range', 'length', 'polbs',
+              'd_to_the_left', 'd_to_the_right', 'left_rep_seq', 'right_rep_seq', sep='\t', file=ouf)
         for repeat in repeats:
             print((repeat.left.start, repeat.left.end), (repeat.right.start, repeat.right.end),
                   repeat.left.end - repeat.left.start, ','.join([str(i) for i in polbs_locations]),
                   polbs_locations[0][0] - repeat.left.end, repeat.right.start - polbs_locations[-1][-1],
-                  repeat.seq, sep='\t', file=ouf)
+                  repeat.left_seq, repeat.right_seq, sep='\t', file=ouf)
 
 
 def write_atts_denovo(atts_denovo: Sequence[Feature], genome: Genome, atts_denovo_dir: str):

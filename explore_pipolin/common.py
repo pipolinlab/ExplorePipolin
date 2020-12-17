@@ -48,7 +48,7 @@ class Genome:
         for contig in self.contigs:
             if contig.contig_id == contig_id:
                 return contig
-        raise AssertionError('It is unexpected that you ask for a non-existent contig!')
+        raise AssertionError(f'It is unexpected that you ask for a non-existent contig {contig_id}!')
 
     def is_single_contig(self):
         return len(self.contigs) == 1
@@ -84,7 +84,7 @@ class Feature:
         return max_start <= min_end
 
     @property
-    def contig(self):
+    def contig(self) -> Contig:
         return self.genome.get_contig_by_id(self.contig_id)
 
     def shift(self, shift):
@@ -149,22 +149,26 @@ class FeaturesContainer:
 
 
 class RepeatPair:
-    def __init__(self, left: Feature, right: Feature, seq: str):
+    def __init__(self, left: Feature, right: Feature, left_seq: str, right_seq: str):
         self.left = left
         self.right = right
-        self.seq = seq
+        self.left_seq = left_seq
+        self.right_seq = right_seq
 
         left_repeat_length = self.left.end - self.left.start
         right_repeat_length = self.right.end - self.right.start
-        seq_length = len(self.seq)
-        if seq_length > left_repeat_length or seq_length > right_repeat_length:
-            raise AssertionError('Repeat sequence length cannot be greater than repeat ranges!')
+        left_seq_length = len(self.left_seq)
+        right_seq_length = len(self.right_seq)
+        if left_seq_length > left_repeat_length or right_seq_length > right_repeat_length:
+            raise AssertionError(f'Repeat sequence length cannot be greater than repeat ranges:'
+                                 f' {left_seq_length} > {left_repeat_length} or '
+                                 f'{right_seq_length} > {right_repeat_length}!')
 
     def shift(self, left_shift: int, right_shift: int):
         if left_shift > right_shift:
             raise AssertionError('Left shift cannot be greater than right shift!')
 
-        return RepeatPair(self.left.shift(left_shift), self.right.shift(right_shift), self.seq)
+        return RepeatPair(self.left.shift(left_shift), self.right.shift(right_shift), self.left_seq, self.right_seq)
 
 
 class PipolinFragment:
