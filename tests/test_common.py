@@ -23,16 +23,18 @@ class TestOrientation(unittest.TestCase):
         self.assertEqual(-Orientation.REVERSE, Orientation.FORWARD)
 
 
-class UtilitiesTestCase(unittest.TestCase):
+class SetUpGenome(unittest.TestCase):
     def setUp(self) -> None:
-        self.single_contig_genome = Genome(genome_id='bar', genome_file='dir/bar.fa', contigs=[])
         self.contig1_id = 'foo'
         self.contig1 = Contig(contig_id=self.contig1_id, contig_length=100)
+
+        self.contig2_id = 'boo'
+        self.contig2 = Contig(contig_id=self.contig2_id, contig_length=500)
+
+        self.single_contig_genome = Genome(genome_id='bar', genome_file='dir/bar.fa', contigs=[])
         self.single_contig_genome.contigs = [self.contig1]
 
         self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa', contigs=[])
-        self.contig2_id = 'boo'
-        self.contig2 = Contig(contig_id=self.contig2_id, contig_length=500)
         self.multi_contig_genome.contigs = [self.contig1, self.contig2]
 
         self.feature = Feature(start=123, end=321, strand=Orientation.REVERSE,
@@ -44,25 +46,26 @@ class UtilitiesTestCase(unittest.TestCase):
                                  contig_id='foo', genome=self.single_contig_genome)
         self.repeat_f2 = Feature(start=60, end=70, strand=Orientation.FORWARD,
                                  contig_id='foo', genome=self.single_contig_genome)
-        self.repeat = RepeatPair(self.repeat_f1, self.repeat_f2, right_seq='GATTACA', left_seq='GATTACA')
+        self.repeat = RepeatPair(self.repeat_f1, self.repeat_f2,
+                                 right_seq='GATTACAATC', left_seq='GATTACAATC')
 
-    def test_single_contig_genome(self):
+
+class TestGenome(SetUpGenome):
+    def test_is_single_contig(self):
         self.assertTrue(self.single_contig_genome.is_single_contig())
-        self.assertEqual(self.single_contig_genome.get_complete_genome_contig_id(), 'foo')
-        self.assertEqual(self.single_contig_genome.get_complete_genome_length(), 100)
-
-    def test_multi_contig_genome(self):
         self.assertFalse(self.multi_contig_genome.is_single_contig())
+        # TODO: implement repeats search for incomplete genomes and delete this!
+        self.assertEqual(self.single_contig_genome.get_complete_genome_contig_id(), self.contig1_id)
         with self.assertRaises(AssertionError):
             self.multi_contig_genome.get_complete_genome_contig_id()
-        with self.assertRaises(AssertionError):
-            self.multi_contig_genome.get_complete_genome_length()
 
     def test_get_contig_by_id(self):
         self.assertEqual(self.single_contig_genome.get_contig_by_id(contig_id=self.contig1_id), self.contig1)
         with self.assertRaises(AssertionError):
             self.single_contig_genome.get_contig_by_id(contig_id=self.contig2_id)
 
+
+class UtilitiesTestCase(SetUpGenome):
     def test_feature_contig_property(self):
         self.assertEqual(self.feature.contig, self.contig2)
 

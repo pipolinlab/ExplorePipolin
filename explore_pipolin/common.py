@@ -41,24 +41,20 @@ class Genome:
         self.contigs = contigs
         self.features: FeaturesContainer = FeaturesContainer()
 
-    def get_contig_by_id(self, contig_id: str) -> Optional[Contig]:
+    def get_contig_by_id(self, contig_id: str) -> Contig:
         for contig in self.contigs:
             if contig.contig_id == contig_id:
                 return contig
-        raise AssertionError(f'It is unexpected that you ask for a non-existent contig {contig_id}!')
+        raise AssertionError(f'Asking for the non-existent contig name {contig_id}!')
 
-    def is_single_contig(self):
+    def is_single_contig(self) -> bool:
         return len(self.contigs) == 1
 
+    # TODO: implement repeats search for incomplete genomes and delete this!
     def get_complete_genome_contig_id(self) -> str:
         if not self.is_single_contig():
-            raise AssertionError('Unsupported! Not a complete genome!')
+            raise AssertionError(f'Not a complete genome {self.genome_id}!')
         return self.contigs[0].contig_id
-
-    def get_complete_genome_length(self) -> int:
-        if not self.is_single_contig():
-            raise AssertionError('Unsupported! Not a complete genome!')
-        return self.contigs[0].contig_length
 
 
 class Feature:
