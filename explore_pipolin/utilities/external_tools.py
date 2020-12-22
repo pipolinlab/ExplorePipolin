@@ -2,8 +2,12 @@ import logging
 import os
 import subprocess
 from time import sleep
+from typing import List
+
 import pkg_resources
 from Bio import SeqIO
+
+from explore_pipolin.tasks_related.misc import Window
 
 _PIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/pipolb_expanded_definitive.hmm')
 _NOPIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/nopipolb_expanded_definitive.hmm')
@@ -45,12 +49,14 @@ def run_prokka(genome_id, pipolins_dir, proteins, prokka_results_dir):
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def blast_for_repeats(genome_id, repeats_dir):
-    with open(os.path.join(repeats_dir, genome_id + '.fmt5'), 'w') as ouf:
-        subprocess.run(['blastn', '-query', os.path.join(repeats_dir, genome_id + '.left'),
-                        '-subject', os.path.join(repeats_dir, genome_id + '.right'),
-                        '-outfmt', '5', '-perc_identity', '90', '-word_size', '6',
-                        '-strand', 'plus'], stdout=ouf)
+def blast_for_repeats(windows: List[Window], repeats_dir):
+    genome_id = windows[0].pipolbs[0].genome.genome_id
+    for i in range(len(windows)):
+        with open(os.path.join(repeats_dir, genome_id + f'_{i}.fmt5'), 'w') as ouf:
+            subprocess.run(['blastn', '-query', os.path.join(repeats_dir, genome_id + f'_{i}.left'),
+                            '-subject', os.path.join(repeats_dir, genome_id + f'_{i}.right'),
+                            '-outfmt', '5', '-perc_identity', '90', '-word_size', '6',
+                            '-strand', 'plus'], stdout=ouf)
 
 
 def run_aragorn(genome_file, output_file):

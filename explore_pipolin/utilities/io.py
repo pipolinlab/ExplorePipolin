@@ -1,11 +1,12 @@
 import os
 from collections import defaultdict
-from typing import MutableMapping, MutableSequence, Sequence, Tuple
+from typing import MutableMapping, MutableSequence, Sequence, Tuple, List
 
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
 from explore_pipolin.common import Genome, Orientation, RepeatPair, Contig, Feature, FeatureType
+from explore_pipolin.tasks_related.misc import Window
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
@@ -74,20 +75,22 @@ def read_blastxml(blast_xml):
     return SearchIO.read(blast_xml, 'blast-xml')
 
 
-def save_left_right_subsequences(left_window: Feature, right_window: Feature, repeats_dir: str):
-    genome_seq = SeqIO.read(handle=left_window.genome.genome_file, format='fasta')
+def save_left_right_subsequences(windows: List[Window], repeats_dir: str):
+    genome = windows[0].pipolbs[0].genome
+    genome_seq = SeqIO.read(handle=genome.genome_file, format='fasta')
 
-    left_seq = genome_seq[left_window.start:left_window.end]
-    right_seq = genome_seq[right_window.start:right_window.end]
-    SeqIO.write(sequences=left_seq, format='fasta',
-                handle=os.path.join(repeats_dir, left_window.genome.genome_id + '.left'))
-    SeqIO.write(sequences=right_seq, format='fasta',
-                handle=os.path.join(repeats_dir, left_window.genome.genome_id + '.right'))
+    for i, window in enumerate(windows):
+        left_seq = genome_seq[window.left.start:window.left.end]
+        right_seq = genome_seq[window.right.start:window.right.end]
+        SeqIO.write(sequences=left_seq, format='fasta',
+                    handle=os.path.join(repeats_dir, genome.genome_id + f'_{i}.left'))
+        SeqIO.write(sequences=right_seq, format='fasta',
+                    handle=os.path.join(repeats_dir, genome.genome_id + f'_{i}.right'))
 
 
 def write_repeats(genome: Genome, repeats: Sequence[RepeatPair], out_dir: str):
     with open(os.path.join(out_dir, genome.genome_id + '.repeats'), 'w') as ouf:
-        polbs_locations = sorted([(x.start, x.end) for x in genome.features.get_features(
+        polbs_locations = sorted([(x.coords.start, x.coords.end) for x in genome.features.get_features(
             FeatureType.PIPOLB)], key=lambda x: x[0])
         print('left_rep_range', 'right_rep_range', 'length', 'polbs',
               'd_to_the_left', 'd_to_the_right', 'left_rep_seq', 'right_rep_seq', sep='\t', file=ouf)
@@ -102,7 +105,7 @@ def write_atts_denovo(atts_denovo: Sequence[Feature], genome: Genome, atts_denov
     with open(os.path.join(atts_denovo_dir, genome.genome_id + '.atts_denovo'), 'w') as ouf:
         print('att_start', 'att_end', sep='\t', file=ouf)
         for att in atts_denovo:
-            print(att.start, att.end, sep='\t', file=ouf)
+            print(att.coords.start, att.coords.end, sep='\t', file=ouf)
 
 
 def create_pipolb_entries(hmmsearch_table, proteins_file) -> Sequence[Tuple[str, int, int, int]]:

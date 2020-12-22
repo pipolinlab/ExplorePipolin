@@ -13,7 +13,7 @@ from typing import Any, Optional, Sequence, Tuple, List
 
 from explore_pipolin.tasks_related.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, Genome, \
-    define_genome_id, FeaturesContainer, Orientation
+    define_genome_id, FeaturesContainer, Orientation, Range
 from explore_pipolin.utilities.logging import genome_specific_logging
 from explore_pipolin.tasks_related.misc import join_it, get_contig_orientation, \
     is_single_target_trna_per_contig, add_features_from_blast_entries
@@ -98,14 +98,13 @@ def find_pipolbs(genome: Genome, out_dir) -> Genome:
     intersect_or_difference(entries_pipolb, entries_nopipolb,
                             os.path.join(results_dir, genome.genome_id + '.pos_vs_neg'), is_intersection=False)
 
-    raise NotImplementedError
+    for entry in entries_pipolb:
+        feature = Feature(coords=Range(start=entry[1], end=entry[2]),
+                          strand=Orientation.orientation_from_blast(entry[3]),
+                          contig_id=entry[0], genome=genome)
+        genome.features.add_feature(feature=feature, feature_type=FeatureType.PIPOLB)
 
-    # for entry in entries:
-    #     feature = Feature(start=entry[1], end=entry[2], strand=Orientation.orientation_from_blast(entry[3]),
-    #                       contig_id=entry[0], genome=genome)
-    #     genome.features.add_feature(feature=feature, feature_type=FeatureType.PIPOLB)
-    #
-    # return genome
+    return genome
 
 
 @task
@@ -145,7 +144,8 @@ def add_trna_features_from_aragorn_entries(entries, genome: Genome):
             # "correct strange coordinates in -l mode" as in Prokka
             start = max(hit[0], 1)
             end = min(hit[1], genome.get_contig_by_id(contig_id=contig_id).contig_length)
-            trna_feature = Feature(start=start, end=end, strand=hit[2], contig_id=contig_id, genome=genome)
+            trna_feature = Feature(coords=Range(start=start, end=end),
+                                   strand=hit[2], contig_id=contig_id, genome=genome)
             genome.features.add_feature(feature=trna_feature, feature_type=FeatureType.TRNA)
 
 
@@ -178,17 +178,11 @@ def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> O
 
 @task()
 @genome_specific_logging
-def find_atts_denovo(genome: Genome, out_dir):
-    logger = context.get('logger')
-
-    if not genome.is_single_contig():
-        logger.warning('This step is only for complete genomes. Skip...')
-        return genome
-
+def find_atts_denovo(genome: Genome, out_dir) -> Genome:
     atts_denovo_dir = os.path.join(out_dir, 'atts_denovo_search')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
-    repeats: Sequence[RepeatPair] = find_repeats(genome, atts_denovo_dir)
+    repeats: Sequence[RepeatPair] = find_repeats(genome=genome, repeats_dir=atts_denovo_dir)
     write_repeats(genome=genome, repeats=repeats, out_dir=atts_denovo_dir)
 
     atts_denovo: Sequence[RepeatPair] = [rep for rep in repeats if is_att_denovo(genome, rep)]
@@ -228,8 +222,8 @@ def are_atts_present(genome: Genome) -> Genome:
         if set(atts_frames).pop() == genome.features.get_features(FeatureType.TARGET_TRNA_DENOVO)[0].strand:
             reverse_denovo_atts = []
             for att in genome.features.get_features(FeatureType.ATT_DENOVO):
-                reverse_denovo_atts.append(Feature(start=att.start, end=att.end, strand=-att.strand,
-                                                   contig_id=att.contig, genome=genome))
+                reverse_denovo_atts.append(Feature(coords=Range(start=att.coords.start, end=att.coords.end),
+                                                   strand=-att.strand, contig_id=att.contig.contig_id, genome=genome))
             [genome.features.add_feature(feature=i, feature_type=FeatureType.ATT) for i in reverse_denovo_atts]
         else:
             atts_denovo = genome.features.get_features(FeatureType.ATT_DENOVO)

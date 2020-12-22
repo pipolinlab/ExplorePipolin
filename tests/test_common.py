@@ -1,6 +1,6 @@
 import unittest
 
-from explore_pipolin.common import Orientation, Contig, Genome, Feature, RepeatPair, PipolinFragment
+from explore_pipolin.common import Orientation, Contig, Genome, Feature, RepeatPair, PipolinFragment, Range
 from explore_pipolin.common import define_genome_id
 
 
@@ -37,17 +37,16 @@ class SetUpGenome(unittest.TestCase):
         self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa', contigs=[])
         self.multi_contig_genome.contigs = [self.contig1, self.contig2]
 
-        self.feature = Feature(start=123, end=321, strand=Orientation.REVERSE,
+        self.feature = Feature(Range(start=123, end=321), strand=Orientation.REVERSE,
                                contig_id='boo', genome=self.multi_contig_genome)
 
         self.pipolin = PipolinFragment(contig_id='boo', genome=self.multi_contig_genome, start=300, end=400)
 
-        self.repeat_f1 = Feature(start=10, end=20, strand=Orientation.FORWARD,
-                                 contig_id='foo', genome=self.single_contig_genome)
-        self.repeat_f2 = Feature(start=60, end=70, strand=Orientation.FORWARD,
-                                 contig_id='foo', genome=self.single_contig_genome)
+        self.repeat_f1 = Range(start=10, end=20)
+        self.repeat_f2 = Range(start=60, end=70)
         self.repeat = RepeatPair(self.repeat_f1, self.repeat_f2,
-                                 right_seq='GATTACAATC', left_seq='GATTACAATC')
+                                 right_seq='GATTACAATC', left_seq='GATTACAATC',
+                                 pipolbs=[self.feature])
 
 
 class TestGenome(SetUpGenome):
@@ -71,17 +70,17 @@ class UtilitiesTestCase(SetUpGenome):
 
     def test_feature_start_not_greater_end(self):
         with self.assertRaises(AssertionError):
-            Feature(start=321, end=123, strand=Orientation.REVERSE,
+            Feature(Range(start=321, end=123), strand=Orientation.REVERSE,
                     contig_id='boo', genome=self.multi_contig_genome)
 
     def test_feature_end_not_greater_contig_length(self):
         with self.assertRaises(AssertionError):
-            Feature(start=123, end=321, strand=Orientation.FORWARD,
+            Feature(Range(start=123, end=321), strand=Orientation.FORWARD,
                     contig_id='foo', genome=self.multi_contig_genome)
 
     def test_repeat_seq_not_greater_range(self):
         with self.assertRaises(AssertionError):
-            RepeatPair(self.repeat_f1, self.repeat_f2, right_seq='ATCGTAGCTTGACTTCG', left_seq='ATCGTAGCTTGACTTCG')
+            RepeatPair(self.repeat_f1, self.repeat_f2, 'ATCGTAGCTTGACTTCG', 'ATCGTAGCTTGACTTCG', [self.feature])
 
     def test_repeat_left_shift_greater_right_shift(self):
         with self.assertRaises(AssertionError):

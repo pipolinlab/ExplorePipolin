@@ -3,7 +3,6 @@ from collections import defaultdict
 from enum import Enum, auto
 from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List
 
-
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
@@ -57,31 +56,36 @@ class Genome:
         return self.contigs[0].contig_id
 
 
-class Feature:
-    def __init__(self, start: int, end: int, strand: Orientation, contig_id: str, genome: Genome):
+class Range:
+    def __init__(self, start: int, end: int):
         self.start = start
         self.end = end
-        self.strand = strand
-        self.contig_id = contig_id
-        self.genome = genome
 
-        if self.start > self.end:
-            raise AssertionError('Feature start cannot be greater than feature end!')
-
-        if self.end > self.contig.contig_length:
-            raise AssertionError('Feature end cannot be greater than contig length!')
+    def shift(self, shift):
+        return Range(self.start + shift, self.end + shift)
 
     def is_overlapping(self, other) -> bool:
         max_start = max(self.start, other.start)
         min_end = min(self.end, other.end)
         return max_start <= min_end
 
+
+class Feature:
+    def __init__(self, coords: Range, strand: Orientation, contig_id: str, genome: Genome):
+        self.coords = coords
+        self.strand = strand
+        self.contig_id = contig_id
+        self.genome = genome
+
+        if self.coords.start > self.coords.end:
+            raise AssertionError('Feature start cannot be greater than feature end!')
+
+        if self.coords.end > self.contig.contig_length:
+            raise AssertionError('Feature end cannot be greater than contig length!')
+
     @property
     def contig(self) -> Contig:
         return self.genome.get_contig_by_id(self.contig_id)
-
-    def shift(self, shift):
-        return Feature(self.start + shift, self.end + shift, self.strand, self.contig_id, self.genome)
 
 
 class FeatureType(Enum):
@@ -103,7 +107,7 @@ class FeaturesContainer:
         for feature in features:
             result[feature.contig_id].append(feature)
         for _, features in result.items():
-            features.sort(key=lambda p: p.start)
+            features.sort(key=lambda p: p.coords.start)
         return result
 
     def get_features_dict_by_contig_normalized(self, feature_type: FeatureType) -> Mapping[str, Sequence[Feature]]:
@@ -125,7 +129,7 @@ class FeaturesContainer:
         if feature.contig_id in feature_dict:
             features = feature_dict[feature.contig_id]
             for other_feature in features:
-                if other_feature.is_overlapping(feature):
+                if other_feature.coords.is_overlapping(feature.coords):
                     return other_feature
 
     def is_on_the_same_contig(self, *feature_types: FeatureType) -> bool:
@@ -134,19 +138,20 @@ class FeaturesContainer:
             target_contigs.extend(f.contig_id for f in self.get_features(feature_type))
         return len(set(target_contigs)) == 1
 
-    def is_overlapping_with(self, feature: Feature, feature_type: FeatureType):
+    def is_overlapping_with(self, coords: Range, feature_type: FeatureType):
         for other_feature in self.get_features(feature_type):
-            if feature.is_overlapping(other_feature):
+            if coords.is_overlapping(other_feature.coords):
                 return True
         return False
 
 
 class RepeatPair:
-    def __init__(self, left: Feature, right: Feature, left_seq: str, right_seq: str):
+    def __init__(self, left: Range, right: Range, left_seq: str, right_seq: str, pipolbs: MutableSequence[Feature]):
         self.left = left
         self.right = right
         self.left_seq = left_seq
         self.right_seq = right_seq
+        self.pipolbs = pipolbs
 
         left_repeat_length = self.left.end - self.left.start
         right_repeat_length = self.right.end - self.right.start
@@ -161,7 +166,8 @@ class RepeatPair:
         if left_shift > right_shift:
             raise AssertionError('Left shift cannot be greater than right shift!')
 
-        return RepeatPair(self.left.shift(left_shift), self.right.shift(right_shift), self.left_seq, self.right_seq)
+        return RepeatPair(self.left.shift(left_shift), self.right.shift(right_shift),
+                          self.left_seq, self.right_seq, self.pipolbs)
 
 
 class PipolinFragment:
