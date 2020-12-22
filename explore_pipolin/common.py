@@ -12,22 +12,19 @@ class Orientation(Enum):
     REVERSE = auto()
 
     @staticmethod
-    def orientation_from_blast(hit_strand):
+    def from_pm_one_encoding(hit_strand):
         if hit_strand == 1:
             return Orientation.FORWARD
         elif hit_strand == -1:
             return Orientation.REVERSE
         else:
-            raise AssertionError(f'Unknown hit_frame: {hit_strand}! 0 is also unexpected in our case!')
+            raise AssertionError(f'Unknown hit strand: {hit_strand}! Should be 1 or -1.')
 
     def to_pm_one_encoding(self):
-        return +1 if self is self.FORWARD else -1
+        return 1 if self is self.FORWARD else -1
 
     def __neg__(self):
-        if self is self.FORWARD:
-            return self.REVERSE
-        else:
-            return self.FORWARD
+        return self.REVERSE if self is self.FORWARD else self.FORWARD
 
 
 class Contig:

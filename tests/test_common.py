@@ -4,24 +4,26 @@ from explore_pipolin.common import Orientation, Contig, Genome, Feature, RepeatP
 from explore_pipolin.common import define_genome_id
 
 
-class UtilitiesTestCase(unittest.TestCase):
-    def test_orientation(self):
-        self.assertEqual(-Orientation.FORWARD, Orientation.REVERSE)
-        self.assertEqual(-Orientation.REVERSE, Orientation.FORWARD)
-
-    def test_blast_orientation(self):
-        self.assertEqual(Orientation.orientation_from_blast(1), Orientation.FORWARD)
-        self.assertEqual(Orientation.orientation_from_blast(-1), Orientation.REVERSE)
-        with self.assertRaises(AssertionError):
-            Orientation.orientation_from_blast(0)
-
-    def test_pm_one_encoding(self):
-        self.assertEqual(Orientation.FORWARD.to_pm_one_encoding(), 1)
-        self.assertEqual(Orientation.REVERSE.to_pm_one_encoding(), -1)
-
+class TestOrientation(unittest.TestCase):
     def test_default_contig_orientation(self):
         self.assertEqual(Contig('foo', 100).contig_orientation, Orientation.FORWARD)
 
+    def test_from_pm_one_encoding(self):
+        self.assertEqual(Orientation.from_pm_one_encoding(1), Orientation.FORWARD)
+        self.assertEqual(Orientation.from_pm_one_encoding(-1), Orientation.REVERSE)
+        with self.assertRaises(AssertionError):
+            Orientation.from_pm_one_encoding(0)
+
+    def test_to_pm_one_encoding(self):
+        self.assertEqual(Orientation.FORWARD.to_pm_one_encoding(), 1)
+        self.assertEqual(Orientation.REVERSE.to_pm_one_encoding(), -1)
+
+    def test_negation(self):
+        self.assertEqual(-Orientation.FORWARD, Orientation.REVERSE)
+        self.assertEqual(-Orientation.REVERSE, Orientation.FORWARD)
+
+
+class UtilitiesTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.single_contig_genome = Genome(genome_id='bar', genome_file='dir/bar.fa', contigs=[])
         self.contig1_id = 'foo'
@@ -42,7 +44,7 @@ class UtilitiesTestCase(unittest.TestCase):
                                  contig_id='foo', genome=self.single_contig_genome)
         self.repeat_f2 = Feature(start=60, end=70, strand=Orientation.FORWARD,
                                  contig_id='foo', genome=self.single_contig_genome)
-        self.repeat = RepeatPair(self.repeat_f1, self.repeat_f2, seq='GATTACA')
+        self.repeat = RepeatPair(self.repeat_f1, self.repeat_f2, right_seq='GATTACA', left_seq='GATTACA')
 
     def test_single_contig_genome(self):
         self.assertTrue(self.single_contig_genome.is_single_contig())
@@ -76,7 +78,7 @@ class UtilitiesTestCase(unittest.TestCase):
 
     def test_repeat_seq_not_greater_range(self):
         with self.assertRaises(AssertionError):
-            RepeatPair(self.repeat_f1, self.repeat_f2, seq='ATCGTAGCTTGACTTCG')
+            RepeatPair(self.repeat_f1, self.repeat_f2, right_seq='ATCGTAGCTTGACTTCG', left_seq='ATCGTAGCTTGACTTCG')
 
     def test_repeat_left_shift_greater_right_shift(self):
         with self.assertRaises(AssertionError):

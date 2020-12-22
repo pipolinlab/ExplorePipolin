@@ -1,6 +1,5 @@
 import unittest
 import tempfile
-import os
 
 from explore_pipolin.download_metadata_ncbi import read_gb_ids
 from explore_pipolin.download_metadata_ncbi import get_assembly_info
@@ -13,6 +12,7 @@ from explore_pipolin.download_genomes_ncbi import read_metadata_file
 from explore_pipolin.download_genomes_ncbi import extract_data
 
 
+@unittest.skip('Will be probably replaced with the EMBL-EBI API!')
 class DownloadFromNCBITestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.assembly = 'GCF_002860085.1'

@@ -55,7 +55,7 @@ def create_fragment_record(fragment, genome_dict):
 
 def feature_from_blasthit(hit, contig_id: str, genome: Genome) -> Feature:
     return Feature(start=hit.hit_start, end=hit.hit_end,
-                   strand=Orientation.orientation_from_blast(hit.hit_strand),
+                   strand=Orientation.from_pm_one_encoding(hit.hit_strand),
                    contig_id=contig_id, genome=genome)
 
 
