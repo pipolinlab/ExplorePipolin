@@ -84,20 +84,17 @@ class TestRange(SetUpGenome):
         self.assertTrue(self.repeat_f2.is_overlapping(self.repeat_f3))
 
 
-class UtilitiesTestCase(SetUpGenome):
+class TestFeature(SetUpGenome):
     def test_feature_contig_property(self):
         self.assertEqual(self.feature.contig, self.contig2)
-
-    def test_feature_start_not_greater_end(self):
-        with self.assertRaises(AssertionError):
-            Feature(Range(start=321, end=123), strand=Orientation.REVERSE,
-                    contig_id='boo', genome=self.multi_contig_genome)
 
     def test_feature_end_not_greater_contig_length(self):
         with self.assertRaises(AssertionError):
             Feature(Range(start=123, end=321), strand=Orientation.FORWARD,
-                    contig_id='foo', genome=self.multi_contig_genome)
+                    contig_id=self.contig1.contig_id, genome=self.multi_contig_genome)
 
+
+class UtilitiesTestCase(SetUpGenome):
     def test_repeat_seq_not_greater_range(self):
         with self.assertRaises(AssertionError):
             RepeatPair(self.repeat_f1, self.repeat_f2, 'ATCGTAGCTTGACTTCG', 'ATCGTAGCTTGACTTCG', [self.feature])
