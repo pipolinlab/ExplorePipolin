@@ -1,5 +1,6 @@
 import os
 from collections import defaultdict
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List
 
@@ -28,21 +29,21 @@ class Orientation(Enum):
 
 class Contig:
     def __init__(self, contig_id: str, contig_length: int, orientation=Orientation.FORWARD):
-        self.contig_id = contig_id
-        self.contig_length = contig_length
-        self.contig_orientation: Orientation = orientation
+        self.id = contig_id
+        self.length = contig_length
+        self.orientation: Orientation = orientation
 
 
 class Genome:
     def __init__(self, genome_id: str, genome_file: str, contigs: MutableSequence[Contig]):
-        self.genome_id = genome_id
-        self.genome_file = genome_file
+        self.id = genome_id
+        self.file = genome_file
         self.contigs = contigs
         self.features: FeaturesContainer = FeaturesContainer()
 
     def get_contig_by_id(self, contig_id: str) -> Contig:
         for contig in self.contigs:
-            if contig.contig_id == contig_id:
+            if contig.id == contig_id:
                 return contig
         raise AssertionError(f'Asking for the non-existent contig name {contig_id}!')
 
@@ -52,24 +53,29 @@ class Genome:
     # TODO: implement repeats search for incomplete genomes and delete this!
     def get_complete_genome_contig_id(self) -> str:
         if not self.is_single_contig():
-            raise AssertionError(f'Not a complete genome {self.genome_id}!')
-        return self.contigs[0].contig_id
+            raise AssertionError(f'Not a complete genome {self.id}!')
+        return self.contigs[0].id
 
 
+@dataclass(frozen=True)
 class Range:
-    def __init__(self, start: int, end: int):
-        self.start = start
-        self.end = end
+    start: int
+    end: int
 
-    def __new__(cls, start, end):
-        if start > end:
+    def __post_init__(self):
+        if self.start > self.end:
             raise AssertionError('Start cannot be greater than end!')
-        if start < 0:
+        if self.start < 0:
             raise AssertionError('Start cannot be less than 0!')
-        return super(Range, cls).__new__(cls)
 
     def shift(self, shift: int):
         return Range(self.start + shift, self.end + shift)
+
+    def inflate(self, size: int):
+        return Range(self.start - size, self.end + size)
+
+    def clamp(self, min_coord: int, max_coord: int):
+        return Range(start=max(min_coord, self.start), end=min(max_coord, self.end))
 
     def is_overlapping(self, other) -> bool:
         max_start = max(self.start, other.start)
@@ -84,8 +90,16 @@ class Feature:
         self.contig_id = contig_id
         self.genome = genome
 
-        if self.coords.end > self.contig.contig_length:
+        if self.coords.end > self.contig.length:
             raise AssertionError('Feature end cannot be greater than contig length!')
+
+    @property
+    def start(self) -> int:
+        return self.coords.start
+
+    @property
+    def end(self) -> int:
+        return self.coords.end
 
     @property
     def contig(self) -> Contig:
@@ -151,14 +165,14 @@ class FeaturesContainer:
 
 class RepeatPair:
     def __init__(self, left: Range, right: Range, left_seq: str, right_seq: str, pipolbs: MutableSequence[Feature]):
-        self.left = left
-        self.right = right
+        self.left_range = left
+        self.right_range = right
         self.left_seq = left_seq
         self.right_seq = right_seq
         self.pipolbs = pipolbs
 
-        left_repeat_length = self.left.end - self.left.start
-        right_repeat_length = self.right.end - self.right.start
+        left_repeat_length = self.left_range.end - self.left_range.start
+        right_repeat_length = self.right_range.end - self.right_range.start
         left_seq_length = len(self.left_seq)
         right_seq_length = len(self.right_seq)
         if left_seq_length > left_repeat_length or right_seq_length > right_repeat_length:
@@ -170,27 +184,15 @@ class RepeatPair:
         if left_shift > right_shift:
             raise AssertionError('Left shift cannot be greater than right shift!')
 
-        return RepeatPair(self.left.shift(left_shift), self.right.shift(right_shift),
+        return RepeatPair(self.left_range.shift(left_shift), self.right_range.shift(right_shift),
                           self.left_seq, self.right_seq, self.pipolbs)
 
 
-class PipolinFragment:
-    def __init__(self, contig_id: str, genome: Genome, start: int, end: int):
-        self.start = start
-        self.end = end
+class PipolinFragment(Feature):
+    def __init__(self, coords: Range, contig_id: str, genome: Genome):
+        # TODO: do I need orientation here?
+        super(PipolinFragment, self).__init__(coords, Orientation.FORWARD, contig_id, genome)
         self.atts: MutableSequence[Feature] = []
-        self.contig_id = contig_id
-        self.genome = genome
-
-        if self.start > self.end:
-            raise AssertionError('Fragment start cannot be greater than fragment end!')
-
-        if self.end > self.contig.contig_length:
-            raise AssertionError('Fragment end cannot be greater than contig length!')
-
-    @property
-    def contig(self):
-        return self.genome.get_contig_by_id(self.contig_id)
 
 
 class Pipolin:

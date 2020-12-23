@@ -50,7 +50,7 @@ def run_prokka(genome_id, pipolins_dir, proteins, prokka_results_dir):
 
 
 def blast_for_repeats(windows: List[Window], repeats_dir):
-    genome_id = windows[0].pipolbs[0].genome.genome_id
+    genome_id = windows[0].pipolbs[0].genome.id
     for i in range(len(windows)):
         with open(os.path.join(repeats_dir, genome_id + f'_{i}.fmt5'), 'w') as ouf:
             subprocess.run(['blastn', '-query', os.path.join(repeats_dir, genome_id + f'_{i}.left'),

@@ -10,10 +10,10 @@ from explore_pipolin.tasks_related.misc import get_windows, Window
 
 
 def is_att_denovo(genome: Genome, repeat_pair: RepeatPair) -> bool:
-    if genome.features.is_overlapping_with(repeat_pair.left, FeatureType.ATT):
+    if genome.features.is_overlapping_with(repeat_pair.left_range, FeatureType.ATT):
         return False
-    left_overlaps = genome.features.is_overlapping_with(repeat_pair.left, FeatureType.TRNA)
-    right_overlaps = genome.features.is_overlapping_with(repeat_pair.right, FeatureType.TRNA)
+    left_overlaps = genome.features.is_overlapping_with(repeat_pair.left_range, FeatureType.TRNA)
+    right_overlaps = genome.features.is_overlapping_with(repeat_pair.right_range, FeatureType.TRNA)
     return left_overlaps or right_overlaps
 
 
@@ -29,7 +29,7 @@ def _extract_repeats(windows: List[Window], repeats_dir: str) -> Sequence[Repeat
     genome = windows[0].pipolbs[0].genome
     repeats = []
     for i, window in enumerate(windows):
-        repeats_xml = read_blastxml(os.path.join(repeats_dir, genome.genome_id + f'_{i}.fmt5'))
+        repeats_xml = read_blastxml(os.path.join(repeats_dir, genome.id + f'_{i}.fmt5'))
         for entry in repeats_xml:
             for hit in entry:
                 left_repeat = Range(start=hit.query_start, end=hit.query_end)

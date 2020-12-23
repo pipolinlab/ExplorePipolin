@@ -39,13 +39,13 @@ def read_gff_records(file) -> SeqIORecords:
 
 def write_genbank_records(gb_records: SeqIORecords, out_dir, genome: Genome):
     records = [record for record in gb_records.values()]
-    with open(os.path.join(out_dir, f'{genome.genome_id}.gbk'), 'w') as ouf:
+    with open(os.path.join(out_dir, f'{genome.id}.gbk'), 'w') as ouf:
         SeqIO.write(records, ouf, 'genbank')
 
 
 def write_gff_records(gff_records: SeqIORecords, out_dir, genome: Genome):
     records = [record for record in gff_records.values()]
-    with open(os.path.join(out_dir, f'{genome.genome_id}.gff'), 'w') as ouf:
+    with open(os.path.join(out_dir, f'{genome.id}.gff'), 'w') as ouf:
         GFF.write(records, ouf)
         print('##FASTA', file=ouf)
         SeqIO.write(records, ouf, format='fasta')
@@ -77,32 +77,32 @@ def read_blastxml(blast_xml):
 
 def save_left_right_subsequences(windows: List[Window], repeats_dir: str):
     genome = windows[0].pipolbs[0].genome
-    genome_seq = SeqIO.read(handle=genome.genome_file, format='fasta')
+    genome_seq = SeqIO.read(handle=genome.file, format='fasta')
 
     for i, window in enumerate(windows):
         left_seq = genome_seq[window.left.start:window.left.end]
         right_seq = genome_seq[window.right.start:window.right.end]
         SeqIO.write(sequences=left_seq, format='fasta',
-                    handle=os.path.join(repeats_dir, genome.genome_id + f'_{i}.left'))
+                    handle=os.path.join(repeats_dir, genome.id + f'_{i}.left'))
         SeqIO.write(sequences=right_seq, format='fasta',
-                    handle=os.path.join(repeats_dir, genome.genome_id + f'_{i}.right'))
+                    handle=os.path.join(repeats_dir, genome.id + f'_{i}.right'))
 
 
 def write_repeats(genome: Genome, repeats: Sequence[RepeatPair], out_dir: str):
-    with open(os.path.join(out_dir, genome.genome_id + '.repeats'), 'w') as ouf:
+    with open(os.path.join(out_dir, genome.id + '.repeats'), 'w') as ouf:
         polbs_locations = sorted([(x.coords.start, x.coords.end) for x in genome.features.get_features(
             FeatureType.PIPOLB)], key=lambda x: x[0])
         print('left_rep_range', 'right_rep_range', 'length', 'polbs',
               'd_to_the_left', 'd_to_the_right', 'left_rep_seq', 'right_rep_seq', sep='\t', file=ouf)
         for repeat in repeats:
-            print((repeat.left.start, repeat.left.end), (repeat.right.start, repeat.right.end),
-                  repeat.left.end - repeat.left.start, ','.join([str(i) for i in polbs_locations]),
-                  polbs_locations[0][0] - repeat.left.end, repeat.right.start - polbs_locations[-1][-1],
+            print((repeat.left_range.start, repeat.left_range.end), (repeat.right_range.start, repeat.right_range.end),
+                  repeat.left_range.end - repeat.left_range.start, ','.join([str(i) for i in polbs_locations]),
+                  polbs_locations[0][0] - repeat.left_range.end, repeat.right_range.start - polbs_locations[-1][-1],
                   repeat.left_seq, repeat.right_seq, sep='\t', file=ouf)
 
 
 def write_atts_denovo(atts_denovo: Sequence[Feature], genome: Genome, atts_denovo_dir: str):
-    with open(os.path.join(atts_denovo_dir, genome.genome_id + '.atts_denovo'), 'w') as ouf:
+    with open(os.path.join(atts_denovo_dir, genome.id + '.atts_denovo'), 'w') as ouf:
         print('att_start', 'att_end', sep='\t', file=ouf)
         for att in atts_denovo:
             print(att.coords.start, att.coords.end, sep='\t', file=ouf)

@@ -20,16 +20,16 @@ def set_logging_dir(log_dir: str):
 
 
 def _ensure_handler_for(genome: Genome):
-    if genome.genome_id not in _HANDLERS:
-        _HANDLERS[genome.genome_id] = _create_logging_handler(genome=genome, out_dir=_LOG_DIR)
-        logging.getLogger().addHandler(_HANDLERS[genome.genome_id])
+    if genome.id not in _HANDLERS:
+        _HANDLERS[genome.id] = _create_logging_handler(genome=genome, out_dir=_LOG_DIR)
+        logging.getLogger().addHandler(_HANDLERS[genome.id])
 
 
 def _create_logging_handler(genome: Genome, out_dir: str):
-    handler = logging.FileHandler(os.path.join(out_dir, f'{genome.genome_id}.log'), mode='w')
+    handler = logging.FileHandler(os.path.join(out_dir, f'{genome.id}.log'), mode='w')
 
     def my_filter(record: LogRecord):
-        return 1 if (hasattr(record, 'genome_id') and record.genome_id == genome.genome_id) else 0
+        return 1 if (hasattr(record, 'genome_id') and record.genome_id == genome.id) else 0
 
     handler.addFilter(my_filter)
     handler.setFormatter(logging.Formatter('{asctime} {levelname}: {name} ( {genome_id} ) {message}', style='{'))
@@ -41,7 +41,7 @@ def _add_genome_id_to_logger(genome: Genome):
     logger: logging.Logger = context['logger']
 
     def log_record_filter(record: LogRecord):
-        record.genome_id = genome.genome_id
+        record.genome_id = genome.id
         return 1
 
     logger.addFilter(log_record_filter)

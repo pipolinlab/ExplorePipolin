@@ -50,22 +50,22 @@ def find_pipolbs(genome: Genome, out_dir) -> Genome:
     results_dir = os.path.join(out_dir, 'pipolbs_search')
     os.makedirs(results_dir, exist_ok=True)
 
-    blast_output_file = os.path.join(results_dir, genome.genome_id + '.fmt5')
-    tblastn_against_ref_pipolb(genome_file=genome.genome_file, ref_pipolb=_REF_PIPOLB,
+    blast_output_file = os.path.join(results_dir, genome.id + '.fmt5')
+    tblastn_against_ref_pipolb(genome_file=genome.file, ref_pipolb=_REF_PIPOLB,
                                output_file=blast_output_file)
     entries_blast: List[Tuple[str, int, int, int]] = []
     for entry in read_blastxml(blast_output_file):
         entries_blast.extend((hit.hit_id, hit.hit_start, hit.hit_end, hit.hit_strand) for hit in entry)
 
-    prodigal_output_file = os.path.join(results_dir, genome.genome_id + '.faa')
-    run_prodigal(genome_file=genome.genome_file, output_file=prodigal_output_file)
+    prodigal_output_file = os.path.join(results_dir, genome.id + '.faa')
+    run_prodigal(genome_file=genome.file, output_file=prodigal_output_file)
 
-    hmm_output_file = os.path.join(results_dir, genome.genome_id + '.tbl')
+    hmm_output_file = os.path.join(results_dir, genome.id + '.tbl')
     run_hmmsearch(proteins=prodigal_output_file, output_file=hmm_output_file)
     entries_pipolb = create_pipolb_entries(hmmsearch_table=hmm_output_file,
                                            proteins_file=prodigal_output_file)
 
-    hmm_output_file_nopipolb = os.path.join(results_dir, genome.genome_id + '.tbl.nopipolb')
+    hmm_output_file_nopipolb = os.path.join(results_dir, genome.id + '.tbl.nopipolb')
     run_hmmsearch(proteins=prodigal_output_file, output_file=hmm_output_file_nopipolb, is_pipolb=False)
     entries_nopipolb = create_pipolb_entries(hmmsearch_table=hmm_output_file_nopipolb,
                                              proteins_file=prodigal_output_file)
@@ -92,11 +92,11 @@ def find_pipolbs(genome: Genome, out_dir) -> Genome:
         return res
 
     intersect_or_difference(entries_blast, entries_pipolb,
-                            os.path.join(results_dir, genome.genome_id + '.blast_vs_pos'))
+                            os.path.join(results_dir, genome.id + '.blast_vs_pos'))
     intersect_or_difference(entries_blast, entries_nopipolb,
-                            os.path.join(results_dir, genome.genome_id + '.blast_vs_neg'))
+                            os.path.join(results_dir, genome.id + '.blast_vs_neg'))
     intersect_or_difference(entries_pipolb, entries_nopipolb,
-                            os.path.join(results_dir, genome.genome_id + '.pos_vs_neg'), is_intersection=False)
+                            os.path.join(results_dir, genome.id + '.pos_vs_neg'), is_intersection=False)
 
     for entry in entries_pipolb:
         feature = Feature(coords=Range(start=entry[1], end=entry[2]),
@@ -113,8 +113,8 @@ def find_atts(genome: Genome, out_dir) -> Genome:
     blast_results_dir = os.path.join(out_dir, 'atts_search')
     os.makedirs(blast_results_dir, exist_ok=True)
 
-    output_file = os.path.join(blast_results_dir, genome.genome_id) + '.fmt5'
-    blastn_against_ref_att(genome_file=genome.genome_file, ref_att=_REF_ATT, output_file=output_file)
+    output_file = os.path.join(blast_results_dir, genome.id) + '.fmt5'
+    blastn_against_ref_att(genome_file=genome.file, ref_att=_REF_ATT, output_file=output_file)
     entries = read_blastxml(blast_xml=output_file)
 
     add_features_from_blast_entries(entries=entries, feature_type=FeatureType.ATT, genome=genome)
@@ -128,8 +128,8 @@ def find_trnas(genome: Genome, out_dir) -> Genome:
     aragorn_results_dir = os.path.join(out_dir, 'trnas_search')
     os.makedirs(aragorn_results_dir, exist_ok=True)
 
-    output_file = os.path.join(aragorn_results_dir, genome.genome_id + '.batch')
-    run_aragorn(genome_file=genome.genome_file, output_file=output_file)
+    output_file = os.path.join(aragorn_results_dir, genome.id + '.batch')
+    run_aragorn(genome_file=genome.file, output_file=output_file)
     entries = read_aragorn_batch(aragorn_batch=output_file)
 
     add_trna_features_from_aragorn_entries(entries=entries, genome=genome)
@@ -143,7 +143,7 @@ def add_trna_features_from_aragorn_entries(entries, genome: Genome):
         for hit in hits:
             # "correct strange coordinates in -l mode" as in Prokka
             start = max(hit[0], 1)
-            end = min(hit[1], genome.get_contig_by_id(contig_id=contig_id).contig_length)
+            end = min(hit[1], genome.get_contig_by_id(contig_id=contig_id).length)
             trna_feature = Feature(coords=Range(start=start, end=end),
                                    strand=hit[2], contig_id=contig_id, genome=genome)
             genome.features.add_feature(feature=trna_feature, feature_type=FeatureType.TRNA)
@@ -187,8 +187,8 @@ def find_atts_denovo(genome: Genome, out_dir) -> Genome:
 
     atts_denovo: Sequence[RepeatPair] = [rep for rep in repeats if is_att_denovo(genome, rep)]
     for atts_pair in atts_denovo:
-        genome.features.add_feature(feature=atts_pair.left, feature_type=FeatureType.ATT_DENOVO)
-        genome.features.add_feature(feature=atts_pair.right, feature_type=FeatureType.ATT_DENOVO)
+        genome.features.add_feature(feature=atts_pair.left_range, feature_type=FeatureType.ATT_DENOVO)
+        genome.features.add_feature(feature=atts_pair.right_range, feature_type=FeatureType.ATT_DENOVO)
 
     for att in genome.features.get_features(FeatureType.ATT_DENOVO):
         target_trna = genome.features.find_overlapping_feature(att, FeatureType.TRNA)
@@ -213,7 +213,7 @@ def are_atts_present(genome: Genome) -> Genome:
 
     elif len(genome.features.get_features(FeatureType.ATT)) == 0:
         logger.warning(f'\n\n>>>No "usual" atts were found, but some atts were found by denovo search!'
-                       f'For more details, check the {genome.genome_id}.atts_denovo file '
+                       f'For more details, check the {genome.id}.atts_denovo file '
                        f'in the atts_denovo_search directory!\n')
         # TODO: check that it's only one repeat! Although, this shouldn't be a problem.
         atts_frames = [att.strand for att in genome.features.get_features(FeatureType.ATT_DENOVO)]
@@ -223,7 +223,7 @@ def are_atts_present(genome: Genome) -> Genome:
             reverse_denovo_atts = []
             for att in genome.features.get_features(FeatureType.ATT_DENOVO):
                 reverse_denovo_atts.append(Feature(coords=Range(start=att.coords.start, end=att.coords.end),
-                                                   strand=-att.strand, contig_id=att.contig.contig_id, genome=genome))
+                                                   strand=-att.strand, contig_id=att.contig.id, genome=genome))
             [genome.features.add_feature(feature=i, feature_type=FeatureType.ATT) for i in reverse_denovo_atts]
         else:
             atts_denovo = genome.features.get_features(FeatureType.ATT_DENOVO)
@@ -233,7 +233,7 @@ def are_atts_present(genome: Genome) -> Genome:
 
     elif len(genome.features.get_features(FeatureType.ATT_DENOVO)) != 0:
         logger.warning(f'\n\n>>>Some atts were found by denovo search, but we are not going to use them!'
-                       f'For more details, check the {genome.genome_id}.atts file '
+                       f'For more details, check the {genome.id}.atts file '
                        f'in the atts_denovo directory!\n')
 
     return genome
@@ -244,7 +244,7 @@ def are_atts_present(genome: Genome) -> Genome:
 def analyse_orientation(genome: Genome) -> Genome:
     is_single_target_trna_per_contig(genome=genome)
     for contig in genome.contigs:
-        contig.contig_orientation = get_contig_orientation(contig=contig, genome=genome)
+        contig.orientation = get_contig_orientation(contig=contig, genome=genome)
 
     return genome
 
@@ -268,26 +268,26 @@ def scaffold_pipolins(genome: Genome) -> Pipolin:
 @task()
 @genome_specific_logging
 def extract_pipolin_regions(genome: Genome, pipolin: Pipolin, out_dir: str):
-    genome_dict = read_seqio_records(file=genome.genome_file, file_format='fasta')
+    genome_dict = read_seqio_records(file=genome.file, file_format='fasta')
 
     pipolins_dir = os.path.join(out_dir, 'pipolin_sequences')
     os.makedirs(pipolins_dir, exist_ok=True)
 
     logger = context.get('logger')
 
-    with open(os.path.join(pipolins_dir, genome.genome_id + '.fa'), 'w') as ouf:
+    with open(os.path.join(pipolins_dir, genome.id + '.fa'), 'w') as ouf:
         fragment_records = [create_fragment_record(fragment=f, genome_dict=genome_dict) for f in pipolin.fragments]
 
         for fragment_record, fragment in zip(fragment_records, pipolin.fragments):
-            logger.info(f'@pipolin fragment length {len(fragment_record)} from {fragment.contig.contig_id}')
+            logger.info(f'@pipolin fragment length {len(fragment_record)} from {fragment.contig.id}')
 
         record = sum(join_it(fragment_records, SeqRecord(seq='N' * 100)), SeqRecord(seq=''))
 
         logger.info(f'@@@pipolin record total length {len(record)}')
 
-        record.id = genome.genome_id
-        record.name = genome.genome_id
-        record.description = genome.genome_id
+        record.id = genome.id
+        record.name = genome.id
+        record.description = genome.id
         SeqIO.write(sequences=record, handle=ouf, format='fasta')
 
     return pipolins_dir
@@ -298,7 +298,7 @@ def extract_pipolin_regions(genome: Genome, pipolin: Pipolin, out_dir: str):
 def annotate_pipolins(genome: Genome, pipolins_dir, proteins, out_dir):
     prokka_results_dir = os.path.join(out_dir, 'prokka_results')
     os.makedirs(prokka_results_dir, exist_ok=True)
-    run_prokka(genome_id=genome.genome_id, pipolins_dir=pipolins_dir,
+    run_prokka(genome_id=genome.id, pipolins_dir=pipolins_dir,
                proteins=proteins, prokka_results_dir=prokka_results_dir)
     return prokka_results_dir
 
@@ -306,9 +306,9 @@ def annotate_pipolins(genome: Genome, pipolins_dir, proteins, out_dir):
 @task()
 @genome_specific_logging
 def include_atts(genome: Genome, prokka_dir, out_dir, pipolin: Pipolin):
-    gb_records = read_seqio_records(file=os.path.join(prokka_dir, genome.genome_id + '.gbk'),
+    gb_records = read_seqio_records(file=os.path.join(prokka_dir, genome.id + '.gbk'),
                                     file_format='genbank')
-    gff_records = read_gff_records(file=os.path.join(prokka_dir, genome.genome_id + '.gff'))
+    gff_records = read_gff_records(file=os.path.join(prokka_dir, genome.id + '.gff'))
 
     include_atts_into_gb(gb_records=gb_records, genome=genome, pipolin=pipolin)
     include_atts_into_gff(gff_records=gff_records, genome=genome, pipolin=pipolin)
@@ -325,7 +325,7 @@ def include_atts(genome: Genome, prokka_dir, out_dir, pipolin: Pipolin):
 @task()
 @genome_specific_logging
 def easyfig_add_colours(genome: Genome, in_dir):
-    gb_records = read_seqio_records(file=os.path.join(in_dir, genome.genome_id + '.gbk'),
+    gb_records = read_seqio_records(file=os.path.join(in_dir, genome.id + '.gbk'),
                                     file_format='genbank')
-    add_colours(gb_records[genome.genome_id])
+    add_colours(gb_records[genome.id])
     write_genbank_records(gb_records=gb_records, out_dir=in_dir, genome=genome)

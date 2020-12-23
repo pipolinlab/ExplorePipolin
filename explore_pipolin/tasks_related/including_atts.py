@@ -11,28 +11,28 @@ from explore_pipolin.utilities.io import SeqIORecords
 def include_atts_into_gb(gb_records: SeqIORecords, genome: Genome, pipolin: Pipolin):
     att_seq_features = _generate_att_seq_features(record_format='gb', genome=genome, pipolin=pipolin)
     for att in att_seq_features:
-        _add_att_seq_feature(att_seq_feature=att, seq_record=gb_records[genome.genome_id])
+        _add_att_seq_feature(att_seq_feature=att, seq_record=gb_records[genome.id])
 
 
 def include_atts_into_gff(gff_records: SeqIORecords, genome: Genome, pipolin: Pipolin):
     att_seq_features = _generate_att_seq_features(record_format='gff', genome=genome, pipolin=pipolin)
     for att in att_seq_features:
-        _add_att_seq_feature(att_seq_feature=att, seq_record=gff_records[genome.genome_id])
+        _add_att_seq_feature(att_seq_feature=att, seq_record=gff_records[genome.id])
 
 
 def _generate_att_seq_features(record_format: str, genome: Genome, pipolin: Pipolin) -> MutableSequence[SeqFeature]:
     att_seq_features = []
     in_start = 0
     for fragment in pipolin.fragments:
-        fragment_shift = fragment.start if fragment.contig.contig_orientation == Orientation.FORWARD else fragment.end
+        fragment_shift = fragment.start if fragment.contig.orientation == Orientation.FORWARD else fragment.end
         for att in fragment.atts:
             att_start, att_end = sorted([abs(att.coords.start - fragment_shift), abs(att.coords.end - fragment_shift)])
             if record_format == 'gb':
                 att_feature = _create_gb_att_seq_feature(start=att_start + in_start, end=att_end + in_start,
-                                                         strand=att.strand, genome_id=genome.genome_id,)
+                                                         strand=att.strand, genome_id=genome.id, )
             elif record_format == 'gff':
                 att_feature = _create_gff_att_seq_feature(start=att_start + in_start, end=att_end + in_start,
-                                                          strand=att.strand, genome_id=genome.genome_id)
+                                                          strand=att.strand, genome_id=genome.id)
             else:
                 raise AssertionError
             att_seq_features.append(att_feature)

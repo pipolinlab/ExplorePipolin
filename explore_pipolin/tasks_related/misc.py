@@ -13,12 +13,12 @@ def is_single_target_trna_per_contig(genome: Genome):
 
 
 def get_contig_orientation(contig: Contig, genome: Genome) -> Orientation:
-    target_trnas = genome.features.get_features_of_contig_normalized(contig_id=contig.contig_id,
+    target_trnas = genome.features.get_features_of_contig_normalized(contig_id=contig.id,
                                                                      feature_type=FeatureType.TARGET_TRNA)
-    atts = genome.features.get_features_of_contig_normalized(contig_id=contig.contig_id,
+    atts = genome.features.get_features_of_contig_normalized(contig_id=contig.id,
                                                              feature_type=FeatureType.ATT)
     atts_strands = [att.strand for att in atts]
-    polbs = genome.features.get_features_of_contig_normalized(contig_id=contig.contig_id,
+    polbs = genome.features.get_features_of_contig_normalized(contig_id=contig.id,
                                                               feature_type=FeatureType.PIPOLB)
     polbs_strands = [polb.strand for polb in polbs]
 
@@ -36,7 +36,7 @@ def get_contig_orientation(contig: Contig, genome: Genome) -> Orientation:
 
     if len(polbs) != 0:
         if len(set(polbs_strands)) != 1:  # an ambiguous case
-            return contig.contig_orientation
+            return contig.orientation
         return polbs[0].strand
 
 
@@ -49,8 +49,8 @@ def join_it(iterable, delimiter):
 
 
 def create_fragment_record(fragment, genome_dict):
-    fragment_record = genome_dict[fragment.contig.contig_id][fragment.start:fragment.end]
-    if fragment.contig.contig_orientation == Orientation.REVERSE:
+    fragment_record = genome_dict[fragment.contig.id][fragment.start:fragment.end]
+    if fragment.contig.orientation == Orientation.REVERSE:
         fragment_record = fragment_record.reverse_complement()
     return fragment_record
 
@@ -74,7 +74,7 @@ def get_windows(genome: Genome) -> List[Window]:
 
     windows = []
     for pipolb in pipolbs:   # TODO: actually, I need all the combinations here!
-        contig_length = genome.get_contig_by_id(contig_id=pipolb.contig_id).contig_length
+        contig_length = genome.get_contig_by_id(contig_id=pipolb.contig_id).length
 
         left_edge = pipolb.coords.start - 100000
         left_window = Range(start=left_edge if left_edge >= 0 else 0, end=pipolbs[0].coords.start)
