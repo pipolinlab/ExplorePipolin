@@ -44,6 +44,7 @@ class SetUpGenome(unittest.TestCase):
 
         self.repeat_f1 = Range(start=10, end=20)
         self.repeat_f2 = Range(start=60, end=70)
+        self.repeat_f3 = Range(start=65, end=85)
         self.repeat = RepeatPair(self.repeat_f1, self.repeat_f2,
                                  right_seq='GATTACAATC', left_seq='GATTACAATC',
                                  pipolbs=[self.feature])
@@ -62,6 +63,25 @@ class TestGenome(SetUpGenome):
         self.assertEqual(self.single_contig_genome.get_contig_by_id(contig_id=self.contig1_id), self.contig1)
         with self.assertRaises(AssertionError):
             self.single_contig_genome.get_contig_by_id(contig_id=self.contig2_id)
+
+
+class TestRange(SetUpGenome):
+    def test_start_greater_than_end(self):
+        with self.assertRaises(AssertionError):
+            Range(start=20, end=10)
+
+    def test_start_less_than_zero(self):
+        with self.assertRaises(AssertionError):
+            Range(start=-1, end=10)
+
+    def test_shift(self):
+        x = 5
+        self.assertEqual(self.repeat_f1.shift(x).start, self.repeat_f1.start + x)
+        self.assertEqual(self.repeat_f1.shift(x).end, self.repeat_f1.end + x)
+
+    def test_is_overlapping(self):
+        self.assertFalse(self.repeat_f1.is_overlapping(self.repeat_f2))
+        self.assertTrue(self.repeat_f2.is_overlapping(self.repeat_f3))
 
 
 class UtilitiesTestCase(SetUpGenome):
@@ -85,12 +105,6 @@ class UtilitiesTestCase(SetUpGenome):
     def test_repeat_left_shift_greater_right_shift(self):
         with self.assertRaises(AssertionError):
             self.repeat.shift(left_shift=250, right_shift=150)
-
-    # def test_repeat_shift(self):
-    #     repeat_shifted = self.repeat.shift(left_shift=self.left_shift, right_shift=self.right_shift)
-    #     self.assertEqual(repeat_shifted.left, self.repeat_shifted.left)
-    #     self.assertEqual(repeat_shifted.right, self.repeat_shifted.right)
-    #     self.assertEqual(repeat_shifted.seq, self.repeat_shifted.seq)
 
     def test_pipolin_contig_property(self):
         self.assertEqual(self.pipolin.contig, self.contig2)

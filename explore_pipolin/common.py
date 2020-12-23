@@ -61,7 +61,14 @@ class Range:
         self.start = start
         self.end = end
 
-    def shift(self, shift):
+    def __new__(cls, start, end):
+        if start > end:
+            raise AssertionError('Start cannot be greater than end!')
+        if start < 0:
+            raise AssertionError('Start cannot be less than 0!')
+        return super(Range, cls).__new__(cls)
+
+    def shift(self, shift: int):
         return Range(self.start + shift, self.end + shift)
 
     def is_overlapping(self, other) -> bool:
@@ -76,9 +83,6 @@ class Feature:
         self.strand = strand
         self.contig_id = contig_id
         self.genome = genome
-
-        if self.coords.start > self.coords.end:
-            raise AssertionError('Feature start cannot be greater than feature end!')
 
         if self.coords.end > self.contig.contig_length:
             raise AssertionError('Feature end cannot be greater than contig length!')
