@@ -76,9 +76,21 @@ class TestRange(SetUpGenome):
             Range(start=-1, end=10)
 
     def test_shift(self):
-        x = 5
-        self.assertEqual(self.repeat_f1.shift(x).start, self.repeat_f1.start + x)
-        self.assertEqual(self.repeat_f1.shift(x).end, self.repeat_f1.end + x)
+        size = 5
+        self.assertEqual(self.repeat_f1.shift(size),
+                         Range(self.repeat_f1.start + size, self.repeat_f1.end + size))
+
+    def test_inflate(self):
+        size = 5
+        self.assertEqual(self.repeat_f1.inflate(size),
+                         Range(self.repeat_f1.start - size, self.repeat_f1.end + size))
+
+    def test_inflate_beyond_zero(self):
+        size = 20
+        self.assertEqual(self.repeat_f1.inflate(size).start, 0)
+
+    def test_clamp(self):
+        self.assertEqual(self.repeat_f1.clamp(0, self.short_contig.length), self.repeat_f1)
 
     def test_is_overlapping(self):
         self.assertFalse(self.repeat_f1.is_overlapping(self.repeat_f2))

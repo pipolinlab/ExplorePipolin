@@ -68,11 +68,11 @@ class Range:
         if self.start < 0:
             raise AssertionError('Start cannot be less than 0!')
 
-    def shift(self, shift: int):
-        return Range(self.start + shift, self.end + shift)
+    def shift(self, size: int):
+        return Range(self.start + size, self.end + size)
 
     def inflate(self, size: int):
-        return Range(self.start - size, self.end + size)
+        return Range(max(0, self.start - size), self.end + size)
 
     def clamp(self, min_coord: int, max_coord: int):
         return Range(start=max(min_coord, self.start), end=min(max_coord, self.end))
