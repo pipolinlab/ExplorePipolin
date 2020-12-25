@@ -146,8 +146,16 @@ def find_atts_denovo(genome: Genome, out_dir) -> Genome:
 
     atts_denovo: Sequence[RepeatPair] = [rep for rep in repeats if is_att_denovo(genome, rep)]
     for atts_pair in atts_denovo:
-        genome.features.add_feature(feature=atts_pair.left_range, feature_type=FeatureType.ATT_DENOVO)
-        genome.features.add_feature(feature=atts_pair.right_range, feature_type=FeatureType.ATT_DENOVO)
+        genome.features.add_feature(feature=Feature(
+            frange=atts_pair.left_range,
+            strand=Orientation.FORWARD,
+            contig_id=genome.contigs[0].id,
+            genome=genome), feature_type=FeatureType.ATT_DENOVO)
+        genome.features.add_feature(feature=Feature(
+            frange=atts_pair.right_range,
+            strand=Orientation.FORWARD,
+            contig_id=genome.contigs[0].id,
+            genome=genome), feature_type=FeatureType.ATT_DENOVO)
 
     for att in genome.features.get_features(FeatureType.ATT_DENOVO):
         target_trna = genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
