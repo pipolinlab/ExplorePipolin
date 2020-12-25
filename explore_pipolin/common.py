@@ -203,21 +203,22 @@ class Pipolin:
         self.fragments: Sequence[PipolinFragment] = fragments
 
 
-def define_genome_id(genome_path: str):
-    genome_id = os.path.splitext(os.path.basename(genome_path))[0]
-    check_genome_id_length(genome_id)
-    return genome_id
-
-
-def check_genome_id_length(genome_id):
-    if len(genome_id) > 16:
-        raise AssertionError('Genome file basename is going to be used as a genome identifier. '
-                             'Due to Biopython restrictions, it cannot be longer than 16 characters. '
-                             'Please, rename the file, so that its basename does not exceed the limit!')
-
-
 class Window:
     def __init__(self, left: Range, right: Range, pipolbs: MutableSequence[Feature]):
         self.left = left
         self.right = right
         self.pipolbs = pipolbs
+
+
+def define_genome_id(genome_path: str):
+    genome_id = os.path.splitext(os.path.basename(genome_path))[0]
+    _check_genome_id_length(genome_id)
+    return genome_id
+
+
+def _check_genome_id_length(genome_id):
+    max_length_allowed = 16
+    if len(genome_id) > max_length_allowed:
+        raise AssertionError('Genome file basename is going to be used as a genome identifier. '
+                             f'Due to Biopython restrictions, it cannot be longer than {max_length_allowed} '
+                             f'characters. Please, rename the file, so that its basename does not exceed the limit!')

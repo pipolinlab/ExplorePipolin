@@ -9,7 +9,7 @@ from prefect import context
 
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
-from typing import Any, Optional, Sequence, Tuple, List
+from typing import Any, Optional, Sequence
 
 from explore_pipolin.tasks_related.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, Genome, \
@@ -21,8 +21,7 @@ from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_att
 from explore_pipolin.utilities.io import read_seqio_records
 from explore_pipolin.utilities.io import read_aragorn_batch
 from explore_pipolin.tasks_related.atts_denovo_search import find_repeats, is_att_denovo
-from explore_pipolin.utilities.external_tools import blastn_against_ref_att, run_prodigal, run_hmmsearch, \
-    tblastn_against_ref_pipolb
+from explore_pipolin.utilities.external_tools import blastn_against_ref_att, run_prodigal, run_hmmsearch
 from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
 from explore_pipolin.tasks_related.misc import create_fragment_record
 from explore_pipolin.utilities.io import read_gff_records
@@ -50,53 +49,13 @@ def find_pipolbs(genome: Genome, out_dir) -> Genome:
     results_dir = os.path.join(out_dir, 'pipolbs_search')
     os.makedirs(results_dir, exist_ok=True)
 
-    blast_output_file = os.path.join(results_dir, genome.id + '.fmt5')
-    tblastn_against_ref_pipolb(genome_file=genome.file, ref_pipolb=_REF_PIPOLB,
-                               output_file=blast_output_file)
-    entries_blast: List[Tuple[str, int, int, int]] = []
-    for entry in read_blastxml(blast_output_file):
-        entries_blast.extend((hit.hit_id, hit.hit_start, hit.hit_end, hit.hit_strand) for hit in entry)
-
     prodigal_output_file = os.path.join(results_dir, genome.id + '.faa')
     run_prodigal(genome_file=genome.file, output_file=prodigal_output_file)
 
     hmm_output_file = os.path.join(results_dir, genome.id + '.tbl')
-    run_hmmsearch(proteins=prodigal_output_file, output_file=hmm_output_file)
+    run_hmmsearch(proteins_file=prodigal_output_file, output_file=hmm_output_file)
     entries_pipolb = create_pipolb_entries(hmmsearch_table=hmm_output_file,
                                            proteins_file=prodigal_output_file)
-
-    hmm_output_file_nopipolb = os.path.join(results_dir, genome.id + '.tbl.nopipolb')
-    run_hmmsearch(proteins=prodigal_output_file, output_file=hmm_output_file_nopipolb, is_pipolb=False)
-    entries_nopipolb = create_pipolb_entries(hmmsearch_table=hmm_output_file_nopipolb,
-                                             proteins_file=prodigal_output_file)
-
-    def intersect_or_difference(entries1: Sequence[Tuple[str, int, int, int]],
-                                entries2: Sequence[Tuple[str, int, int, int]],
-                                output_file, is_intersection=True):
-        with open(output_file, 'w') as ouf:
-            if is_intersection:
-                res = get_intersection(entries1, entries2)
-            else:
-                res = set(entries1).difference(set(entries2))
-            for i in res:
-                print(i, file=ouf)
-
-    def get_intersection(entries1: Sequence[Tuple[str, int, int, int]], entries2: Sequence[Tuple[str, int, int, int]]):
-        res = set()
-        for i in entries1:  # blast entries
-            for y in entries2:
-                if i[0] == y[0] and i[3] == y[3]:
-                    intersection = set(range(i[1], i[2])).intersection(range(y[1], y[2]))
-                    if len(intersection) != 0:
-                        res.add(y)
-        return res
-
-    intersect_or_difference(entries_blast, entries_pipolb,
-                            os.path.join(results_dir, genome.id + '.blast_vs_pos'))
-    intersect_or_difference(entries_blast, entries_nopipolb,
-                            os.path.join(results_dir, genome.id + '.blast_vs_neg'))
-    intersect_or_difference(entries_pipolb, entries_nopipolb,
-                            os.path.join(results_dir, genome.id + '.pos_vs_neg'), is_intersection=False)
 
     for entry in entries_pipolb:
         feature = Feature(frange=Range(start=entry[1], end=entry[2]),

@@ -10,31 +10,38 @@ from Bio import SeqIO
 from explore_pipolin.common import Window
 
 _PIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/pipolb_expanded_definitive.hmm')
-_NOPIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/nopipolb_expanded_definitive.hmm')
 
 
 def check_blast():
-    try:
-        subprocess.run(['blastn', '-version'], stdout=subprocess.DEVNULL)
-        subprocess.run(['tblastn', '-version'], stdout=subprocess.DEVNULL)
-    except FileNotFoundError:
-        logging.fatal('Cannot find blastn and tblastn executables in your PATH! Is BLAST+ installed?')
-        exit(1)
+    command_args = ['blastn', '-version']
+    _try_command_except_fatal(command_args, 'blastn')
 
 
 def check_aragorn():
-    try:
-        subprocess.run(['aragorn', '-h'], stdout=subprocess.DEVNULL)
-    except FileNotFoundError:
-        logging.fatal('Cannot find aragorn executable in your PATH! Is ARAGORN installed?')
-        exit(1)
+    command_args = ['aragorn', '-h']
+    _try_command_except_fatal(command_args, 'aragorn')
 
 
 def check_prokka():
+    command_args = ['prokka', '--version']
+    _try_command_except_fatal(command_args, 'prokka')
+
+
+def check_prodigal():
+    command_args = ['prodigal', '-h']
+    _try_command_except_fatal(command_args, 'prodigal')
+
+
+def check_hmmsearch():
+    command_args = ['hmmsearch', '-h']
+    _try_command_except_fatal(command_args, 'hmmsearch')
+
+
+def _try_command_except_fatal(command_args: List[str], exec_name: str):
     try:
-        subprocess.run(['prokka', '--version'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(command_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except FileNotFoundError:
-        logging.fatal('Cannot find prokka executable in your PATH! Is Prokka installed?')
+        logging.fatal(f'Cannot call {exec_name} executable! Is it installed and added to your PATH?')
         exit(1)
 
 
@@ -64,16 +71,29 @@ def run_aragorn(genome_file, output_file):
         subprocess.run(['aragorn', '-l', '-w', genome_file], stdout=ouf)
 
 
-def tblastn_against_ref_pipolb(genome_file, ref_pipolb, output_file):
-    with open(output_file, 'w') as ouf:
-        subprocess.run(['tblastn', '-query', ref_pipolb, '-subject', genome_file, '-evalue', '0.1', '-outfmt', '5'],
-                       stdout=ouf)
-
-
 def blastn_against_ref_att(genome_file, ref_att, output_file):
     with open(output_file, 'w') as ouf:
         subprocess.run(['blastn', '-query', ref_att, '-subject', genome_file, '-evalue', '0.1', '-outfmt', '5'],
                        stdout=ouf)
+
+
+def run_prodigal(genome_file: str, output_file: str):
+    mode = 'single' if _is_long_enough(genome_file) else 'meta'
+    subprocess.run(['prodigal', '-c', '-m', '-q', '-p', mode, '-a', output_file, '-i', genome_file],
+                   stdout=subprocess.DEVNULL)
+
+
+def _is_long_enough(genome_file):
+    records = SeqIO.parse(handle=genome_file, format='fasta')
+    length = 0
+    for record in records:
+        length += len(record.seq)
+    return True if length >= 100000 else False
+
+
+def run_hmmsearch(proteins_file: str, output_file:str):
+    subprocess.run(['hmmsearch', '--tblout', output_file, '-E', '0.01', _PIPOLB_HMM_PROFILE, proteins_file],
+                   stdout=subprocess.DEVNULL)
 
 
 class EmptyResult(Exception):
@@ -104,26 +124,3 @@ def subprocess_with_retries(*args, **kwargs):
             continue
 
     print('FAILED!!! Maximum number of retries is exceeded.')
-
-
-def is_long_enough(genome_file):
-    records = SeqIO.parse(handle=genome_file, format='fasta')
-    length = 0
-    for record in records:
-        length += len(record.seq)
-    return True if length >= 100000 else False
-
-
-def run_prodigal(genome_file, output_file):
-    mode = 'single' if is_long_enough(genome_file) else 'meta'
-    subprocess.run(['prodigal', '-c', '-m', '-q', '-p', mode, '-a', output_file, '-i', genome_file],
-                   stdout=subprocess.DEVNULL)
-
-
-def run_hmmsearch(proteins, output_file, is_pipolb=True):
-    if is_pipolb:
-        subprocess.run(['hmmsearch', '--tblout', output_file, '-E', '0.01', _PIPOLB_HMM_PROFILE, proteins],
-                       stdout=subprocess.DEVNULL)
-    else:
-        subprocess.run(['hmmsearch', '--tblout', output_file, '-E', '0.01', _NOPIPOLB_HMM_PROFILE, proteins],
-                       stdout=subprocess.DEVNULL)

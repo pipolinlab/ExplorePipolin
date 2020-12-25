@@ -51,11 +51,11 @@ class SetUpGenome(unittest.TestCase):
         self.pipolin = PipolinFragment(contig_id='boo', genome=self.multi_contig_genome,
                                        coords=Range(start=300, end=400))
 
-        self.repeat_f1 = Range(start=10, end=20)
-        self.repeat_f2 = Range(start=60, end=70)
+        self.repeat_f1 = Range(start=10, end=15)
+        self.repeat_f2 = Range(start=60, end=65)
         self.repeat_f3 = Range(start=65, end=85)
         self.repeat = RepeatPair(self.repeat_f1, self.repeat_f2,
-                                 right_seq='GATTACAATC', left_seq='GATTACAATC',
+                                 right_seq='GATT', left_seq='GATT',
                                  pipolbs=[self.long_contig_feature1])
 
 
@@ -159,30 +159,25 @@ class TestFeaturesContainer(SetUpGenome):
         self.assertFalse(self.features.is_overlapping_with(qrange, FeatureType.TRNA))
 
 
-class UtilitiesTestCase(SetUpGenome):
+class TestRepeatPair(SetUpGenome):
     def test_repeat_seq_not_greater_range(self):
         with self.assertRaises(AssertionError):
-            RepeatPair(self.repeat_f1, self.repeat_f2, 'ATCGTAGCTTGACTTCG', 'ATCGTAGCTTGACTTCG', [self.long_contig_feature1])
+            RepeatPair(self.repeat_f1, self.repeat_f2, 'ATCGTAG', 'ATCGTAG', [self.long_contig_feature1])
 
     def test_repeat_left_shift_greater_right_shift(self):
         with self.assertRaises(AssertionError):
             self.repeat.shift(left_shift=250, right_shift=150)
 
-    def test_pipolin_contig_property(self):
-        self.assertEqual(self.pipolin.contig, self.long_contig)
 
-    def test_pipolin_start_not_greater_end(self):
-        with self.assertRaises(AssertionError):
-            PipolinFragment(contig_id='boo', genome=self.multi_contig_genome,
-                            coords=Range(start=400, end=300))
+class TestWindow(SetUpGenome):
+    pass
 
-    def test_pipolin_end_not_greater_contig_length(self):
-        with self.assertRaises(AssertionError):
-            PipolinFragment(contig_id='foo', genome=self.multi_contig_genome,
-                            coords=Range(start=300, end=400))
 
+class TestOthers(SetUpGenome):
     def test_define_genome_id(self):
         self.assertEqual(define_genome_id('my_genome.fa'), 'my_genome')
+
+    def test_too_long_genome_id(self):
         with self.assertRaises(AssertionError):
             define_genome_id('thisisverylongfilebasename.fa')
 
