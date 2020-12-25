@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List
+from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -115,7 +115,7 @@ class FeatureType(Enum):
     TARGET_TRNA_DENOVO = auto()
 
 
-class FeatureSet(List[Feature]):
+class FeatureSet(Set[Feature]):
     def get_overlapping(self, feature: Feature) -> Optional[Feature]:
         try:
             features_list = self.get_dict_by_contig_sorted()[feature.contig_id]
@@ -125,6 +125,10 @@ class FeatureSet(List[Feature]):
 
     def get_dict_by_contig_sorted(self) -> Mapping[str, Sequence[Feature]]:
         return self._dict_by_contig_sorted()
+
+    @property
+    def first(self) -> Feature:
+        return next(iter(self))
 
     @staticmethod
     def _get_overlapping_with_feature(features_list, feature):
@@ -149,7 +153,7 @@ class FeaturesContainer:
         self._features: Mapping[FeatureType, FeatureSet] = defaultdict(FeatureSet)
 
     def add_feature(self, feature: Feature, feature_type: FeatureType):
-        self._features[feature_type].append(feature)
+        self._features[feature_type].add(feature)
 
     def get_features(self, feature_type: FeatureType) -> FeatureSet:
         return self._features[feature_type]

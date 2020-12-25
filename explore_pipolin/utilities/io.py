@@ -1,6 +1,6 @@
 import os
 from collections import defaultdict
-from typing import MutableMapping, MutableSequence, Sequence, Tuple, List
+from typing import MutableMapping, MutableSequence, Sequence, Tuple, List, Iterable
 
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
@@ -100,7 +100,7 @@ def write_repeats(genome: Genome, repeats: Sequence[RepeatPair], out_dir: str):
                   repeat.left_seq, repeat.right_seq, sep='\t', file=ouf)
 
 
-def write_atts_denovo(atts_denovo: Sequence[Feature], genome: Genome, atts_denovo_dir: str):
+def write_atts_denovo(atts_denovo: Iterable[Feature], genome: Genome, atts_denovo_dir: str):
     with open(os.path.join(atts_denovo_dir, genome.id + '.atts_denovo'), 'w') as ouf:
         print('att_start', 'att_end', sep='\t', file=ouf)
         for att in atts_denovo:

@@ -258,14 +258,14 @@ class Scaffolder:
 def create_pipolin_fragments_single_contig(genome: Genome) -> Pipolin:
     if len(genome.features.get_features(FeatureType.ATT).get_dict_by_contig_sorted()) != 0:
         pipolin_range = _get_pipolin_bounds(genome)
-        pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB)[0].contig.id,
+        pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig.id,
                                   genome=genome, coords=pipolin_range)
 
         pipolin.atts.extend(genome.features.get_features(FeatureType.ATT))
         return Pipolin(pipolin)
     else:
         left_window, right_window = get_windows(genome)
-        pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB)[0].contig.id,
+        pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig.id,
                                   genome=genome, coords=Range(left_window.start, right_window.end))
         return Pipolin(pipolin)
 

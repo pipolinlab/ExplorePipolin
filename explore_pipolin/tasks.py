@@ -186,7 +186,7 @@ def are_atts_present(genome: Genome) -> Genome:
         atts_frames = [att.strand for att in genome.features.get_features(FeatureType.ATT_DENOVO)]
         if len(set(atts_frames)) != 1:
             raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
-        if set(atts_frames).pop() == genome.features.get_features(FeatureType.TARGET_TRNA_DENOVO)[0].strand:
+        if set(atts_frames).pop() == genome.features.get_features(FeatureType.TARGET_TRNA_DENOVO).first.strand:
             reverse_denovo_atts = []
             for att in genome.features.get_features(FeatureType.ATT_DENOVO):
                 reverse_denovo_atts.append(Feature(frange=Range(start=att.start, end=att.end),
