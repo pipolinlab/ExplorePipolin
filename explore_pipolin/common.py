@@ -115,43 +115,44 @@ class FeatureType(Enum):
     TARGET_TRNA_DENOVO = auto()
 
 
-class FeaturesContainer:
-    def __init__(self):
-        self._features: Mapping[FeatureType, MutableSequence[Feature]] = defaultdict(list)
-
-    def add_feature(self, feature, feature_type):
-        self._features[feature_type].append(feature)
-
-    def get_features(self, feature_type: FeatureType) -> MutableSequence[Feature]:
-        return self._features[feature_type]
-
-    @staticmethod
-    def _dict_by_contig_sorted(features: Sequence[Feature]) -> Mapping[str, Sequence[Feature]]:
-        result: MutableMapping[str, List[Feature]] = defaultdict(list)
-        for feature in features:
-            result[feature.contig_id].append(feature)
-        for _, features in result.items():
-            features.sort(key=lambda p: p.start)
-        return result
-
-    def get_features_dict_by_contig_sorted(self, feature_type: FeatureType) -> Mapping[str, Sequence[Feature]]:
-        return self._dict_by_contig_sorted(self.get_features(feature_type))
-
-    def get_features_list_of_contig_sorted(self, feature_type: FeatureType, contig_id: str,) -> Sequence[Feature]:
-        return self.get_features_dict_by_contig_sorted(feature_type=feature_type)[contig_id]
-
-    def get_overlapping_with_feature(self, feature_type: FeatureType, feature: Feature) -> Optional[Feature]:
+class FeatureSet(List[Feature]):
+    def get_overlapping(self, feature: Feature) -> Optional[Feature]:
         try:
-            features_list = self.get_features_dict_by_contig_sorted(feature_type)[feature.contig_id]
+            features_list = self.get_dict_by_contig_sorted()[feature.contig_id]
             return self._get_overlapping_with_feature(features_list, feature)
         except KeyError:
             return None
+
+    def get_dict_by_contig_sorted(self) -> Mapping[str, Sequence[Feature]]:
+        return self._dict_by_contig_sorted()
 
     @staticmethod
     def _get_overlapping_with_feature(features_list, feature):
         for other_feature in features_list:
             if feature.range.is_overlapping(other_feature.range):
                 return other_feature
+
+    def _dict_by_contig_sorted(self) -> Mapping[str, Sequence[Feature]]:
+        result: MutableMapping[str, List[Feature]] = defaultdict(list)
+        for feature in self:
+            result[feature.contig_id].append(feature)
+        for _, features in result.items():
+            features.sort(key=lambda p: p.start)
+        return result
+
+    def get_list_of_contig_sorted(self, contig_id: str) -> Sequence[Feature]:
+        return self.get_dict_by_contig_sorted()[contig_id]
+
+
+class FeaturesContainer:
+    def __init__(self):
+        self._features: Mapping[FeatureType, FeatureSet] = defaultdict(FeatureSet)
+
+    def add_feature(self, feature: Feature, feature_type: FeatureType):
+        self._features[feature_type].append(feature)
+
+    def get_features(self, feature_type: FeatureType) -> FeatureSet:
+        return self._features[feature_type]
 
     def is_on_the_same_contig(self, *feature_types: FeatureType) -> bool:
         target_contigs = []

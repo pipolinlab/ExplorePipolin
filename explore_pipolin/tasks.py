@@ -110,7 +110,7 @@ def add_trna_features_from_aragorn_entries(entries, genome: Genome):
 
 def find_and_add_target_trnas_features(features: FeaturesContainer):
     for att in features.get_features(FeatureType.ATT):
-        target_trna = features.get_overlapping_with_feature(FeatureType.TRNA, att)
+        target_trna = features.get_features(FeatureType.TRNA).get_overlapping(att)
         if target_trna is not None:
             features.add_feature(feature=target_trna, feature_type=FeatureType.TARGET_TRNA)
 
@@ -150,7 +150,7 @@ def find_atts_denovo(genome: Genome, out_dir) -> Genome:
         genome.features.add_feature(feature=atts_pair.right_range, feature_type=FeatureType.ATT_DENOVO)
 
     for att in genome.features.get_features(FeatureType.ATT_DENOVO):
-        target_trna = genome.features.get_overlapping_with_feature(FeatureType.TRNA, att)
+        target_trna = genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
         if target_trna is not None:
             genome.features.add_feature(feature=target_trna, feature_type=FeatureType.TARGET_TRNA_DENOVO)
 

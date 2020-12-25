@@ -91,7 +91,7 @@ def _is_long_enough(genome_file):
     return True if length >= 100000 else False
 
 
-def run_hmmsearch(proteins_file: str, output_file:str):
+def run_hmmsearch(proteins_file: str, output_file: str):
     subprocess.run(['hmmsearch', '--tblout', output_file, '-E', '0.01', _PIPOLB_HMM_PROFILE, proteins_file],
                    stdout=subprocess.DEVNULL)
 

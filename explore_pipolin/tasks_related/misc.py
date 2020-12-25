@@ -6,20 +6,17 @@ from explore_pipolin.common import Orientation, Contig, Genome, Feature, Feature
 def is_single_target_trna_per_contig(genome: Genome):
     # TODO: don't like this
     # there was one case with two target trnas per genome, although usually only one
-    target_trnas_dict = genome.features.get_features_dict_by_contig_sorted(feature_type=FeatureType.TARGET_TRNA)
+    target_trnas_dict = genome.features.get_features(FeatureType.TARGET_TRNA).get_dict_by_contig_sorted()
     target_trnas = genome.features.get_features(feature_type=FeatureType.TARGET_TRNA)
     if len(target_trnas) != len(target_trnas_dict):
         raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
 
 
 def get_contig_orientation(contig: Contig, genome: Genome) -> Orientation:
-    target_trnas = genome.features.get_features_list_of_contig_sorted(contig_id=contig.id,
-                                                                      feature_type=FeatureType.TARGET_TRNA)
-    atts = genome.features.get_features_list_of_contig_sorted(contig_id=contig.id,
-                                                              feature_type=FeatureType.ATT)
+    target_trnas = genome.features.get_features(FeatureType.TARGET_TRNA).get_list_of_contig_sorted(contig.id)
+    atts = genome.features.get_features(FeatureType.ATT).get_list_of_contig_sorted(contig.id)
     atts_strands = [att.strand for att in atts]
-    polbs = genome.features.get_features_list_of_contig_sorted(contig_id=contig.id,
-                                                               feature_type=FeatureType.PIPOLB)
+    polbs = genome.features.get_features(feature_type=FeatureType.PIPOLB).get_list_of_contig_sorted(contig.id)
     polbs_strands = [polb.strand for polb in polbs]
 
     if len(target_trnas) != 0:

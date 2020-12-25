@@ -127,8 +127,8 @@ class TestFeaturesContainer(SetUpGenome):
         self.features.add_feature(self.long_contig_feature3, feature_type)
         self.features.add_feature(self.long_contig_feature1, feature_type)
 
-        features_dict = self.features.get_features_dict_by_contig_sorted(feature_type)
-        features_list = self.features.get_features_list_of_contig_sorted(feature_type, self.long_contig_id)
+        features_dict = self.features.get_features(feature_type).get_dict_by_contig_sorted()
+        features_list = self.features.get_features(feature_type).get_list_of_contig_sorted(self.long_contig_id)
         self.assertEqual(features_dict[self.long_contig_id], features_list)
 
     def test_get_overlapping_with_feature(self):
@@ -136,10 +136,10 @@ class TestFeaturesContainer(SetUpGenome):
         self.features.add_feature(self.long_contig_feature2, FeatureType.ATT)
         self.features.add_feature(self.long_contig_feature3, FeatureType.PIPOLB)
 
-        ofeature_present = self.features.get_overlapping_with_feature(FeatureType.TRNA, self.long_contig_feature2)
+        ofeature_present = self.features.get_features(FeatureType.TRNA).get_overlapping(self.long_contig_feature2)
         self.assertEqual(ofeature_present, self.long_contig_feature1)
 
-        ofeature_absent = self.features.get_overlapping_with_feature(FeatureType.PIPOLB, self.long_contig_feature2)
+        ofeature_absent = self.features.get_features(FeatureType.PIPOLB).get_overlapping(self.long_contig_feature2)
         self.assertIsNone(ofeature_absent)
 
     def test_is_on_the_same_contig(self):

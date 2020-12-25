@@ -13,9 +13,9 @@ class Direction(Enum):
 class Scaffolder:
     def __init__(self, genome: Genome):
         self.genome = genome
-        self.polbs_dict = genome.features.get_features_dict_by_contig_sorted(FeatureType.PIPOLB)
-        self.atts_dict = genome.features.get_features_dict_by_contig_sorted(FeatureType.ATT)
-        self.target_trnas_dict = genome.features.get_features_dict_by_contig_sorted(FeatureType.TARGET_TRNA)
+        self.polbs_dict = genome.features.get_features(FeatureType.PIPOLB).get_dict_by_contig_sorted()
+        self.atts_dict = genome.features.get_features(FeatureType.ATT).get_dict_by_contig_sorted()
+        self.target_trnas_dict = genome.features.get_features(FeatureType.TARGET_TRNA).get_dict_by_contig_sorted()
 
     def scaffold(self) -> Pipolin:
         unchangeable_contigs = self._get_unchangeable_contigs()
@@ -154,11 +154,11 @@ class Scaffolder:
                 polb1_fragment = PipolinFragment(contig_id=polbs_contigs[1].id, genome=self.genome,
                                                  coords=Range(0, polbs_contigs[1].length))
 
-                contig_features = self.genome.features.get_features_list_of_contig_sorted(
-                    contig_id=polbs_contigs[0].id, feature_type=FeatureType.PIPOLB)
+                contig_features = self.genome.features.get_features(FeatureType.PIPOLB).get_list_of_contig_sorted(
+                        polbs_contigs[0].id)
                 polb0_length = sum((i.end - i.start) for i in contig_features)
-                contig_features = self.genome.features.get_features_list_of_contig_sorted(
-                    contig_id=polbs_contigs[1].id, feature_type=FeatureType.PIPOLB)
+                contig_features = self.genome.features.get_features(FeatureType.PIPOLB).get_list_of_contig_sorted(
+                        polbs_contigs[1].id)
                 polb1_length = sum((i.end - i.start) for i in contig_features)
                 # TODO: comparing just by length is an unreliable way! REWRITE if possible!
                 if polb0_length < polb1_length:
@@ -180,8 +180,7 @@ class Scaffolder:
 
         contigs_to_return = []
         for contig in polbs_contigs:
-            atts_next_polbs = self.genome.features.get_features_list_of_contig_sorted(contig_id=contig.id,
-                                                                                      feature_type=FeatureType.ATT)
+            atts_next_polbs = self.genome.features.get_features(FeatureType.ATT).get_list_of_contig_sorted(contig.id)
             if len(atts_next_polbs) != 0:
                 contigs_to_return.append(contig)
 
@@ -228,8 +227,8 @@ class Scaffolder:
     def _get_att_only_contigs(self) -> Set[Contig]:
         att_only_contigs = set()
         for att in self.genome.features.get_features(FeatureType.ATT):
-            polbs_next_att = self.genome.features.get_features_list_of_contig_sorted(contig_id=att.contig_id,
-                                                                                     feature_type=FeatureType.PIPOLB)
+            polbs_next_att = self.genome.features.get_features(FeatureType.PIPOLB).get_list_of_contig_sorted(
+                    att.contig_id)
             if len(polbs_next_att) == 0:
                 att_only_contigs.add(att.contig)
 
@@ -252,12 +251,12 @@ class Scaffolder:
             return None
 
     def _contig_has_feature_type(self, contig_id: str, feature_type: FeatureType) -> bool:
-        feature_dict = self.genome.features.get_features_dict_by_contig_sorted(feature_type)
+        feature_dict = self.genome.features.get_features(feature_type).get_dict_by_contig_sorted()
         return len(feature_dict[contig_id]) != 0
 
 
 def create_pipolin_fragments_single_contig(genome: Genome) -> Pipolin:
-    if len(genome.features.get_features_dict_by_contig_sorted(FeatureType.ATT)) != 0:
+    if len(genome.features.get_features(FeatureType.ATT).get_dict_by_contig_sorted()) != 0:
         pipolin_range = _get_pipolin_bounds(genome)
         pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB)[0].contig.id,
                                   genome=genome, coords=pipolin_range)
