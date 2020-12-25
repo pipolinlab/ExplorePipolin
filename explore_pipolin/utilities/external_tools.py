@@ -7,7 +7,7 @@ from typing import List
 import pkg_resources
 from Bio import SeqIO
 
-from explore_pipolin.tasks_related.misc import Window
+from explore_pipolin.common import Window
 
 _PIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/pipolb_expanded_definitive.hmm')
 _NOPIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/nopipolb_expanded_definitive.hmm')

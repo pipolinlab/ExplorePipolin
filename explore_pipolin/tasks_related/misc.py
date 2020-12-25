@@ -1,25 +1,25 @@
-from typing import List, MutableSequence
+from typing import List
 
-from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType, Range
+from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType, Range, Window
 
 
 def is_single_target_trna_per_contig(genome: Genome):
     # TODO: don't like this
     # there was one case with two target trnas per genome, although usually only one
-    target_trnas_dict = genome.features.get_features_dict_by_contig_normalized(feature_type=FeatureType.TARGET_TRNA)
+    target_trnas_dict = genome.features.get_features_dict_by_contig_sorted(feature_type=FeatureType.TARGET_TRNA)
     target_trnas = genome.features.get_features(feature_type=FeatureType.TARGET_TRNA)
     if len(target_trnas) != len(target_trnas_dict):
         raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
 
 
 def get_contig_orientation(contig: Contig, genome: Genome) -> Orientation:
-    target_trnas = genome.features.get_features_of_contig_normalized(contig_id=contig.id,
-                                                                     feature_type=FeatureType.TARGET_TRNA)
-    atts = genome.features.get_features_of_contig_normalized(contig_id=contig.id,
-                                                             feature_type=FeatureType.ATT)
+    target_trnas = genome.features.get_features_list_of_contig_sorted(contig_id=contig.id,
+                                                                      feature_type=FeatureType.TARGET_TRNA)
+    atts = genome.features.get_features_list_of_contig_sorted(contig_id=contig.id,
+                                                              feature_type=FeatureType.ATT)
     atts_strands = [att.strand for att in atts]
-    polbs = genome.features.get_features_of_contig_normalized(contig_id=contig.id,
-                                                              feature_type=FeatureType.PIPOLB)
+    polbs = genome.features.get_features_list_of_contig_sorted(contig_id=contig.id,
+                                                               feature_type=FeatureType.PIPOLB)
     polbs_strands = [polb.strand for polb in polbs]
 
     if len(target_trnas) != 0:
@@ -56,16 +56,9 @@ def create_fragment_record(fragment, genome_dict):
 
 
 def feature_from_blasthit(hit, contig_id: str, genome: Genome) -> Feature:
-    return Feature(coords=Range(start=hit.hit_start, end=hit.hit_end),
+    return Feature(frange=Range(start=hit.hit_start, end=hit.hit_end),
                    strand=Orientation.from_pm_one_encoding(hit.hit_strand),
                    contig_id=contig_id, genome=genome)
-
-
-class Window:
-    def __init__(self, left: Range, right: Range, pipolbs: MutableSequence[Feature]):
-        self.left = left
-        self.right = right
-        self.pipolbs = pipolbs
 
 
 def get_windows(genome: Genome) -> List[Window]:
@@ -76,10 +69,10 @@ def get_windows(genome: Genome) -> List[Window]:
     for pipolb in pipolbs:   # TODO: actually, I need all the combinations here!
         contig_length = genome.get_contig_by_id(contig_id=pipolb.contig_id).length
 
-        left_edge = pipolb.coords.start - 100000
-        left_window = Range(start=left_edge if left_edge >= 0 else 0, end=pipolbs[0].coords.start)
-        right_edge = pipolb.coords.end + 100000
-        right_window = Range(start=pipolbs[-1].coords.end,
+        left_edge = pipolb.start - 100000
+        left_window = Range(start=left_edge if left_edge >= 0 else 0, end=pipolbs[0].start)
+        right_edge = pipolb.end + 100000
+        right_window = Range(start=pipolbs[-1].end,
                              end=right_edge if right_edge <= contig_length else contig_length)
         windows.append(Window(left_window, right_window, pipolbs=[pipolb]))
     return windows

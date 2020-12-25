@@ -84,22 +84,22 @@ class Range:
 
 
 class Feature:
-    def __init__(self, coords: Range, strand: Orientation, contig_id: str, genome: Genome):
-        self.coords = coords
+    def __init__(self, frange: Range, strand: Orientation, contig_id: str, genome: Genome):
+        self.range = frange
         self.strand = strand
         self.contig_id = contig_id
         self.genome = genome
 
-        if self.coords.end > self.contig.length:
+        if self.range.end > self.contig.length:
             raise AssertionError('Feature end cannot be greater than contig length!')
 
     @property
     def start(self) -> int:
-        return self.coords.start
+        return self.range.start
 
     @property
     def end(self) -> int:
-        return self.coords.end
+        return self.range.end
 
     @property
     def contig(self) -> Contig:
@@ -119,36 +119,39 @@ class FeaturesContainer:
     def __init__(self):
         self._features: Mapping[FeatureType, MutableSequence[Feature]] = defaultdict(list)
 
-    @staticmethod
-    def _dict_by_contig_normalized(features: Sequence[Feature]) -> Mapping[str, Sequence[Feature]]:
-        result: MutableMapping[str, List[Feature]] = defaultdict(list)
-        for feature in features:
-            result[feature.contig_id].append(feature)
-        for _, features in result.items():
-            features.sort(key=lambda p: p.coords.start)
-        return result
-
-    def get_features_dict_by_contig_normalized(self, feature_type: FeatureType) -> Mapping[str, Sequence[Feature]]:
-        return self._dict_by_contig_normalized(self.get_features(feature_type))
-
-    def get_features_of_contig_normalized(self, contig_id: str, feature_type: FeatureType) -> Sequence[Feature]:
-        features_dict = self.get_features_dict_by_contig_normalized(feature_type=feature_type)
-        return features_dict[contig_id]
+    def add_feature(self, feature, feature_type):
+        self._features[feature_type].append(feature)
 
     def get_features(self, feature_type: FeatureType) -> MutableSequence[Feature]:
         return self._features[feature_type]
 
-    def add_feature(self, feature, feature_type):
-        self.get_features(feature_type).append(feature)
+    @staticmethod
+    def _dict_by_contig_sorted(features: Sequence[Feature]) -> Mapping[str, Sequence[Feature]]:
+        result: MutableMapping[str, List[Feature]] = defaultdict(list)
+        for feature in features:
+            result[feature.contig_id].append(feature)
+        for _, features in result.items():
+            features.sort(key=lambda p: p.start)
+        return result
 
-    def find_overlapping_feature(self, feature: Feature, feature_type: FeatureType) -> Optional[Feature]:
-        feature_dict = self.get_features_dict_by_contig_normalized(feature_type)
+    def get_features_dict_by_contig_sorted(self, feature_type: FeatureType) -> Mapping[str, Sequence[Feature]]:
+        return self._dict_by_contig_sorted(self.get_features(feature_type))
 
-        if feature.contig_id in feature_dict:
-            features = feature_dict[feature.contig_id]
-            for other_feature in features:
-                if other_feature.coords.is_overlapping(feature.coords):
-                    return other_feature
+    def get_features_list_of_contig_sorted(self, feature_type: FeatureType, contig_id: str,) -> Sequence[Feature]:
+        return self.get_features_dict_by_contig_sorted(feature_type=feature_type)[contig_id]
+
+    def get_overlapping_with_feature(self, feature_type: FeatureType, feature: Feature) -> Optional[Feature]:
+        try:
+            features_list = self.get_features_dict_by_contig_sorted(feature_type)[feature.contig_id]
+            return self._get_overlapping_with_feature(features_list, feature)
+        except KeyError:
+            return None
+
+    @staticmethod
+    def _get_overlapping_with_feature(features_list, feature):
+        for other_feature in features_list:
+            if feature.range.is_overlapping(other_feature.range):
+                return other_feature
 
     def is_on_the_same_contig(self, *feature_types: FeatureType) -> bool:
         target_contigs = []
@@ -156,9 +159,9 @@ class FeaturesContainer:
             target_contigs.extend(f.contig_id for f in self.get_features(feature_type))
         return len(set(target_contigs)) == 1
 
-    def is_overlapping_with(self, coords: Range, feature_type: FeatureType):
+    def is_overlapping_with(self, qrange: Range, feature_type: FeatureType) -> bool:
         for other_feature in self.get_features(feature_type):
-            if coords.is_overlapping(other_feature.coords):
+            if qrange.is_overlapping(other_feature.range):
                 return True
         return False
 
@@ -211,3 +214,10 @@ def check_genome_id_length(genome_id):
         raise AssertionError('Genome file basename is going to be used as a genome identifier. '
                              'Due to Biopython restrictions, it cannot be longer than 16 characters. '
                              'Please, rename the file, so that its basename does not exceed the limit!')
+
+
+class Window:
+    def __init__(self, left: Range, right: Range, pipolbs: MutableSequence[Feature]):
+        self.left = left
+        self.right = right
+        self.pipolbs = pipolbs

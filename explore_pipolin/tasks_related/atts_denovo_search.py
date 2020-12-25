@@ -2,11 +2,11 @@ import os
 
 from typing import Sequence, List
 
-from explore_pipolin.common import RepeatPair, Genome, FeatureType, Range
+from explore_pipolin.common import RepeatPair, Genome, FeatureType, Range, Window
 from explore_pipolin.utilities.external_tools import blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml
 from explore_pipolin.utilities.io import save_left_right_subsequences
-from explore_pipolin.tasks_related.misc import get_windows, Window
+from explore_pipolin.tasks_related.misc import get_windows
 
 
 def is_att_denovo(genome: Genome, repeat_pair: RepeatPair) -> bool:

@@ -5,8 +5,7 @@ from typing import MutableMapping, MutableSequence, Sequence, Tuple, List
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.common import Genome, Orientation, RepeatPair, Contig, Feature, FeatureType
-from explore_pipolin.tasks_related.misc import Window
+from explore_pipolin.common import Genome, Orientation, RepeatPair, Contig, Feature, FeatureType, Window
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
@@ -90,7 +89,7 @@ def save_left_right_subsequences(windows: List[Window], repeats_dir: str):
 
 def write_repeats(genome: Genome, repeats: Sequence[RepeatPair], out_dir: str):
     with open(os.path.join(out_dir, genome.id + '.repeats'), 'w') as ouf:
-        polbs_locations = sorted([(x.coords.start, x.coords.end) for x in genome.features.get_features(
+        polbs_locations = sorted([(x.start, x.end) for x in genome.features.get_features(
             FeatureType.PIPOLB)], key=lambda x: x[0])
         print('left_rep_range', 'right_rep_range', 'length', 'polbs',
               'd_to_the_left', 'd_to_the_right', 'left_rep_seq', 'right_rep_seq', sep='\t', file=ouf)
@@ -105,7 +104,7 @@ def write_atts_denovo(atts_denovo: Sequence[Feature], genome: Genome, atts_denov
     with open(os.path.join(atts_denovo_dir, genome.id + '.atts_denovo'), 'w') as ouf:
         print('att_start', 'att_end', sep='\t', file=ouf)
         for att in atts_denovo:
-            print(att.coords.start, att.coords.end, sep='\t', file=ouf)
+            print(att.start, att.end, sep='\t', file=ouf)
 
 
 def create_pipolb_entries(hmmsearch_table, proteins_file) -> Sequence[Tuple[str, int, int, int]]:

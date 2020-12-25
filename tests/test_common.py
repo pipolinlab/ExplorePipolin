@@ -1,6 +1,7 @@
 import unittest
 
-from explore_pipolin.common import Orientation, Contig, Genome, Feature, RepeatPair, PipolinFragment, Range
+from explore_pipolin.common import Orientation, Contig, Genome, Feature, RepeatPair, PipolinFragment, Range, \
+    FeaturesContainer, FeatureType
 from explore_pipolin.common import define_genome_id
 
 
@@ -37,8 +38,15 @@ class SetUpGenome(unittest.TestCase):
         self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa',
                                           contigs=[self.short_contig, self.long_contig])
 
-        self.long_contig_feature = Feature(Range(start=123, end=321), strand=Orientation.REVERSE,
-                                           contig_id=self.long_contig_id, genome=self.multi_contig_genome)
+        self.long_contig_feature1 = Feature(Range(123, 231), strand=Orientation.REVERSE,
+                                            contig_id=self.long_contig_id, genome=self.multi_contig_genome)
+        self.long_contig_feature2 = Feature(Range(213, 234), strand=Orientation.REVERSE,
+                                            contig_id=self.long_contig_id, genome=self.multi_contig_genome)
+        self.long_contig_feature3 = Feature(Range(321, 432), strand=Orientation.FORWARD,
+                                            contig_id=self.long_contig_id, genome=self.multi_contig_genome)
+        self.short_contig_feature = Feature(Range(10, 60), strand=Orientation.FORWARD,
+                                            contig_id=self.short_contig_id, genome=self.multi_contig_genome)
+        self.features = FeaturesContainer()
 
         self.pipolin = PipolinFragment(contig_id='boo', genome=self.multi_contig_genome,
                                        coords=Range(start=300, end=400))
@@ -48,7 +56,7 @@ class SetUpGenome(unittest.TestCase):
         self.repeat_f3 = Range(start=65, end=85)
         self.repeat = RepeatPair(self.repeat_f1, self.repeat_f2,
                                  right_seq='GATTACAATC', left_seq='GATTACAATC',
-                                 pipolbs=[self.long_contig_feature])
+                                 pipolbs=[self.long_contig_feature1])
 
 
 class TestGenome(SetUpGenome):
@@ -99,7 +107,7 @@ class TestRange(SetUpGenome):
 
 class TestFeature(SetUpGenome):
     def test_feature_contig_property(self):
-        self.assertEqual(self.long_contig_feature.contig, self.long_contig)
+        self.assertEqual(self.long_contig_feature1.contig, self.long_contig)
 
     def test_feature_end_not_greater_contig_length(self):
         with self.assertRaises(AssertionError):
@@ -107,10 +115,54 @@ class TestFeature(SetUpGenome):
                     contig_id=self.short_contig.id, genome=self.multi_contig_genome)
 
 
+class TestFeaturesContainer(SetUpGenome):
+    def test_add_get_feature(self):
+        feature_type = FeatureType.PIPOLB
+        self.features.add_feature(self.long_contig_feature1, feature_type)
+        self.assertEqual(self.features.get_features(feature_type), [self.long_contig_feature1])
+
+    def test_get_features_by_contig_sorted(self):
+        feature_type = FeatureType.TRNA
+        self.features.add_feature(self.long_contig_feature2, feature_type)
+        self.features.add_feature(self.long_contig_feature3, feature_type)
+        self.features.add_feature(self.long_contig_feature1, feature_type)
+
+        features_dict = self.features.get_features_dict_by_contig_sorted(feature_type)
+        features_list = self.features.get_features_list_of_contig_sorted(feature_type, self.long_contig_id)
+        self.assertEqual(features_dict[self.long_contig_id], features_list)
+
+    def test_get_overlapping_with_feature(self):
+        self.features.add_feature(self.long_contig_feature1, FeatureType.TRNA)
+        self.features.add_feature(self.long_contig_feature2, FeatureType.ATT)
+        self.features.add_feature(self.long_contig_feature3, FeatureType.PIPOLB)
+
+        ofeature_present = self.features.get_overlapping_with_feature(FeatureType.TRNA, self.long_contig_feature2)
+        self.assertEqual(ofeature_present, self.long_contig_feature1)
+
+        ofeature_absent = self.features.get_overlapping_with_feature(FeatureType.PIPOLB, self.long_contig_feature2)
+        self.assertIsNone(ofeature_absent)
+
+    def test_is_on_the_same_contig(self):
+        self.features.add_feature(self.long_contig_feature1, FeatureType.TRNA)
+        self.features.add_feature(self.long_contig_feature2, FeatureType.ATT)
+        self.assertTrue(self.features.is_on_the_same_contig(FeatureType.TRNA, FeatureType.ATT))
+
+        self.features.add_feature(self.short_contig_feature, FeatureType.PIPOLB)
+        self.assertFalse(self.features.is_on_the_same_contig(FeatureType.ATT, FeatureType.PIPOLB))
+
+    def test_is_overlapping_with(self):
+        qrange = Range(150, 250)
+        self.features.add_feature(self.long_contig_feature1, FeatureType.PIPOLB)
+        self.features.add_feature(self.long_contig_feature3, FeatureType.TRNA)
+
+        self.assertTrue(self.features.is_overlapping_with(qrange, FeatureType.PIPOLB))
+        self.assertFalse(self.features.is_overlapping_with(qrange, FeatureType.TRNA))
+
+
 class UtilitiesTestCase(SetUpGenome):
     def test_repeat_seq_not_greater_range(self):
         with self.assertRaises(AssertionError):
-            RepeatPair(self.repeat_f1, self.repeat_f2, 'ATCGTAGCTTGACTTCG', 'ATCGTAGCTTGACTTCG', [self.long_contig_feature])
+            RepeatPair(self.repeat_f1, self.repeat_f2, 'ATCGTAGCTTGACTTCG', 'ATCGTAGCTTGACTTCG', [self.long_contig_feature1])
 
     def test_repeat_left_shift_greater_right_shift(self):
         with self.assertRaises(AssertionError):

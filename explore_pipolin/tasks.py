@@ -99,7 +99,7 @@ def find_pipolbs(genome: Genome, out_dir) -> Genome:
                             os.path.join(results_dir, genome.id + '.pos_vs_neg'), is_intersection=False)
 
     for entry in entries_pipolb:
-        feature = Feature(coords=Range(start=entry[1], end=entry[2]),
+        feature = Feature(frange=Range(start=entry[1], end=entry[2]),
                           strand=Orientation.orientation_from_blast(entry[3]),
                           contig_id=entry[0], genome=genome)
         genome.features.add_feature(feature=feature, feature_type=FeatureType.PIPOLB)
@@ -144,14 +144,14 @@ def add_trna_features_from_aragorn_entries(entries, genome: Genome):
             # "correct strange coordinates in -l mode" as in Prokka
             start = max(hit[0], 1)
             end = min(hit[1], genome.get_contig_by_id(contig_id=contig_id).length)
-            trna_feature = Feature(coords=Range(start=start, end=end),
+            trna_feature = Feature(frange=Range(start=start, end=end),
                                    strand=hit[2], contig_id=contig_id, genome=genome)
             genome.features.add_feature(feature=trna_feature, feature_type=FeatureType.TRNA)
 
 
 def find_and_add_target_trnas_features(features: FeaturesContainer):
     for att in features.get_features(FeatureType.ATT):
-        target_trna = features.find_overlapping_feature(att, FeatureType.TRNA)
+        target_trna = features.get_overlapping_with_feature(FeatureType.TRNA, att)
         if target_trna is not None:
             features.add_feature(feature=target_trna, feature_type=FeatureType.TARGET_TRNA)
 
@@ -191,7 +191,7 @@ def find_atts_denovo(genome: Genome, out_dir) -> Genome:
         genome.features.add_feature(feature=atts_pair.right_range, feature_type=FeatureType.ATT_DENOVO)
 
     for att in genome.features.get_features(FeatureType.ATT_DENOVO):
-        target_trna = genome.features.find_overlapping_feature(att, FeatureType.TRNA)
+        target_trna = genome.features.get_overlapping_with_feature(FeatureType.TRNA, att)
         if target_trna is not None:
             genome.features.add_feature(feature=target_trna, feature_type=FeatureType.TARGET_TRNA_DENOVO)
 
@@ -222,7 +222,7 @@ def are_atts_present(genome: Genome) -> Genome:
         if set(atts_frames).pop() == genome.features.get_features(FeatureType.TARGET_TRNA_DENOVO)[0].strand:
             reverse_denovo_atts = []
             for att in genome.features.get_features(FeatureType.ATT_DENOVO):
-                reverse_denovo_atts.append(Feature(coords=Range(start=att.coords.start, end=att.coords.end),
+                reverse_denovo_atts.append(Feature(frange=Range(start=att.start, end=att.end),
                                                    strand=-att.strand, contig_id=att.contig.id, genome=genome))
             [genome.features.add_feature(feature=i, feature_type=FeatureType.ATT) for i in reverse_denovo_atts]
         else:
