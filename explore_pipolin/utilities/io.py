@@ -5,7 +5,7 @@ from typing import MutableMapping, MutableSequence, Sequence, Tuple, List, Itera
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.common import Genome, Orientation, RepeatPair, Contig, Feature, FeatureType, Window
+from explore_pipolin.common import Genome, Strand, RepeatPair, Contig, Feature, FeatureType, Window
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
@@ -62,10 +62,10 @@ def read_aragorn_batch(aragorn_batch) -> MutableMapping[str, MutableSequence]:
                     coordinates = hit[0].split(sep=' ')[-1]
                     if coordinates[0] == 'c':
                         start, end = (int(i) for i in coordinates[2:-1].split(sep=','))
-                        entries[entry].append((start, end, Orientation.REVERSE))
+                        entries[entry].append((start, end, Strand.REVERSE))
                     else:
                         start, end = (int(i) for i in coordinates[1:-1].split(sep=','))
-                        entries[entry].append((start, end, Orientation.FORWARD))
+                        entries[entry].append((start, end, Strand.FORWARD))
 
     return entries
 

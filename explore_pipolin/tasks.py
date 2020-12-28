@@ -13,7 +13,7 @@ from typing import Any, Optional, Sequence
 
 from explore_pipolin.tasks_related.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, Genome, \
-    define_genome_id, FeaturesContainer, Orientation, Range
+    define_genome_id, FeaturesContainer, Strand, Range
 from explore_pipolin.utilities.logging import genome_specific_logging
 from explore_pipolin.tasks_related.misc import join_it, get_contig_orientation, \
     is_single_target_trna_per_contig, add_features_from_blast_entries
@@ -58,8 +58,8 @@ def find_pipolbs(genome: Genome, out_dir) -> Genome:
                                            proteins_file=prodigal_output_file)
 
     for entry in entries_pipolb:
-        feature = Feature(frange=Range(start=entry[1], end=entry[2]),
-                          strand=Orientation.orientation_from_blast(entry[3]),
+        feature = Feature(location=Range(start=entry[1], end=entry[2]),
+                          strand=Strand.orientation_from_blast(entry[3]),
                           contig_id=entry[0], genome=genome)
         genome.features.add_feature(feature=feature, feature_type=FeatureType.PIPOLB)
 
@@ -103,7 +103,7 @@ def add_trna_features_from_aragorn_entries(entries, genome: Genome):
             # "correct strange coordinates in -l mode" as in Prokka
             start = max(hit[0], 1)
             end = min(hit[1], genome.get_contig_by_id(contig_id=contig_id).length)
-            trna_feature = Feature(frange=Range(start=start, end=end),
+            trna_feature = Feature(location=Range(start=start, end=end),
                                    strand=hit[2], contig_id=contig_id, genome=genome)
             genome.features.add_feature(feature=trna_feature, feature_type=FeatureType.TRNA)
 
@@ -147,13 +147,13 @@ def find_atts_denovo(genome: Genome, out_dir) -> Genome:
     atts_denovo: Sequence[RepeatPair] = [rep for rep in repeats if is_att_denovo(genome, rep)]
     for atts_pair in atts_denovo:
         genome.features.add_feature(feature=Feature(
-            frange=atts_pair.left_range,
-            strand=Orientation.FORWARD,
+            location=atts_pair.left_range,
+            strand=Strand.FORWARD,
             contig_id=genome.contigs[0].id,
             genome=genome), feature_type=FeatureType.ATT_DENOVO)
         genome.features.add_feature(feature=Feature(
-            frange=atts_pair.right_range,
-            strand=Orientation.FORWARD,
+            location=atts_pair.right_range,
+            strand=Strand.FORWARD,
             contig_id=genome.contigs[0].id,
             genome=genome), feature_type=FeatureType.ATT_DENOVO)
 
@@ -189,7 +189,7 @@ def are_atts_present(genome: Genome) -> Genome:
         if set(atts_frames).pop() == genome.features.get_features(FeatureType.TARGET_TRNA_DENOVO).first.strand:
             reverse_denovo_atts = []
             for att in genome.features.get_features(FeatureType.ATT_DENOVO):
-                reverse_denovo_atts.append(Feature(frange=Range(start=att.start, end=att.end),
+                reverse_denovo_atts.append(Feature(location=Range(start=att.start, end=att.end),
                                                    strand=-att.strand, contig_id=att.contig.id, genome=genome))
             [genome.features.add_feature(feature=i, feature_type=FeatureType.ATT) for i in reverse_denovo_atts]
         else:

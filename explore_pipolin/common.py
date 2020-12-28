@@ -7,16 +7,16 @@ from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping,
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
-class Orientation(Enum):
+class Strand(Enum):
     FORWARD = auto()
     REVERSE = auto()
 
     @staticmethod
     def from_pm_one_encoding(hit_strand):
         if hit_strand == 1:
-            return Orientation.FORWARD
+            return Strand.FORWARD
         elif hit_strand == -1:
-            return Orientation.REVERSE
+            return Strand.REVERSE
         else:
             raise AssertionError(f'Unknown hit strand: {hit_strand}! Should be 1 or -1.')
 
@@ -28,10 +28,10 @@ class Orientation(Enum):
 
 
 class Contig:
-    def __init__(self, contig_id: str, contig_length: int, orientation=Orientation.FORWARD):
+    def __init__(self, contig_id: str, contig_length: int, orientation=Strand.FORWARD):
         self.id = contig_id
         self.length = contig_length
-        self.orientation: Orientation = orientation
+        self.orientation: Strand = orientation
 
 
 class Genome:
@@ -84,22 +84,22 @@ class Range:
 
 
 class Feature:
-    def __init__(self, frange: Range, strand: Orientation, contig_id: str, genome: Genome):
-        self.range = frange
+    def __init__(self, location: Range, strand: Strand, contig_id: str, genome: Genome):
+        self.location = location
         self.strand = strand
         self.contig_id = contig_id
         self.genome = genome
 
-        if self.range.end > self.contig.length:
+        if self.location.end > self.contig.length:
             raise AssertionError('Feature end cannot be greater than contig length!')
 
     @property
     def start(self) -> int:
-        return self.range.start
+        return self.location.start
 
     @property
     def end(self) -> int:
-        return self.range.end
+        return self.location.end
 
     @property
     def contig(self) -> Contig:
@@ -138,7 +138,7 @@ class FeatureSet(Set[Feature]):
     @staticmethod
     def _get_overlapping_with_feature(features_list, feature):
         for other_feature in features_list:
-            if feature.range.is_overlapping(other_feature.range):
+            if feature.location.is_overlapping(other_feature.location):
                 return other_feature
 
     def get_list_of_contig_sorted(self, contig_id: str) -> Sequence[Feature]:
@@ -163,7 +163,7 @@ class FeaturesContainer:
 
     def is_overlapping_with(self, qrange: Range, feature_type: FeatureType) -> bool:
         for other_feature in self.get_features(feature_type):
-            if qrange.is_overlapping(other_feature.range):
+            if qrange.is_overlapping(other_feature.location):
                 return True
         return False
 
@@ -194,9 +194,9 @@ class RepeatPair:
 
 
 class PipolinFragment(Feature):
-    def __init__(self, frange: Range, contig_id: str, genome: Genome):
+    def __init__(self, location: Range, contig_id: str, genome: Genome):
         # TODO: do I need orientation here?
-        super(PipolinFragment, self).__init__(frange, Orientation.FORWARD, contig_id, genome)
+        super(PipolinFragment, self).__init__(location, Strand.FORWARD, contig_id, genome)
         self.atts: MutableSequence[Feature] = []
 
 

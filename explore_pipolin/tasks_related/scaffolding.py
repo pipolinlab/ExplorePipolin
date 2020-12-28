@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from typing import Sequence, MutableSequence, Optional, Set
 
-from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Orientation, Pipolin, Genome, Range
+from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Strand, Pipolin, Genome, Range
 from explore_pipolin.tasks_related.misc import get_windows
 
 
@@ -39,7 +39,7 @@ class Scaffolder:
                     pipolin_range = pipolin_range.inflate(50)
 
                     pipolin = PipolinFragment(contig_id=unchangeable_contig.id, genome=self.genome,
-                                              coords=pipolin_range.clamp(0, contig_length))
+                                              location=pipolin_range.clamp(0, contig_length))
                     pipolin.atts.extend(self.atts_dict[unchangeable_contig.id])
                     return Pipolin(pipolin)
                     # TODO: if att_only_contig has a target_trna, it could be added on the right
@@ -54,7 +54,7 @@ class Scaffolder:
             elif len(att_only_contigs) == 2:
                 # TODO: the order can be also [middle_fragment, left_fragment, right_fragment]
                 middle_fragment = PipolinFragment(contig_id=unchangeable_contig.id, genome=self.genome,
-                                                  coords=Range(0, unchangeable_contig.length))
+                                                  location=Range(0, unchangeable_contig.length))
                 middle_fragment.atts.extend(self.atts_dict[unchangeable_contig.id])
 
                 left_atts = self.atts_dict[att_only_contigs[0].id]
@@ -93,24 +93,24 @@ class Scaffolder:
 
     def _create_unchangeable_fragment(self, contig: Contig, direction: Direction) -> PipolinFragment:
         if direction is Direction.RIGHT:
-            if contig.orientation == Orientation.FORWARD:
+            if contig.orientation == Strand.FORWARD:
                 fragment_range = Range(self.atts_dict[contig.id][0].start, contig.length)
                 fragment_range = fragment_range.inflate(50).clamp(0, contig.length)
                 fragment = PipolinFragment(contig_id=contig.id, genome=self.genome,
-                                           coords=fragment_range)
+                                           location=fragment_range)
             else:
                 fragment_range = Range(0, self.atts_dict[contig.id][-1].end)
                 fragment_range = fragment_range.inflate(50).clamp(0, contig.length)
-                fragment = PipolinFragment(contig_id=contig.id, genome=self.genome, coords=fragment_range)
+                fragment = PipolinFragment(contig_id=contig.id, genome=self.genome, location=fragment_range)
         else:
-            if contig.orientation == Orientation.FORWARD:
+            if contig.orientation == Strand.FORWARD:
                 fragment_range = Range(0, self.atts_dict[contig.id][-1].end)
                 fragment_range = fragment_range.inflate(50).clamp(0, contig.length)
-                fragment = PipolinFragment(contig_id=contig.id, genome=self.genome, coords=fragment_range)
+                fragment = PipolinFragment(contig_id=contig.id, genome=self.genome, location=fragment_range)
             else:
                 fragment_range = Range(self.atts_dict[contig.id][0].start, contig.length)
                 fragment_range = fragment_range.inflate(50).clamp(0, contig.length)
-                fragment = PipolinFragment(contig_id=contig.id, genome=self.genome, coords=fragment_range)
+                fragment = PipolinFragment(contig_id=contig.id, genome=self.genome, location=fragment_range)
 
         fragment.atts.extend(self.atts_dict[contig.id])
         return fragment
@@ -150,9 +150,9 @@ class Scaffolder:
             polbs_contigs = list(polbs_contigs)
             if polbs_contigs[0].length + polbs_contigs[1].length < 15000:
                 polb0_fragment = PipolinFragment(contig_id=polbs_contigs[0].id, genome=self.genome,
-                                                 coords=Range(0, polbs_contigs[0].length))
+                                                 location=Range(0, polbs_contigs[0].length))
                 polb1_fragment = PipolinFragment(contig_id=polbs_contigs[1].id, genome=self.genome,
-                                                 coords=Range(0, polbs_contigs[1].length))
+                                                 location=Range(0, polbs_contigs[1].length))
 
                 contig_features = self.genome.features.get_features(FeatureType.PIPOLB).get_list_of_contig_sorted(
                         polbs_contigs[0].id)
@@ -171,7 +171,7 @@ class Scaffolder:
         elif len(polbs_contigs) == 1:
             the_polb_contig, = polbs_contigs
             return [PipolinFragment(contig_id=the_polb_contig.id, genome=self.genome,
-                                    coords=Range(0, the_polb_contig.length))]
+                                    location=Range(0, the_polb_contig.length))]
 
         raise NotImplementedError
 
@@ -191,18 +191,18 @@ class Scaffolder:
         contig = contig_atts[0].contig
         contig_length = contig.length
         if direction is Direction.RIGHT:
-            if contig.orientation == Orientation.FORWARD:
+            if contig.orientation == Strand.FORWARD:
                 fragment_range = Range(0, contig_atts[-1].end + 50)
             else:
                 fragment_range = Range(contig_atts[0].start - 50, contig_length)
         else:
-            if contig.orientation == Orientation.FORWARD:
+            if contig.orientation == Strand.FORWARD:
                 fragment_range = Range(contig_atts[0].start - 50, contig_length)
             else:
                 fragment_range = Range(0, contig_atts[-1].end + 50)
 
         fragment = PipolinFragment(contig_id=contig.id, genome=self.genome,
-                                   coords=fragment_range.clamp(0, contig_length))
+                                   location=fragment_range.clamp(0, contig_length))
         fragment.atts.extend(contig_atts)
         return fragment
 
@@ -238,12 +238,12 @@ class Scaffolder:
         polbs_sorted = self.polbs_dict[contig_id]
         atts_sorted = self.atts_dict[contig_id]
         if polbs_sorted[0].start > atts_sorted[-1].end:
-            if polbs_sorted[0].contig.orientation == Orientation.FORWARD:
+            if polbs_sorted[0].contig.orientation == Strand.FORWARD:
                 return Direction.RIGHT
             else:
                 return Direction.LEFT
         elif polbs_sorted[-1].end < atts_sorted[0].start:
-            if polbs_sorted[-1].contig.orientation == Orientation.FORWARD:
+            if polbs_sorted[-1].contig.orientation == Strand.FORWARD:
                 return Direction.LEFT
             else:
                 return Direction.RIGHT
@@ -259,14 +259,14 @@ def create_pipolin_fragments_single_contig(genome: Genome) -> Pipolin:
     if len(genome.features.get_features(FeatureType.ATT).get_dict_by_contig_sorted()) != 0:
         pipolin_range = _get_pipolin_bounds(genome)
         pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig.id,
-                                  genome=genome, coords=pipolin_range)
+                                  genome=genome, location=pipolin_range)
 
         pipolin.atts.extend(genome.features.get_features(FeatureType.ATT))
         return Pipolin(pipolin)
     else:
         left_window, right_window = get_windows(genome)
         pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig.id,
-                                  genome=genome, coords=Range(left_window.start, right_window.end))
+                                  genome=genome, location=Range(left_window.start, right_window.end))
         return Pipolin(pipolin)
 
 

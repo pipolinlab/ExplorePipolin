@@ -1,27 +1,27 @@
 import unittest
 
-from explore_pipolin.common import Orientation, Contig, Genome, Feature, RepeatPair, PipolinFragment, Range, \
+from explore_pipolin.common import Strand, Contig, Genome, Feature, RepeatPair, PipolinFragment, Range, \
     FeaturesContainer, FeatureType
 from explore_pipolin.common import define_genome_id
 
 
 class TestOrientation(unittest.TestCase):
     def test_default_contig_orientation(self):
-        self.assertEqual(Contig('foo', 100).orientation, Orientation.FORWARD)
+        self.assertEqual(Contig('foo', 100).orientation, Strand.FORWARD)
 
     def test_from_pm_one_encoding(self):
-        self.assertEqual(Orientation.from_pm_one_encoding(1), Orientation.FORWARD)
-        self.assertEqual(Orientation.from_pm_one_encoding(-1), Orientation.REVERSE)
+        self.assertEqual(Strand.from_pm_one_encoding(1), Strand.FORWARD)
+        self.assertEqual(Strand.from_pm_one_encoding(-1), Strand.REVERSE)
         with self.assertRaises(AssertionError):
-            Orientation.from_pm_one_encoding(0)
+            Strand.from_pm_one_encoding(0)
 
     def test_to_pm_one_encoding(self):
-        self.assertEqual(Orientation.FORWARD.to_pm_one_encoding(), 1)
-        self.assertEqual(Orientation.REVERSE.to_pm_one_encoding(), -1)
+        self.assertEqual(Strand.FORWARD.to_pm_one_encoding(), 1)
+        self.assertEqual(Strand.REVERSE.to_pm_one_encoding(), -1)
 
     def test_negation(self):
-        self.assertEqual(-Orientation.FORWARD, Orientation.REVERSE)
-        self.assertEqual(-Orientation.REVERSE, Orientation.FORWARD)
+        self.assertEqual(-Strand.FORWARD, Strand.REVERSE)
+        self.assertEqual(-Strand.REVERSE, Strand.FORWARD)
 
 
 class SetUpGenome(unittest.TestCase):
@@ -38,18 +38,18 @@ class SetUpGenome(unittest.TestCase):
         self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa',
                                           contigs=[self.short_contig, self.long_contig])
 
-        self.long_contig_feature1 = Feature(Range(123, 231), strand=Orientation.REVERSE,
+        self.long_contig_feature1 = Feature(Range(123, 231), strand=Strand.REVERSE,
                                             contig_id=self.long_contig_id, genome=self.multi_contig_genome)
-        self.long_contig_feature2 = Feature(Range(213, 234), strand=Orientation.REVERSE,
+        self.long_contig_feature2 = Feature(Range(213, 234), strand=Strand.REVERSE,
                                             contig_id=self.long_contig_id, genome=self.multi_contig_genome)
-        self.long_contig_feature3 = Feature(Range(321, 432), strand=Orientation.FORWARD,
+        self.long_contig_feature3 = Feature(Range(321, 432), strand=Strand.FORWARD,
                                             contig_id=self.long_contig_id, genome=self.multi_contig_genome)
-        self.short_contig_feature = Feature(Range(10, 60), strand=Orientation.FORWARD,
+        self.short_contig_feature = Feature(Range(10, 60), strand=Strand.FORWARD,
                                             contig_id=self.short_contig_id, genome=self.multi_contig_genome)
         self.features = FeaturesContainer()
 
         self.pipolin = PipolinFragment(contig_id='boo', genome=self.multi_contig_genome,
-                                       frange=Range(start=300, end=400))
+                                       location=Range(start=300, end=400))
 
         self.repeat_f1 = Range(start=10, end=15)
         self.repeat_f2 = Range(start=60, end=65)
@@ -111,7 +111,7 @@ class TestFeatureClasses(SetUpGenome):
 
     def test_feature_end_not_greater_contig_length(self):
         with self.assertRaises(AssertionError):
-            Feature(Range(start=123, end=321), strand=Orientation.FORWARD,
+            Feature(Range(start=123, end=321), strand=Strand.FORWARD,
                     contig_id=self.short_contig.id, genome=self.multi_contig_genome)
 
     def test_add_get_feature(self):

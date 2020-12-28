@@ -4,7 +4,7 @@ from typing import MutableSequence
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 
-from explore_pipolin.common import Orientation, Pipolin, Genome
+from explore_pipolin.common import Strand, Pipolin, Genome
 from explore_pipolin.utilities.io import SeqIORecords
 
 
@@ -24,7 +24,7 @@ def _generate_att_seq_features(record_format: str, genome: Genome, pipolin: Pipo
     att_seq_features = []
     in_start = 0
     for fragment in pipolin.fragments:
-        fragment_shift = fragment.start if fragment.contig.orientation == Orientation.FORWARD else fragment.end
+        fragment_shift = fragment.start if fragment.contig.orientation == Strand.FORWARD else fragment.end
         for att in fragment.atts:
             att_start, att_end = sorted([abs(att.start - fragment_shift), abs(att.end - fragment_shift)])
             if record_format == 'gb':
@@ -41,7 +41,7 @@ def _generate_att_seq_features(record_format: str, genome: Genome, pipolin: Pipo
     return att_seq_features
 
 
-def _create_gb_att_seq_feature(start: int, end: int, strand: Orientation, genome_id: str) -> SeqFeature:
+def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, genome_id: str) -> SeqFeature:
     random_number = randrange(10000, 99999)
     gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{genome_id}_{random_number}'],
                      'rpt_family': ['Att'], 'rpt_type': ['direct']}
@@ -51,7 +51,7 @@ def _create_gb_att_seq_feature(start: int, end: int, strand: Orientation, genome
     return att_seq_feature
 
 
-def _create_gff_att_seq_feature(start: int, end: int, strand: Orientation, genome_id: str) -> SeqFeature:
+def _create_gff_att_seq_feature(start: int, end: int, strand: Strand, genome_id: str) -> SeqFeature:
     random_number = randrange(10000, 99999)
     gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
                       'ID': [f'{genome_id}_{random_number}'], 'inference': ['HMM:custom'],

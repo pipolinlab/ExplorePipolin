@@ -1,6 +1,6 @@
 from typing import List
 
-from explore_pipolin.common import Orientation, Contig, Genome, Feature, FeatureType, Range, Window
+from explore_pipolin.common import Strand, Contig, Genome, Feature, FeatureType, Range, Window
 
 
 def is_single_target_trna_per_contig(genome: Genome):
@@ -12,7 +12,7 @@ def is_single_target_trna_per_contig(genome: Genome):
         raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
 
 
-def get_contig_orientation(contig: Contig, genome: Genome) -> Orientation:
+def get_contig_orientation(contig: Contig, genome: Genome) -> Strand:
     target_trnas = genome.features.get_features(FeatureType.TARGET_TRNA).get_list_of_contig_sorted(contig.id)
     atts = genome.features.get_features(FeatureType.ATT).get_list_of_contig_sorted(contig.id)
     atts_strands = [att.strand for att in atts]
@@ -47,14 +47,14 @@ def join_it(iterable, delimiter):
 
 def create_fragment_record(fragment, genome_dict):
     fragment_record = genome_dict[fragment.contig.id][fragment.start:fragment.end]
-    if fragment.contig.orientation == Orientation.REVERSE:
+    if fragment.contig.orientation == Strand.REVERSE:
         fragment_record = fragment_record.reverse_complement()
     return fragment_record
 
 
 def feature_from_blasthit(hit, contig_id: str, genome: Genome) -> Feature:
-    return Feature(frange=Range(start=hit.hit_start, end=hit.hit_end),
-                   strand=Orientation.from_pm_one_encoding(hit.hit_strand),
+    return Feature(location=Range(start=hit.hit_start, end=hit.hit_end),
+                   strand=Strand.from_pm_one_encoding(hit.hit_strand),
                    contig_id=contig_id, genome=genome)
 
 
