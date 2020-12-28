@@ -124,7 +124,12 @@ class FeatureSet(Set[Feature]):
             return None
 
     def get_dict_by_contig_sorted(self) -> Mapping[str, Sequence[Feature]]:
-        return self._dict_by_contig_sorted()
+        result: MutableMapping[str, List[Feature]] = defaultdict(list)
+        for feature in self:
+            result[feature.contig_id].append(feature)
+        for _, features in result.items():
+            features.sort(key=lambda p: p.start)
+        return result
 
     @property
     def first(self) -> Feature:
@@ -135,14 +140,6 @@ class FeatureSet(Set[Feature]):
         for other_feature in features_list:
             if feature.range.is_overlapping(other_feature.range):
                 return other_feature
-
-    def _dict_by_contig_sorted(self) -> Mapping[str, Sequence[Feature]]:
-        result: MutableMapping[str, List[Feature]] = defaultdict(list)
-        for feature in self:
-            result[feature.contig_id].append(feature)
-        for _, features in result.items():
-            features.sort(key=lambda p: p.start)
-        return result
 
     def get_list_of_contig_sorted(self, contig_id: str) -> Sequence[Feature]:
         return self.get_dict_by_contig_sorted()[contig_id]
@@ -197,9 +194,9 @@ class RepeatPair:
 
 
 class PipolinFragment(Feature):
-    def __init__(self, coords: Range, contig_id: str, genome: Genome):
+    def __init__(self, frange: Range, contig_id: str, genome: Genome):
         # TODO: do I need orientation here?
-        super(PipolinFragment, self).__init__(coords, Orientation.FORWARD, contig_id, genome)
+        super(PipolinFragment, self).__init__(frange, Orientation.FORWARD, contig_id, genome)
         self.atts: MutableSequence[Feature] = []
 
 
@@ -215,13 +212,13 @@ class Window:
         self.pipolbs = pipolbs
 
 
-def define_genome_id(genome_path: str):
+def define_genome_id(genome_path: str) -> str:
     genome_id = os.path.splitext(os.path.basename(genome_path))[0]
     _check_genome_id_length(genome_id)
     return genome_id
 
 
-def _check_genome_id_length(genome_id):
+def _check_genome_id_length(genome_id: str) -> None:
     max_length_allowed = 16
     if len(genome_id) > max_length_allowed:
         raise AssertionError('Genome file basename is going to be used as a genome identifier. '

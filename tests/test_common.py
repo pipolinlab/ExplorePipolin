@@ -49,7 +49,7 @@ class SetUpGenome(unittest.TestCase):
         self.features = FeaturesContainer()
 
         self.pipolin = PipolinFragment(contig_id='boo', genome=self.multi_contig_genome,
-                                       coords=Range(start=300, end=400))
+                                       frange=Range(start=300, end=400))
 
         self.repeat_f1 = Range(start=10, end=15)
         self.repeat_f2 = Range(start=60, end=65)
@@ -105,7 +105,7 @@ class TestRange(SetUpGenome):
         self.assertTrue(self.repeat_f2.is_overlapping(self.repeat_f3))
 
 
-class TestFeature(SetUpGenome):
+class TestFeatureClasses(SetUpGenome):
     def test_feature_contig_property(self):
         self.assertEqual(self.long_contig_feature1.contig, self.long_contig)
 
@@ -114,12 +114,10 @@ class TestFeature(SetUpGenome):
             Feature(Range(start=123, end=321), strand=Orientation.FORWARD,
                     contig_id=self.short_contig.id, genome=self.multi_contig_genome)
 
-
-class TestFeaturesContainer(SetUpGenome):
     def test_add_get_feature(self):
         feature_type = FeatureType.PIPOLB
         self.features.add_feature(self.long_contig_feature1, feature_type)
-        self.assertEqual(self.features.get_features(feature_type), [self.long_contig_feature1])
+        self.assertEqual(self.features.get_features(feature_type).first, self.long_contig_feature1)
 
     def test_get_features_by_contig_sorted(self):
         feature_type = FeatureType.TRNA

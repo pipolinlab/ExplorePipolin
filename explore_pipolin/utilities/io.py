@@ -11,17 +11,17 @@ SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
 
 def read_genome_contigs_from_file(genome_file: str) -> MutableSequence[Contig]:
-    genome_dict = read_seqio_records(file=genome_file, file_format='fasta')
+    genome_dict = create_seqio_records_dict(file=genome_file, file_format='fasta')
     contigs = []
     for key, value in genome_dict.items():
         contigs.append(Contig(contig_id=key, contig_length=len(value.seq)))
     return contigs
 
 
-def read_seqio_records(file, file_format) -> SeqIORecords:
+def create_seqio_records_dict(file, file_format) -> SeqIORecords:
     file_formats = ['genbank', 'fasta']
     if file_format not in file_formats:
-        raise AssertionError('Only genbank or fasta formats are acceptable!')
+        raise AssertionError(f'Unknown file format: {file_format}! Only genbank or fasta formats are acceptable.')
 
     records = SeqIO.to_dict(SeqIO.parse(file, format=file_format))
     return records

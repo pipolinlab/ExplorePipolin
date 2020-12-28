@@ -18,7 +18,7 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 from explore_pipolin.tasks_related.misc import join_it, get_contig_orientation, \
     is_single_target_trna_per_contig, add_features_from_blast_entries
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo, create_pipolb_entries
-from explore_pipolin.utilities.io import read_seqio_records
+from explore_pipolin.utilities.io import create_seqio_records_dict
 from explore_pipolin.utilities.io import read_aragorn_batch
 from explore_pipolin.tasks_related.atts_denovo_search import find_repeats, is_att_denovo
 from explore_pipolin.utilities.external_tools import blastn_against_ref_att, run_prodigal, run_hmmsearch
@@ -235,7 +235,7 @@ def scaffold_pipolins(genome: Genome) -> Pipolin:
 @task()
 @genome_specific_logging
 def extract_pipolin_regions(genome: Genome, pipolin: Pipolin, out_dir: str):
-    genome_dict = read_seqio_records(file=genome.file, file_format='fasta')
+    genome_dict = create_seqio_records_dict(file=genome.file, file_format='fasta')
 
     pipolins_dir = os.path.join(out_dir, 'pipolin_sequences')
     os.makedirs(pipolins_dir, exist_ok=True)
@@ -273,8 +273,8 @@ def annotate_pipolins(genome: Genome, pipolins_dir, proteins, out_dir):
 @task()
 @genome_specific_logging
 def include_atts(genome: Genome, prokka_dir, out_dir, pipolin: Pipolin):
-    gb_records = read_seqio_records(file=os.path.join(prokka_dir, genome.id + '.gbk'),
-                                    file_format='genbank')
+    gb_records = create_seqio_records_dict(file=os.path.join(prokka_dir, genome.id + '.gbk'),
+                                           file_format='genbank')
     gff_records = read_gff_records(file=os.path.join(prokka_dir, genome.id + '.gff'))
 
     include_atts_into_gb(gb_records=gb_records, genome=genome, pipolin=pipolin)
@@ -292,7 +292,7 @@ def include_atts(genome: Genome, prokka_dir, out_dir, pipolin: Pipolin):
 @task()
 @genome_specific_logging
 def easyfig_add_colours(genome: Genome, in_dir):
-    gb_records = read_seqio_records(file=os.path.join(in_dir, genome.id + '.gbk'),
-                                    file_format='genbank')
+    gb_records = create_seqio_records_dict(file=os.path.join(in_dir, genome.id + '.gbk'),
+                                           file_format='genbank')
     add_colours(gb_records[genome.id])
     write_genbank_records(gb_records=gb_records, out_dir=in_dir, genome=genome)
