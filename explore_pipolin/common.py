@@ -178,9 +178,9 @@ class AttRepeat:
 class NewPipolin:
     # TODO: rename to Pipolin in the end
     def __init__(self, atts: Set[AttRepeat], pipolbs: Set[Feature], target_trnas: Set[Feature]):
-        self.atts = []
-        self.pipolbs = []
-        self.target_trnas = []
+        self.atts = atts
+        self.pipolbs = pipolbs
+        self.target_trnas = target_trnas
 
     # TODO: add checks for pipolbs and trnas feature types!!!
 

@@ -107,19 +107,15 @@ def write_atts_denovo(atts_denovo: Iterable[Feature], genome: Genome, atts_denov
             print(att.start, att.end, sep='\t', file=ouf)
 
 
-def create_pipolb_entries(hmmsearch_table, proteins_file) -> Sequence[Tuple[str, int, int, int]]:
-    hit_names = []
-    with open(hmmsearch_table) as inf:
-        for line in inf:
-            if line[0] != '#':
-                entry = line.strip().split()
-                hit_names.append(entry[0])
-
-    proteins = SeqIO.to_dict(SeqIO.parse(handle=proteins_file, format='fasta'))
+def create_pipolb_entries(hmmsearch_table: str) -> Sequence[Tuple[str, int, int, int]]:
     entries = []
-    for hit in hit_names:
-        description = proteins[hit].description.split(sep=' ')
-        hit_name = '_'.join(hit.split(sep='_')[:-1])
-        entries.append((hit_name, int(description[2]), int(description[4]), int(description[6])))
+    with open(hmmsearch_table) as inf:
+        content = list(SearchIO.parse(inf, 'hmmer3-tab'))
+        if len(content) != 1:
+            raise AssertionError(f'More than a single query in {hmmsearch_table}! Should be only one.')
+        for hit in content[0]:
+            name = '_'.join(hit.id.split(sep='_')[:-1])
+            description = hit.description.split(sep=' ')
+            entries.append((name, int(description[1]), int(description[3]), int(description[5])))
 
     return entries
