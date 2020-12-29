@@ -24,7 +24,7 @@ def _generate_att_seq_features(record_format: str, genome: Genome, pipolin: Pipo
     att_seq_features = []
     in_start = 0
     for fragment in pipolin.fragments:
-        fragment_shift = fragment.start if fragment.contig.orientation == Strand.FORWARD else fragment.end
+        fragment_shift = fragment.start
         for att in fragment.atts:
             att_start, att_end = sorted([abs(att.start - fragment_shift), abs(att.end - fragment_shift)])
             if record_format == 'gb':

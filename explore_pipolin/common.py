@@ -28,10 +28,9 @@ class Strand(Enum):
 
 
 class Contig:
-    def __init__(self, contig_id: str, contig_length: int, orientation=Strand.FORWARD):
+    def __init__(self, contig_id: str, contig_length: int):
         self.id = contig_id
         self.length = contig_length
-        self.orientation: Strand = orientation
 
 
 class Genome:

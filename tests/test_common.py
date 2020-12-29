@@ -6,9 +6,6 @@ from explore_pipolin.common import define_genome_id
 
 
 class TestOrientation(unittest.TestCase):
-    def test_default_contig_orientation(self):
-        self.assertEqual(Contig('foo', 100).orientation, Strand.FORWARD)
-
     def test_from_pm_one_encoding(self):
         self.assertEqual(Strand.from_pm_one_encoding(1), Strand.FORWARD)
         self.assertEqual(Strand.from_pm_one_encoding(-1), Strand.REVERSE)

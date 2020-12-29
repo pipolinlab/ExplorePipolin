@@ -15,8 +15,7 @@ from explore_pipolin.tasks_related.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, Genome, \
     define_genome_id, FeaturesContainer, Strand, Range
 from explore_pipolin.utilities.logging import genome_specific_logging
-from explore_pipolin.tasks_related.misc import join_it, get_contig_orientation, \
-    is_single_target_trna_per_contig, add_features_from_blast_entries
+from explore_pipolin.tasks_related.misc import join_it, add_features_from_blast_entries
 from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo, create_pipolb_entries
 from explore_pipolin.utilities.io import create_seqio_records_dict
 from explore_pipolin.utilities.io import read_aragorn_batch
@@ -202,16 +201,6 @@ def are_atts_present(genome: Genome) -> Genome:
         logger.warning(f'\n\n>>>Some atts were found by denovo search, but we are not going to use them!'
                        f'For more details, check the {genome.id}.atts file '
                        f'in the atts_denovo directory!\n')
-
-    return genome
-
-
-@task()
-@genome_specific_logging
-def analyse_orientation(genome: Genome) -> Genome:
-    is_single_target_trna_per_contig(genome=genome)
-    for contig in genome.contigs:
-        contig.orientation = get_contig_orientation(contig=contig, genome=genome)
 
     return genome
 

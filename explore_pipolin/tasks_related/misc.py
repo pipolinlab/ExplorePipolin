@@ -1,6 +1,6 @@
 from typing import List
 
-from explore_pipolin.common import Strand, Contig, Genome, Feature, FeatureType, Range, Window, PipolinFragment
+from explore_pipolin.common import Strand, Genome, Feature, FeatureType, Range, Window, PipolinFragment
 
 
 def is_single_target_trna_per_contig(genome: Genome):
@@ -12,31 +12,6 @@ def is_single_target_trna_per_contig(genome: Genome):
         raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")
 
 
-def get_contig_orientation(contig: Contig, genome: Genome) -> Strand:
-    target_trnas = genome.features.get_features(FeatureType.TARGET_TRNA).get_list_of_contig_sorted(contig.id)
-    atts = genome.features.get_features(FeatureType.ATT).get_list_of_contig_sorted(contig.id)
-    atts_strands = [att.strand for att in atts]
-    polbs = genome.features.get_features(feature_type=FeatureType.PIPOLB).get_list_of_contig_sorted(contig.id)
-    polbs_strands = [polb.strand for polb in polbs]
-
-    if len(target_trnas) != 0:
-        if len(set(atts_strands)) != 1:
-            raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
-        if set(atts_strands).pop() == target_trnas[0].strand:
-            raise AssertionError('ATT and tRNA are expected to be on the different strands!')
-        return - target_trnas[0].strand
-
-    elif len(atts) != 0:
-        if len(set(atts_strands)) != 1:
-            raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
-        return atts[0].strand
-
-    if len(polbs) != 0:
-        if len(set(polbs_strands)) != 1:  # an ambiguous case
-            return contig.orientation
-        return polbs[0].strand
-
-
 def join_it(iterable, delimiter):
     it = iter(iterable)
     yield next(it)
@@ -46,10 +21,7 @@ def join_it(iterable, delimiter):
 
 
 def create_fragment_record(fragment: PipolinFragment, genome_dict):
-    fragment_record = genome_dict[fragment.contig_id][fragment.start:fragment.end]
-    if fragment.contig.orientation == Strand.REVERSE:
-        fragment_record = fragment_record.reverse_complement()
-    return fragment_record
+    return genome_dict[fragment.contig_id][fragment.start:fragment.end]
 
 
 def feature_from_blasthit(hit, contig_id: str, genome: Genome) -> Feature:

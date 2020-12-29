@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from typing import Sequence, MutableSequence, Optional, Set
 
-from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Strand, Pipolin, Genome, Range
+from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Pipolin, Genome, Range
 from explore_pipolin.tasks_related.misc import get_windows
 
 
@@ -93,24 +93,14 @@ class Scaffolder:
 
     def _create_unchangeable_fragment(self, contig: Contig, direction: Direction) -> PipolinFragment:
         if direction is Direction.RIGHT:
-            if contig.orientation == Strand.FORWARD:
-                fragment_range = Range(self.atts_dict[contig.id][0].start, contig.length)
-                fragment_range = fragment_range.inflate(50).clamp(0, contig.length)
-                fragment = PipolinFragment(contig_id=contig.id, genome=self.genome,
-                                           location=fragment_range)
-            else:
-                fragment_range = Range(0, self.atts_dict[contig.id][-1].end)
-                fragment_range = fragment_range.inflate(50).clamp(0, contig.length)
-                fragment = PipolinFragment(contig_id=contig.id, genome=self.genome, location=fragment_range)
+            fragment_range = Range(self.atts_dict[contig.id][0].start, contig.length)
+            fragment_range = fragment_range.inflate(50).clamp(0, contig.length)
+            fragment = PipolinFragment(contig_id=contig.id, genome=self.genome,
+                                       location=fragment_range)
         else:
-            if contig.orientation == Strand.FORWARD:
-                fragment_range = Range(0, self.atts_dict[contig.id][-1].end)
-                fragment_range = fragment_range.inflate(50).clamp(0, contig.length)
-                fragment = PipolinFragment(contig_id=contig.id, genome=self.genome, location=fragment_range)
-            else:
-                fragment_range = Range(self.atts_dict[contig.id][0].start, contig.length)
-                fragment_range = fragment_range.inflate(50).clamp(0, contig.length)
-                fragment = PipolinFragment(contig_id=contig.id, genome=self.genome, location=fragment_range)
+            fragment_range = Range(0, self.atts_dict[contig.id][-1].end)
+            fragment_range = fragment_range.inflate(50).clamp(0, contig.length)
+            fragment = PipolinFragment(contig_id=contig.id, genome=self.genome, location=fragment_range)
 
         fragment.atts.extend(self.atts_dict[contig.id])
         return fragment
@@ -191,15 +181,9 @@ class Scaffolder:
         contig = contig_atts[0].contig
         contig_length = contig.length
         if direction is Direction.RIGHT:
-            if contig.orientation == Strand.FORWARD:
-                fragment_range = Range(0, contig_atts[-1].end + 50)
-            else:
-                fragment_range = Range(contig_atts[0].start - 50, contig_length)
+            fragment_range = Range(0, contig_atts[-1].end + 50)
         else:
-            if contig.orientation == Strand.FORWARD:
-                fragment_range = Range(contig_atts[0].start - 50, contig_length)
-            else:
-                fragment_range = Range(0, contig_atts[-1].end + 50)
+            fragment_range = Range(contig_atts[0].start - 50, contig_length)
 
         fragment = PipolinFragment(contig_id=contig.id, genome=self.genome,
                                    location=fragment_range.clamp(0, contig_length))
@@ -238,15 +222,9 @@ class Scaffolder:
         polbs_sorted = self.polbs_dict[contig_id]
         atts_sorted = self.atts_dict[contig_id]
         if polbs_sorted[0].start > atts_sorted[-1].end:
-            if polbs_sorted[0].contig.orientation == Strand.FORWARD:
-                return Direction.RIGHT
-            else:
-                return Direction.LEFT
+            return Direction.RIGHT
         elif polbs_sorted[-1].end < atts_sorted[0].start:
-            if polbs_sorted[-1].contig.orientation == Strand.FORWARD:
-                return Direction.LEFT
-            else:
-                return Direction.RIGHT
+            return Direction.LEFT
         else:
             return None
 
