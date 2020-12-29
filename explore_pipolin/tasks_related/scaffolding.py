@@ -183,7 +183,7 @@ class Scaffolder:
         if direction is Direction.RIGHT:
             fragment_range = Range(0, contig_atts[-1].end + 50)
         else:
-            fragment_range = Range(contig_atts[0].start - 50, contig_length)
+            fragment_range = Range(max(0, contig_atts[0].start - 50), contig_length)
 
         fragment = PipolinFragment(contig_id=contig.id, genome=self.genome,
                                    location=fragment_range.clamp(0, contig_length))
