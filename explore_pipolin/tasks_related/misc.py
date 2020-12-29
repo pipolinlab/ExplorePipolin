@@ -1,6 +1,6 @@
 from typing import List
 
-from explore_pipolin.common import Strand, Contig, Genome, Feature, FeatureType, Range, Window
+from explore_pipolin.common import Strand, Contig, Genome, Feature, FeatureType, Range, Window, PipolinFragment
 
 
 def is_single_target_trna_per_contig(genome: Genome):
@@ -45,8 +45,8 @@ def join_it(iterable, delimiter):
         yield x
 
 
-def create_fragment_record(fragment, genome_dict):
-    fragment_record = genome_dict[fragment.contig.id][fragment.start:fragment.end]
+def create_fragment_record(fragment: PipolinFragment, genome_dict):
+    fragment_record = genome_dict[fragment.contig_id][fragment.start:fragment.end]
     if fragment.contig.orientation == Strand.REVERSE:
         fragment_record = fragment_record.reverse_complement()
     return fragment_record

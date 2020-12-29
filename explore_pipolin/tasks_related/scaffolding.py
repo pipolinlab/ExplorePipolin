@@ -258,14 +258,14 @@ class Scaffolder:
 def create_pipolin_fragments_single_contig(genome: Genome) -> Pipolin:
     if len(genome.features.get_features(FeatureType.ATT).get_dict_by_contig_sorted()) != 0:
         pipolin_range = _get_pipolin_bounds(genome)
-        pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig.id,
+        pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig_id,
                                   genome=genome, location=pipolin_range)
 
         pipolin.atts.extend(genome.features.get_features(FeatureType.ATT))
         return Pipolin(pipolin)
     else:
         left_window, right_window = get_windows(genome)
-        pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig.id,
+        pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig_id,
                                   genome=genome, location=Range(left_window.start, right_window.end))
         return Pipolin(pipolin)
 
@@ -274,9 +274,7 @@ def _get_pipolin_bounds(genome: Genome) -> Range:
     pipolbs = sorted((i for i in genome.features.get_features(FeatureType.PIPOLB)), key=lambda p: p.start)
     atts = sorted((i for i in genome.features.get_features(FeatureType.ATT)), key=lambda p: p.start)
 
-    length = pipolbs[0].contig.length
-    left_edge = atts[0].start - 50 if atts[0].start < pipolbs[0].start \
-        else pipolbs[0].start - 50
-    right_edge = atts[-1].end + 50 if atts[-1].end > pipolbs[-1].end \
-        else pipolbs[-1].end + 50
-    return Range(left_edge if left_edge >= 0 else 0, right_edge if right_edge <= length else length)
+    contig_length = pipolbs[0].contig.length
+    left_edge = atts[0].start - 50 if atts[0].start < pipolbs[0].start else 0
+    right_edge = atts[-1].end + 50 if atts[-1].end > pipolbs[-1].end else contig_length
+    return Range(left_edge, right_edge)

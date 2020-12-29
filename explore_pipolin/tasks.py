@@ -190,7 +190,7 @@ def are_atts_present(genome: Genome) -> Genome:
             reverse_denovo_atts = []
             for att in genome.features.get_features(FeatureType.ATT_DENOVO):
                 reverse_denovo_atts.append(Feature(location=Range(start=att.start, end=att.end),
-                                                   strand=-att.strand, contig_id=att.contig.id, genome=genome))
+                                                   strand=-att.strand, contig_id=att.contig_id, genome=genome))
             [genome.features.add_feature(feature=i, feature_type=FeatureType.ATT) for i in reverse_denovo_atts]
         else:
             atts_denovo = genome.features.get_features(FeatureType.ATT_DENOVO)
@@ -246,7 +246,7 @@ def extract_pipolin_regions(genome: Genome, pipolin: Pipolin, out_dir: str):
         fragment_records = [create_fragment_record(fragment=f, genome_dict=genome_dict) for f in pipolin.fragments]
 
         for fragment_record, fragment in zip(fragment_records, pipolin.fragments):
-            logger.info(f'@pipolin fragment length {len(fragment_record)} from {fragment.contig.id}')
+            logger.info(f'@pipolin fragment length {len(fragment_record)} from {fragment.contig_id}')
 
         record = sum(join_it(fragment_records, SeqRecord(seq='N' * 100)), SeqRecord(seq=''))
 

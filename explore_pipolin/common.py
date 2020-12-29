@@ -102,6 +102,7 @@ class Feature:
         return self.location.end
 
     @property
+    # TODO: do I really need it?
     def contig(self) -> Contig:
         return self.genome.get_contig_by_id(self.contig_id)
 
