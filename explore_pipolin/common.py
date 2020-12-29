@@ -168,6 +168,23 @@ class FeaturesContainer:
         return False
 
 
+class AttRepeat:
+    def __init__(self, location: Range, seq: str, contig_id: str):
+        self.location = location
+        self.seq = seq
+        self.contig_id = contig_id
+
+
+class NewPipolin:
+    # TODO: rename to Pipolin in the end
+    def __init__(self, atts: Set[AttRepeat], pipolbs: Set[Feature], target_trnas: Set[Feature]):
+        self.atts = []
+        self.pipolbs = []
+        self.target_trnas = []
+
+    # TODO: add checks for pipolbs and trnas feature types!!!
+
+
 class RepeatPair:
     def __init__(self, left: Range, right: Range, left_seq: str, right_seq: str, pipolbs: MutableSequence[Feature]):
         self.left_range = left
