@@ -71,12 +71,12 @@ def run_prodigal(genome_file: str, output_file: str):
                    stdout=subprocess.DEVNULL)
 
 
-def _is_long_enough(genome_file):
+def _is_long_enough(genome_file) -> bool:
     records = SeqIO.parse(handle=genome_file, format='fasta')
     length = 0
     for record in records:
         length += len(record.seq)
-    return True if length >= 100000 else False
+    return length >= 100000
 
 
 _PIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/pipolb_expanded_definitive.hmm')

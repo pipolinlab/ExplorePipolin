@@ -111,9 +111,9 @@ class Scaffolder:
         if len(self.genome.features.get_features(FeatureType.TARGET_TRNA)) != 1:
             raise NotImplementedError('At the moment I can only handle one target tRNA')
 
-        the_target_trna, = self.genome.features.get_features(FeatureType.TARGET_TRNA)
+        the_target_trna: Feature = next(iter(self.genome.features.get_features(FeatureType.TARGET_TRNA)))
 
-        right_fragment = self._create_att_contig_fragment(contig_atts=self.atts_dict[the_target_trna.id],
+        right_fragment = self._create_att_contig_fragment(contig_atts=self.atts_dict[the_target_trna.contig_id],
                                                           direction=Direction.RIGHT)
 
         atts_contigs = set([i.contig for i in self.genome.features.get_features(FeatureType.ATT)])
@@ -121,7 +121,7 @@ class Scaffolder:
             print('The single record can be created!!!\n')
 
             atts_contigs = list(atts_contigs)
-            if atts_contigs[0].id == the_target_trna.id:
+            if atts_contigs[0].id == the_target_trna.contig_id:
                 left_contig = atts_contigs[1]
             else:
                 left_contig = atts_contigs[0]

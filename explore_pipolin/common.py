@@ -90,7 +90,8 @@ class Feature:
         self.genome = genome
 
         if self.location.end > self.contig.length:
-            raise AssertionError('Feature end cannot be greater than contig length!')
+            raise AssertionError(f'Feature end cannot be greater than contig length! '
+                                 f'{self.location.end} > {self.contig.length}')
 
     @property
     def start(self) -> int:

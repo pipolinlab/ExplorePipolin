@@ -209,6 +209,7 @@ def scaffold_pipolins(genome: Genome) -> Pipolin:
     # https://github.com/biopython/biopython/issues/1755
     logger = context.get('logger')
 
+    # TODO: make this inside Scaffolder!
     if genome.features.is_on_the_same_contig(FeatureType.PIPOLB, FeatureType.ATT, FeatureType.TARGET_TRNA):
         logger.warning('>>> Scaffolding is not required!')
         return create_pipolin_fragments_single_contig(genome)
