@@ -15,10 +15,7 @@ _TRNA = '(t)'   # goes always after att!
 _GAP = '...'
 
 
-def _create_genome_from_scheme(scheme: str) -> Genome:
-    if len(scheme) % 3 != 0:
-        raise AssertionError('Wrong scheme! Its length should be multiple of 3!')
-
+def create_genome_from_scheme(scheme: str) -> Genome:
     contigs_schemes = scheme.split(_GAP)
     genome = _create_genome_with_contigs(contigs_schemes)
 
@@ -49,119 +46,100 @@ def _add_features_to_genome(contigs_schemes, genome):
                 genome.features.add_feature(feature, FeatureType.TARGET_TRNA)
 
 
-class SetUpPipolinsToScaffold(unittest.TestCase):
-    def setUp(self) -> None:
-        self.genome1 = _create_genome_from_scheme('---pol---')
-        self.genome2 = _create_genome_from_scheme('---att---pol---')   # ---att(t)---pol---
-        self.genome3 = _create_genome_from_scheme('---att---pol---att---')   # ---att(t)---polb---att---
-        self.genome4 = _create_genome_from_scheme('---att---pol---...---att---')
-        self.genome5 = _create_genome_from_scheme('---att---...---pol---...---att---')
-        self.genome5_trna = _create_genome_from_scheme('---att---...---pol---...---att(t)---')
+class TestScaffolder(unittest.TestCase):
+    def _check_pipolin_fragments(self, genome1):
+        pipolin: Pipolin = Scaffolder(genome1).scaffold()
+        contigs = [i.contig for i in pipolin.fragments]
+        self.assertCountEqual(contigs, genome1.contigs)
 
-        self.genome6 = _create_genome_from_scheme('---att---pol---att---att(t)---')
-        self.genome7 = _create_genome_from_scheme('---att---...---pol---att---att(t)---')
-        self.genome8 = _create_genome_from_scheme('---att---pol---...---att---att(t)---')
-        self.genome9 = _create_genome_from_scheme('---att---pol---att---...---att(t)---')
-        self.genome10 = _create_genome_from_scheme('---att---...---pol---...---att---att(t)---')
-        self.genome11 = _create_genome_from_scheme('---att---pol---...---att---...---att(t)---')
-        self.genome12 = _create_genome_from_scheme('---att---...---pol---att---...---att(t)---')
-
-        self.genome13 = _create_genome_from_scheme('---att---pol---att---pol---att(t)---')
-        self.genome14 = _create_genome_from_scheme('---att---...---pol---att---pol---att(t)---')
-        self.genome15 = _create_genome_from_scheme('---att---pol---...---att---pol---att(t)---')
-        self.genome16 = _create_genome_from_scheme('---att---pol---att---...---pol---att(t)---')
-        self.genome17 = _create_genome_from_scheme('---att---pol---att---pol---...---att(t)---')
-
-        self.genome18 = _create_genome_from_scheme('---att---pol---att(t)---att---pol---att(t)---')
-        self.genome19 = _create_genome_from_scheme('---att---pol---att(t)---...---att---pol---att(t)---')
-
-
-class TestScaffolder(SetUpPipolinsToScaffold):
     def test_genome1(self):
-        with self.assertRaises(NotImplementedError):
-            Scaffolder(self.genome1).scaffold()
+        genome = create_genome_from_scheme('---pol---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome2(self):
-        with self.assertRaises(NotImplementedError):
-            Scaffolder(self.genome2).scaffold()
+        genome = create_genome_from_scheme('---att---pol---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome3(self):
-        with self.assertRaises(NotImplementedError):
-            Scaffolder(self.genome3).scaffold()
+        genome = create_genome_from_scheme('---att---pol---att---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome4(self):
-        pipolin: Pipolin = Scaffolder(self.genome4).scaffold()
-        contigs = [i.contig for i in pipolin.fragments]
-        self.assertCountEqual(contigs, self.genome4.contigs)
+        genome = create_genome_from_scheme('---att---pol---...---att---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome5(self):
-        with self.assertRaises(NotImplementedError):
-            Scaffolder(self.genome5).scaffold()
-        Scaffolder(self.genome5_trna).scaffold()
+        genome = create_genome_from_scheme('---att---...---pol---...---att---')
+        self._check_pipolin_fragments(genome)
+
+    def test_genome5_trna(self):
+        genome = create_genome_from_scheme('---att---...---pol---...---att(t)---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome6(self):
-        with self.assertRaises(NotImplementedError):
-            Scaffolder(self.genome6).scaffold()
+        genome = create_genome_from_scheme('---att---pol---att---att(t)---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome7(self):
-        pipolin: Pipolin = Scaffolder(self.genome7).scaffold()
-        contigs = [i.contig for i in pipolin.fragments]
-        self.assertCountEqual(contigs, self.genome7.contigs)
+        genome = create_genome_from_scheme('---att---...---pol---att---att(t)---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome8(self):
-        pipolin: Pipolin = Scaffolder(self.genome8).scaffold()
-        contigs = [i.contig for i in pipolin.fragments]
-        self.assertCountEqual(contigs, self.genome8.contigs)
+        genome = create_genome_from_scheme('---att---pol---...---att---att(t)---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome9(self):
-        pipolin: Pipolin = Scaffolder(self.genome9).scaffold()
-        # contigs = [i.contig for i in pipolin.fragments]
-        # self.assertCountEqual(contigs, self.genome9.contigs)
+        genome = create_genome_from_scheme('---att---pol---att---...---att(t)---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome10(self):
-        pipolin: Pipolin = Scaffolder(self.genome10).scaffold()
-        contigs = [i.contig for i in pipolin.fragments]
-        self.assertCountEqual(contigs, self.genome10.contigs)
+        genome = create_genome_from_scheme('---att---...---pol---...---att---att(t)---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome11(self):
-        pipolin: Pipolin = Scaffolder(self.genome11).scaffold()
-        contigs = [i.contig for i in pipolin.fragments]
-        self.assertCountEqual(contigs, self.genome11.contigs)
+        genome = create_genome_from_scheme('---att---pol---...---att---...---att(t)---')
+        self._check_pipolin_fragments(genome)
 
     def test_genome12(self):
-        pipolin: Pipolin = Scaffolder(self.genome12).scaffold()
-        contigs = [i.contig for i in pipolin.fragments]
-        self.assertCountEqual(contigs, self.genome12.contigs)
+        genome = create_genome_from_scheme('---att---...---pol---att---...---att(t)---')
+        self._check_pipolin_fragments(genome)
 
-    def test_genome13(self):
-        with self.assertRaises(NotImplementedError):
-            Scaffolder(self.genome13).scaffold()
+    def test_genome13(self):   # consider as two pipolins
+        genome = create_genome_from_scheme('---att---pol---att---pol---att(t)---')
+        self._check_pipolin_fragments(genome)
 
-    def test_genome14(self):
-        pipolin: Pipolin = Scaffolder(self.genome14).scaffold()
-        # contigs = [i.contig for i in pipolin.fragments]
-        # self.assertCountEqual(contigs, self.genome14.contigs)
+    def test_genome14(self):   # consider as two pipolins
+        genome = create_genome_from_scheme('---att---...---pol---att---pol---att(t)---')
+        self._check_pipolin_fragments(genome)
 
-    def test_genome15(self):
-        pipolin: Pipolin = Scaffolder(self.genome15).scaffold()
-        contigs = [i.contig for i in pipolin.fragments]
-        self.assertCountEqual(contigs, self.genome15.contigs)
+    def test_genome15(self):   # consider as two pipolins
+        genome = create_genome_from_scheme('---att---pol---...---att---pol---att(t)---')
+        self._check_pipolin_fragments(genome)
 
-    def test_genome16(self):
-        pipolin: Pipolin = Scaffolder(self.genome16).scaffold()
-        contigs = [i.contig for i in pipolin.fragments]
-        self.assertCountEqual(contigs, self.genome16.contigs)
+    def test_genome16(self):   # consider as two pipolins
+        genome = create_genome_from_scheme('---att---pol---att---...---pol---att(t)---')
+        self._check_pipolin_fragments(genome)
 
-    def test_genome17(self):
-        pipolin: Pipolin = Scaffolder(self.genome17).scaffold()
-        # contigs = [i.contig for i in pipolin.fragments]
-        # self.assertCountEqual(contigs, self.genome17.contigs)
+    def test_genome18(self):   # two pipolins
+        genome = create_genome_from_scheme('---att---pol---att(t)---att---pol---att(t)---')
+        self._check_pipolin_fragments(genome)
 
-    def test_genome18(self):
-        with self.assertRaises(NotImplementedError):
-            Scaffolder(self.genome18).scaffold()
+    def test_genome19(self):   # two pipolins
+        genome = create_genome_from_scheme('---att---pol---att(t)---...---att---pol---att(t)---')
+        self._check_pipolin_fragments(genome)
 
-    def test_genome19(self):
-        pipolin: Pipolin = Scaffolder(self.genome19).scaffold()
-        contigs = [i.contig for i in pipolin.fragments]
-        self.assertCountEqual(contigs, self.genome19.contigs)
+    def test_genome20(self):   # consider as two pipolins
+        genome = create_genome_from_scheme('---att---pol---att---pol---')
+        self._check_pipolin_fragments(genome)
+
+    def test_genome21(self):
+        genome = create_genome_from_scheme('---att---pol---pol---att---')
+        self._check_pipolin_fragments(genome)
+
+    def test_genome22(self):
+        genome = create_genome_from_scheme('---att---att---pol---pol---')
+        self._check_pipolin_fragments(genome)
+
+    def test_genome23(self):
+        genome = create_genome_from_scheme('---att---pol---pol---att---att---')
+        self._check_pipolin_fragments(genome)
