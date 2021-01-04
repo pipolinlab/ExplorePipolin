@@ -70,6 +70,7 @@ class Scaffolder:
             target_trnas_contig0 = self.target_trnas_dict[unchangeable_contigs[0].id]
             target_trnas_contig1 = self.target_trnas_dict[unchangeable_contigs[1].id]
 
+            # TODO: FIX THIS!!!!!! both contigs can have tRNAs => both != 0
             if len(target_trnas_contig0) != 0:
                 right_contig = unchangeable_contigs[0]
                 left_contig = unchangeable_contigs[1]
@@ -221,6 +222,7 @@ class Scaffolder:
     def _get_direction_of_unchangeable(self, contig_id: str) -> Optional[Direction]:
         polbs_sorted = self.polbs_dict[contig_id]
         atts_sorted = self.atts_dict[contig_id]
+        # TODO: FIX THIS!!!!!!! for the case '---att---pol---att---pol---...---att(t)---'
         if polbs_sorted[0].start > atts_sorted[-1].end:
             return Direction.RIGHT
         elif polbs_sorted[-1].end < atts_sorted[0].start:

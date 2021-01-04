@@ -1,7 +1,7 @@
 import unittest
 from typing import Sequence
 
-from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType
+from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, Pipolin
 from explore_pipolin.tasks_related.scaffolding import Scaffolder
 
 
@@ -60,11 +60,20 @@ class SetUpPipolinsToScaffold(unittest.TestCase):
 
         self.genome6 = _create_genome_from_scheme('---att---pol---att---att(t)---')
         self.genome7 = _create_genome_from_scheme('---att---...---pol---att---att(t)---')
-        # ---att---pol---...---att---att(t)---
-        # ---att---pol---att---...---att(t)---
-        # ---att---...---pol---...---att---att(t)---
-        # ---att---pol---...---att---...---att(t)---
-        # ---att---...---pol---att---...---att(t)---
+        self.genome8 = _create_genome_from_scheme('---att---pol---...---att---att(t)---')
+        self.genome9 = _create_genome_from_scheme('---att---pol---att---...---att(t)---')
+        self.genome10 = _create_genome_from_scheme('---att---...---pol---...---att---att(t)---')
+        self.genome11 = _create_genome_from_scheme('---att---pol---...---att---...---att(t)---')
+        self.genome12 = _create_genome_from_scheme('---att---...---pol---att---...---att(t)---')
+
+        self.genome13 = _create_genome_from_scheme('---att---pol---att---pol---att(t)---')
+        self.genome14 = _create_genome_from_scheme('---att---...---pol---att---pol---att(t)---')
+        self.genome15 = _create_genome_from_scheme('---att---pol---...---att---pol---att(t)---')
+        self.genome16 = _create_genome_from_scheme('---att---pol---att---...---pol---att(t)---')
+        self.genome17 = _create_genome_from_scheme('---att---pol---att---pol---...---att(t)---')
+
+        self.genome18 = _create_genome_from_scheme('---att---pol---att(t)---att---pol---att(t)---')
+        self.genome19 = _create_genome_from_scheme('---att---pol---att(t)---...---att---pol---att(t)---')
 
 
 class TestScaffolder(SetUpPipolinsToScaffold):
@@ -81,7 +90,9 @@ class TestScaffolder(SetUpPipolinsToScaffold):
             Scaffolder(self.genome3).scaffold()
 
     def test_genome4(self):
-        Scaffolder(self.genome4).scaffold()
+        pipolin: Pipolin = Scaffolder(self.genome4).scaffold()
+        contigs = [i.contig for i in pipolin.fragments]
+        self.assertCountEqual(contigs, self.genome4.contigs)
 
     def test_genome5(self):
         with self.assertRaises(NotImplementedError):
@@ -93,4 +104,64 @@ class TestScaffolder(SetUpPipolinsToScaffold):
             Scaffolder(self.genome6).scaffold()
 
     def test_genome7(self):
-        Scaffolder(self.genome7).scaffold()
+        pipolin: Pipolin = Scaffolder(self.genome7).scaffold()
+        contigs = [i.contig for i in pipolin.fragments]
+        self.assertCountEqual(contigs, self.genome7.contigs)
+
+    def test_genome8(self):
+        pipolin: Pipolin = Scaffolder(self.genome8).scaffold()
+        contigs = [i.contig for i in pipolin.fragments]
+        self.assertCountEqual(contigs, self.genome8.contigs)
+
+    def test_genome9(self):
+        pipolin: Pipolin = Scaffolder(self.genome9).scaffold()
+        # contigs = [i.contig for i in pipolin.fragments]
+        # self.assertCountEqual(contigs, self.genome9.contigs)
+
+    def test_genome10(self):
+        pipolin: Pipolin = Scaffolder(self.genome10).scaffold()
+        contigs = [i.contig for i in pipolin.fragments]
+        self.assertCountEqual(contigs, self.genome10.contigs)
+
+    def test_genome11(self):
+        pipolin: Pipolin = Scaffolder(self.genome11).scaffold()
+        contigs = [i.contig for i in pipolin.fragments]
+        self.assertCountEqual(contigs, self.genome11.contigs)
+
+    def test_genome12(self):
+        pipolin: Pipolin = Scaffolder(self.genome12).scaffold()
+        contigs = [i.contig for i in pipolin.fragments]
+        self.assertCountEqual(contigs, self.genome12.contigs)
+
+    def test_genome13(self):
+        with self.assertRaises(NotImplementedError):
+            Scaffolder(self.genome13).scaffold()
+
+    def test_genome14(self):
+        pipolin: Pipolin = Scaffolder(self.genome14).scaffold()
+        # contigs = [i.contig for i in pipolin.fragments]
+        # self.assertCountEqual(contigs, self.genome14.contigs)
+
+    def test_genome15(self):
+        pipolin: Pipolin = Scaffolder(self.genome15).scaffold()
+        contigs = [i.contig for i in pipolin.fragments]
+        self.assertCountEqual(contigs, self.genome15.contigs)
+
+    def test_genome16(self):
+        pipolin: Pipolin = Scaffolder(self.genome16).scaffold()
+        contigs = [i.contig for i in pipolin.fragments]
+        self.assertCountEqual(contigs, self.genome16.contigs)
+
+    def test_genome17(self):
+        pipolin: Pipolin = Scaffolder(self.genome17).scaffold()
+        # contigs = [i.contig for i in pipolin.fragments]
+        # self.assertCountEqual(contigs, self.genome17.contigs)
+
+    def test_genome18(self):
+        with self.assertRaises(NotImplementedError):
+            Scaffolder(self.genome18).scaffold()
+
+    def test_genome19(self):
+        pipolin: Pipolin = Scaffolder(self.genome19).scaffold()
+        contigs = [i.contig for i in pipolin.fragments]
+        self.assertCountEqual(contigs, self.genome19.contigs)
