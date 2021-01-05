@@ -207,16 +207,8 @@ def are_atts_present(genome: Genome) -> Genome:
 def scaffold_pipolins(genome: Genome) -> Pipolin:
     # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
     # https://github.com/biopython/biopython/issues/1755
-    logger = context.get('logger')
-
-    # TODO: make this inside Scaffolder!
-    if genome.features.is_on_the_same_contig(FeatureType.PIPOLB, FeatureType.ATT, FeatureType.TARGET_TRNA):
-        logger.warning('>>> Scaffolding is not required!')
-        return create_pipolin_fragments_single_contig(genome)
-    else:
-        logger.warning('>>> Scaffolding is required!')
-        scaffolder = Scaffolder(genome=genome)
-        return scaffolder.scaffold()
+    scaffolder = Scaffolder(genome=genome)
+    return scaffolder.scaffold()
 
 
 @task()
