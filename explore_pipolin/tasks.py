@@ -29,7 +29,7 @@ from explore_pipolin.tasks_related.including_atts import include_atts_into_gff
 from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities.io import read_genome_contigs_from_file
-from explore_pipolin.tasks_related.scaffolding import Scaffolder, create_pipolin_fragments_single_contig
+from explore_pipolin.tasks_related.scaffolding import scaffold
 
 _REF_PIPOLB = pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB_Firmicutes.faa')
 
@@ -207,8 +207,7 @@ def are_atts_present(genome: Genome) -> Genome:
 def scaffold_pipolins(genome: Genome) -> Pipolin:
     # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
     # https://github.com/biopython/biopython/issues/1755
-    scaffolder = Scaffolder(genome=genome)
-    return scaffolder.scaffold()
+    return scaffold(genome)
 
 
 @task()

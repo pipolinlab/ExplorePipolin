@@ -2,7 +2,7 @@ import unittest
 from typing import Sequence
 
 from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, Pipolin
-from explore_pipolin.tasks_related.scaffolding import Scaffolder
+from explore_pipolin.tasks_related.scaffolding import scaffold
 
 
 _GENOME_ID = 'GENOME'
@@ -47,10 +47,10 @@ def _add_features_to_genome(contigs_schemes, genome):
 
 
 class TestScaffolder(unittest.TestCase):
-    def _check_pipolin_fragments(self, genome1):
-        pipolin: Pipolin = Scaffolder(genome1).scaffold()
+    def _check_pipolin_fragments(self, genome):
+        pipolin: Pipolin = scaffold(genome)
         contigs = [i.contig for i in pipolin.fragments]
-        self.assertCountEqual(contigs, genome1.contigs)
+        self.assertCountEqual(contigs, genome.contigs)
 
     def test_genome1(self):
         genome = create_genome_from_scheme('---pol---')

@@ -156,6 +156,15 @@ class FeaturesContainer:
     def get_features(self, feature_type: FeatureType) -> FeatureSet:
         return self._features[feature_type]
 
+    def pipolbs_dict(self) -> Mapping[str, Sequence[Feature]]:
+        return self.get_features(FeatureType.PIPOLB).get_dict_by_contig_sorted()
+
+    def atts_dict(self):
+        return self.get_features(FeatureType.ATT).get_dict_by_contig_sorted()
+
+    def target_trnas_dict(self):
+        return self.get_features(FeatureType.TARGET_TRNA).get_dict_by_contig_sorted()
+
     def is_on_the_same_contig(self, *feature_types: FeatureType) -> bool:
         target_contigs = []
         for feature_type in feature_types:
