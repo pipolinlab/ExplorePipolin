@@ -6,7 +6,7 @@ from explore_pipolin.common import Strand, Genome, Feature, FeatureType, Range, 
 def is_single_target_trna_per_contig(genome: Genome):
     # TODO: don't like this
     # there was one case with two target trnas per genome, although usually only one
-    target_trnas_dict = genome.features.get_features(FeatureType.TARGET_TRNA).get_dict_by_contig_sorted()
+    target_trnas_dict = genome.features.target_trnas_dict()
     target_trnas = genome.features.get_features(feature_type=FeatureType.TARGET_TRNA)
     if len(target_trnas) != len(target_trnas_dict):
         raise AssertionError("We are expecting a single tRNA to overlap with a single att per contig!")

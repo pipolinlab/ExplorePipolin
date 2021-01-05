@@ -33,14 +33,14 @@ def get_flow():
 
         genome = tasks.are_atts_present.map(genome=genome)
 
-        pipolin = tasks.scaffold_pipolins.map(genome=genome)
+        pipolins = tasks.scaffold_pipolins.map(genome=genome)
 
-        pipolin_sequences = tasks.extract_pipolin_regions.map(genome=genome, pipolin=pipolin,
+        pipolin_sequences = tasks.extract_pipolin_regions.map(genome=genome, pipolins=pipolins,
                                                               out_dir=unmapped(out_dir))
         prokka = tasks.annotate_pipolins.map(genome=genome, pipolins_dir=pipolin_sequences,
                                              proteins=unmapped(_PROTEINS), out_dir=unmapped(out_dir))
         prokka_atts = tasks.include_atts.map(genome=genome, prokka_dir=prokka,
-                                             pipolin=pipolin, out_dir=unmapped(out_dir))
+                                             pipolins=pipolins, out_dir=unmapped(out_dir))
         with case(add_colours, True):
             tasks.easyfig_add_colours.map(genome=genome, in_dir=prokka_atts)
 

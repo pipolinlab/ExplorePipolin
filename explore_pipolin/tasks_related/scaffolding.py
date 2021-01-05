@@ -10,10 +10,10 @@ class Direction(Enum):
     RIGHT = auto()
 
 
-def scaffold(genome: Genome) -> Pipolin:
+def scaffold(genome: Genome) -> Sequence[Pipolin]:
     if genome.features.is_on_the_same_contig(FeatureType.PIPOLB, FeatureType.ATT, FeatureType.TARGET_TRNA):
         print('>>> Scaffolding is not required!')
-        return _create_pipolin_fragments_single_contig(genome)
+        return [_create_pipolin_fragments_single_contig(genome)]
     else:
         print('>>> Scaffolding is required!')
         unchangeable_contigs = _get_unchangeable_contigs(genome)
@@ -39,16 +39,16 @@ def scaffold(genome: Genome) -> Pipolin:
                     pipolin = PipolinFragment(contig_id=unchangeable_contig.id, genome=genome,
                                               location=pipolin_range.clamp(0, contig_length))
                     pipolin.atts.extend(genome.features.atts_dict()[unchangeable_contig.id])
-                    return Pipolin(pipolin)
+                    return [Pipolin(pipolin)]
                     # TODO: if att_only_contig has a target_trna, it could be added on the right
                 if direction.RIGHT:
                     left_fragment = _create_unchangeable_fragment(genome, unchangeable_contig, direction)
                     right_fragment = _create_att_contig_fragment(genome, orphan_atts, direction)
-                    return Pipolin(left_fragment, right_fragment)
+                    return [Pipolin(left_fragment, right_fragment)]
                 else:
                     left_fragment = _create_att_contig_fragment(genome, orphan_atts, direction)
                     right_fragment = _create_unchangeable_fragment(genome, unchangeable_contig, direction)
-                    return Pipolin(left_fragment, right_fragment)
+                    return [Pipolin(left_fragment, right_fragment)]
             elif len(att_only_contigs) == 2:
                 # TODO: the order can be also [middle_fragment, left_fragment, right_fragment]
                 middle_fragment = PipolinFragment(contig_id=unchangeable_contig.id, genome=genome,
@@ -61,7 +61,7 @@ def scaffold(genome: Genome) -> Pipolin:
                 right_atts = genome.features.atts_dict()[att_only_contigs[1].id]
                 right_fragment = _create_att_contig_fragment(genome, right_atts, Direction.RIGHT)
 
-                return Pipolin(left_fragment, middle_fragment, right_fragment)
+                return [Pipolin(left_fragment, middle_fragment, right_fragment)]
             else:
                 raise NotImplementedError
         elif len(unchangeable_contigs) == 2:
@@ -84,11 +84,11 @@ def scaffold(genome: Genome) -> Pipolin:
             right_direction = _get_direction_of_unchangeable(genome, right_contig.id)
             right_fragment = _create_unchangeable_fragment(genome, right_contig, right_direction)
 
-            return Pipolin(left_fragment, right_fragment)
+            return [Pipolin(left_fragment, right_fragment)]
         elif len(unchangeable_contigs) > 2:
             raise NotImplementedError
         else:
-            return _try_finish_separate(genome)
+            return [_try_finish_separate(genome)]
 
 
 def _create_unchangeable_fragment(genome: Genome, contig: Contig, direction: Direction) -> PipolinFragment:
@@ -243,7 +243,7 @@ def _contig_has_feature_type(genome: Genome, contig_id: str, feature_type: Featu
 
 
 def _create_pipolin_fragments_single_contig(genome: Genome) -> Pipolin:
-    if len(genome.features.get_features(FeatureType.ATT).get_dict_by_contig_sorted()) != 0:
+    if len(genome.features.atts_dict()) != 0:
         pipolin_range = _get_pipolin_bounds(genome)
         pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig_id,
                                   genome=genome, location=pipolin_range)

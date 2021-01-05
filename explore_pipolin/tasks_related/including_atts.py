@@ -1,5 +1,5 @@
 from random import randrange
-from typing import MutableSequence
+from typing import MutableSequence, Sequence
 
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
@@ -8,22 +8,23 @@ from explore_pipolin.common import Strand, Pipolin, Genome
 from explore_pipolin.utilities.io import SeqIORecords
 
 
-def include_atts_into_gb(gb_records: SeqIORecords, genome: Genome, pipolin: Pipolin):
-    att_seq_features = _generate_att_seq_features(record_format='gb', genome=genome, pipolin=pipolin)
+def include_atts_into_gb(gb_records: SeqIORecords, genome: Genome, pipolins: Sequence[Pipolin]):
+    att_seq_features = _generate_att_seq_features(record_format='gb', genome=genome, pipolins=pipolins)
     for att in att_seq_features:
         _add_att_seq_feature(att_seq_feature=att, seq_record=gb_records[genome.id])
 
 
-def include_atts_into_gff(gff_records: SeqIORecords, genome: Genome, pipolin: Pipolin):
-    att_seq_features = _generate_att_seq_features(record_format='gff', genome=genome, pipolin=pipolin)
+def include_atts_into_gff(gff_records: SeqIORecords, genome: Genome, pipolins: Sequence[Pipolin]):
+    att_seq_features = _generate_att_seq_features(record_format='gff', genome=genome, pipolins=pipolins)
     for att in att_seq_features:
         _add_att_seq_feature(att_seq_feature=att, seq_record=gff_records[genome.id])
 
 
-def _generate_att_seq_features(record_format: str, genome: Genome, pipolin: Pipolin) -> MutableSequence[SeqFeature]:
+def _generate_att_seq_features(record_format: str, genome: Genome, pipolins: Sequence[Pipolin]) \
+        -> MutableSequence[SeqFeature]:
     att_seq_features = []
     in_start = 0
-    for fragment in pipolin.fragments:
+    for fragment in pipolins.fragments:
         fragment_shift = fragment.start
         for att in fragment.atts:
             att_start, att_end = sorted([abs(att.start - fragment_shift), abs(att.end - fragment_shift)])

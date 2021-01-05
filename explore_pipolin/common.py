@@ -119,7 +119,7 @@ class FeatureType(Enum):
 class FeatureSet(Set[Feature]):
     def get_overlapping(self, feature: Feature) -> Optional[Feature]:
         try:
-            features_list = self.get_dict_by_contig_sorted()[feature.contig_id]
+            features_list = self.get_list_of_contig_sorted(feature.contig_id)
             return self._get_overlapping_with_feature(features_list, feature)
         except KeyError:
             return None
