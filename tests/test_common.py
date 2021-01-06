@@ -1,6 +1,6 @@
 import unittest
 
-from explore_pipolin.common import Strand, Contig, Genome, Feature, RepeatPair, PipolinFragment, Range, \
+from explore_pipolin.common import Strand, Contig, Genome, Feature, PipolinFragment, Range, \
     FeaturesContainer, FeatureType
 from explore_pipolin.common import define_genome_id
 
@@ -51,9 +51,6 @@ class SetUpGenome(unittest.TestCase):
         self.repeat_f1 = Range(start=10, end=15)
         self.repeat_f2 = Range(start=60, end=65)
         self.repeat_f3 = Range(start=65, end=85)
-        self.repeat = RepeatPair(self.repeat_f1, self.repeat_f2,
-                                 right_seq='GATT', left_seq='GATT',
-                                 pipolbs=[self.long_contig_feature1])
 
 
 class TestGenome(SetUpGenome):
@@ -152,16 +149,6 @@ class TestFeatureClasses(SetUpGenome):
 
         self.assertTrue(self.features.is_overlapping_with(qrange, FeatureType.PIPOLB))
         self.assertFalse(self.features.is_overlapping_with(qrange, FeatureType.TRNA))
-
-
-class TestRepeatPair(SetUpGenome):
-    def test_repeat_seq_not_greater_range(self):
-        with self.assertRaises(AssertionError):
-            RepeatPair(self.repeat_f1, self.repeat_f2, 'ATCGTAG', 'ATCGTAG', [self.long_contig_feature1])
-
-    def test_repeat_left_shift_greater_right_shift(self):
-        with self.assertRaises(AssertionError):
-            self.repeat.shift(left_shift=250, right_shift=150)
 
 
 class TestWindow(SetUpGenome):

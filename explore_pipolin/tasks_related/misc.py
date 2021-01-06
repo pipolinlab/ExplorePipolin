@@ -1,6 +1,6 @@
 from typing import List
 
-from explore_pipolin.common import Strand, Genome, Feature, FeatureType, Range, Window, PipolinFragment
+from explore_pipolin.common import Strand, Genome, Feature, FeatureType, Range, RangePair, PipolinFragment
 
 
 def is_single_target_trna_per_contig(genome: Genome):
@@ -30,20 +30,19 @@ def feature_from_blasthit(hit, contig_id: str, genome: Genome) -> Feature:
                    contig_id=contig_id, genome=genome)
 
 
-def get_windows(genome: Genome) -> List[Window]:
-    pipolbs = genome.features.get_features(feature_type=FeatureType.PIPOLB)
-    pipolbs = sorted(pipolbs, key=lambda x: x.start)
+def get_windows_around_pipolbs(genome: Genome) -> List[RangePair]:
+    pipolbs_dict_by_contig = genome.features.pipolbs_dict()
 
     windows = []
-    for pipolb in pipolbs:   # TODO: actually, I need all the combinations here!
-        contig_length = genome.get_contig_by_id(contig_id=pipolb.contig_id).length
+    for contig_id, pipolbs in pipolbs_dict_by_contig.items():
+        contig_length = genome.get_contig_by_id(contig_id=contig_id).length
 
-        left_edge = pipolb.start - 100000
-        left_window = Range(start=left_edge if left_edge >= 0 else 0, end=pipolbs[0].start)
-        right_edge = pipolb.end + 100000
-        right_window = Range(start=pipolbs[-1].end,
-                             end=right_edge if right_edge <= contig_length else contig_length)
-        windows.append(Window(left_window, right_window, pipolbs=[pipolb]))
+        for i in range(0, len(pipolbs)):
+            for j in range(i, len(pipolbs)):
+                pipolbs_range = Range(pipolbs[i].start, pipolbs[j].end)
+                pipolbs_range = pipolbs_range.inflate(100000, _max=contig_length)
+                windows.append(RangePair(Range(pipolbs_range.start, pipolbs[i].start),
+                                         Range(pipolbs[j].end, pipolbs_range.end), contig_id))
     return windows
 
 

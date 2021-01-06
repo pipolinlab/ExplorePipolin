@@ -26,9 +26,9 @@ def get_flow():
             result_to_filter=genome, filter_by=t_check_pipolbs)
         )
 
-        genome = tasks.find_atts.map(genome=genome, out_dir=unmapped(out_dir))
         genome = tasks.find_trnas.map(genome=genome, out_dir=unmapped(out_dir))
 
+        genome = tasks.find_atts.map(genome=genome, out_dir=unmapped(out_dir))
         genome = tasks.find_atts_denovo.map(genome=genome, out_dir=unmapped(out_dir))
 
         genome = tasks.are_atts_present.map(genome=genome)

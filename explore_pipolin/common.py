@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set
+from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, NamedTuple
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -70,8 +70,8 @@ class Range:
     def shift(self, size: int):
         return Range(self.start + size, self.end + size)
 
-    def inflate(self, size: int):
-        return Range(max(0, self.start - size), self.end + size)
+    def inflate(self, size: int, _min: int = 0, _max: int = None):
+        return Range(max(_min, self.start - size), self.end + size if _max is None else min(_max, self.end + size))
 
     def clamp(self, min_coord: int, max_coord: int):
         return Range(start=max(min_coord, self.start), end=min(max_coord, self.end))
@@ -178,46 +178,10 @@ class FeaturesContainer:
         return False
 
 
-class AttRepeat:
-    def __init__(self, location: Range, seq: str, contig_id: str):
-        self.location = location
-        self.seq = seq
-        self.contig_id = contig_id
-
-
-class NewPipolin:
-    # TODO: rename to Pipolin in the end
-    def __init__(self, atts: Set[AttRepeat], pipolbs: Set[Feature], target_trnas: Set[Feature]):
-        self.atts = atts
-        self.pipolbs = pipolbs
-        self.target_trnas = target_trnas
-
-    # TODO: add checks for pipolbs and trnas feature types!!!
-
-
-class RepeatPair:
-    def __init__(self, left: Range, right: Range, left_seq: str, right_seq: str, pipolbs: MutableSequence[Feature]):
-        self.left_range = left
-        self.right_range = right
-        self.left_seq = left_seq
-        self.right_seq = right_seq
-        self.pipolbs = pipolbs
-
-        left_repeat_length = self.left_range.end - self.left_range.start
-        right_repeat_length = self.right_range.end - self.right_range.start
-        left_seq_length = len(self.left_seq)
-        right_seq_length = len(self.right_seq)
-        if left_seq_length > left_repeat_length or right_seq_length > right_repeat_length:
-            raise AssertionError(f'Repeat sequence length cannot be greater than repeat ranges:'
-                                 f' {left_seq_length} > {left_repeat_length} or '
-                                 f'{right_seq_length} > {right_repeat_length}!')
-
-    def shift(self, left_shift: int, right_shift: int):
-        if left_shift > right_shift:
-            raise AssertionError('Left shift cannot be greater than right shift!')
-
-        return RepeatPair(self.left_range.shift(left_shift), self.right_range.shift(right_shift),
-                          self.left_seq, self.right_seq, self.pipolbs)
+class AttFeature(Feature):
+    def __init__(self, location: Range, strand: Strand, repeat_id: str, contig_id: str, genome: Genome):
+        Feature.__init__(self, location, strand, contig_id, genome)
+        self.repeat_id = repeat_id
 
 
 class PipolinFragment(Feature):
@@ -232,11 +196,10 @@ class Pipolin:
         self.fragments: Sequence[PipolinFragment] = fragments
 
 
-class Window:
-    def __init__(self, left: Range, right: Range, pipolbs: MutableSequence[Feature]):
-        self.left = left
-        self.right = right
-        self.pipolbs = pipolbs
+class RangePair(NamedTuple):
+    left: Range
+    right: Range
+    contig_id: str
 
 
 def define_genome_id(genome_path: str) -> str:

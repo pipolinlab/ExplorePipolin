@@ -12,14 +12,14 @@ from Bio import SeqIO
 from typing import Any, Optional, Sequence
 
 from explore_pipolin.tasks_related.easyfig_coloring import add_colours
-from explore_pipolin.common import Feature, FeatureType, RepeatPair, Pipolin, Genome, \
+from explore_pipolin.common import Feature, FeatureType, Pipolin, Genome, \
     define_genome_id, FeaturesContainer, Strand, Range
 from explore_pipolin.utilities.logging import genome_specific_logging
 from explore_pipolin.tasks_related.misc import join_it, add_features_from_blast_entries
-from explore_pipolin.utilities.io import read_blastxml, write_repeats, write_atts_denovo, create_pipolb_entries
+from explore_pipolin.utilities.io import read_blastxml, create_pipolb_entries
 from explore_pipolin.utilities.io import create_seqio_records_dict
 from explore_pipolin.utilities.io import read_aragorn_batch
-from explore_pipolin.tasks_related.atts_denovo_search import find_repeats, is_att_denovo
+from explore_pipolin.tasks_related.atts_denovo_search import AttsDenovoFinder
 from explore_pipolin.utilities.external_tools import ExternalTools, RealExternalTools
 from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
 from explore_pipolin.tasks_related.misc import create_fragment_record
@@ -34,14 +34,14 @@ from explore_pipolin.tasks_related.scaffolding import scaffold
 _REF_PIPOLB = pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB_Firmicutes.faa')
 
 
-@task
+@task()
 def create_genome(genome_file) -> Genome:
     contigs = read_genome_contigs_from_file(genome_file=genome_file)
     genome_id = define_genome_id(genome_file)
     return Genome(genome_id=genome_id, genome_file=genome_file, contigs=contigs)
 
 
-@task
+@task()
 @genome_specific_logging
 def find_pipolbs(genome: Genome, out_dir: str, ext: ExternalTools = RealExternalTools) -> Genome:
     results_dir = os.path.join(out_dir, 'pipolbs_search')
@@ -62,7 +62,7 @@ def find_pipolbs(genome: Genome, out_dir: str, ext: ExternalTools = RealExternal
     return genome
 
 
-@task
+@task()
 @genome_specific_logging
 def find_atts(genome: Genome, out_dir: str, ext: ExternalTools = RealExternalTools) -> Genome:
     blast_results_dir = os.path.join(out_dir, 'atts_search')
@@ -77,7 +77,7 @@ def find_atts(genome: Genome, out_dir: str, ext: ExternalTools = RealExternalToo
     return genome
 
 
-@task
+@task()
 @genome_specific_logging
 def find_trnas(genome: Genome, out_dir) -> Genome:
     aragorn_results_dir = os.path.join(out_dir, 'trnas_search')
@@ -123,7 +123,7 @@ def are_pipolbs_present(genome: Genome):
     return True
 
 
-@task
+@task()
 def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> Optional[Any]:
     if filter_by:
         return result_to_filter
@@ -137,28 +137,7 @@ def find_atts_denovo(genome: Genome, out_dir) -> Genome:
     atts_denovo_dir = os.path.join(out_dir, 'atts_denovo_search')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
-    repeats: Sequence[RepeatPair] = find_repeats(genome=genome, repeats_dir=atts_denovo_dir)
-    write_repeats(genome=genome, repeats=repeats, out_dir=atts_denovo_dir)
-
-    atts_denovo: Sequence[RepeatPair] = [rep for rep in repeats if is_att_denovo(genome, rep)]
-    for atts_pair in atts_denovo:
-        genome.features.add_feature(feature=Feature(
-            location=atts_pair.left_range,
-            strand=Strand.FORWARD,
-            contig_id=genome.contigs[0].id,
-            genome=genome), feature_type=FeatureType.ATT_DENOVO)
-        genome.features.add_feature(feature=Feature(
-            location=atts_pair.right_range,
-            strand=Strand.FORWARD,
-            contig_id=genome.contigs[0].id,
-            genome=genome), feature_type=FeatureType.ATT_DENOVO)
-
-    for att in genome.features.get_features(FeatureType.ATT_DENOVO):
-        target_trna = genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
-        if target_trna is not None:
-            genome.features.add_feature(feature=target_trna, feature_type=FeatureType.TARGET_TRNA_DENOVO)
-
-    write_atts_denovo(genome.features.get_features(FeatureType.ATT_DENOVO), genome, atts_denovo_dir)
+    AttsDenovoFinder(genome=genome, output_dir=atts_denovo_dir).find_atts_denovo()
 
     return genome
 
