@@ -30,10 +30,10 @@ def feature_from_blasthit(hit, contig_id: str, genome: Genome) -> Feature:
                    contig_id=contig_id, genome=genome)
 
 
-def get_windows_around_pipolbs(genome: Genome) -> List[RangePair]:
+def get_ranges_around_pipolbs(genome: Genome) -> List[RangePair]:
     pipolbs_dict_by_contig = genome.features.pipolbs_dict()
 
-    windows = []
+    range_pairs = []
     for contig_id, pipolbs in pipolbs_dict_by_contig.items():
         contig_length = genome.get_contig_by_id(contig_id=contig_id).length
 
@@ -41,9 +41,9 @@ def get_windows_around_pipolbs(genome: Genome) -> List[RangePair]:
             for j in range(i, len(pipolbs)):
                 pipolbs_range = Range(pipolbs[i].start, pipolbs[j].end)
                 pipolbs_range = pipolbs_range.inflate(100000, _max=contig_length)
-                windows.append(RangePair(Range(pipolbs_range.start, pipolbs[i].start),
-                                         Range(pipolbs[j].end, pipolbs_range.end), contig_id))
-    return windows
+                range_pairs.append(RangePair(Range(pipolbs_range.start, pipolbs[i].start),
+                                             Range(pipolbs[j].end, pipolbs_range.end), contig_id))
+    return range_pairs
 
 
 def add_features_from_blast_entries(entries, feature_type: FeatureType, genome: Genome,):

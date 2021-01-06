@@ -96,8 +96,8 @@ def blastn_against_ref_att(genome_file, output_file):
                        stdout=ouf)
 
 
-def blast_for_repeats(windows: List[RangePair], genome_id: str, repeats_dir: str):
-    for i in range(len(windows)):
+def blast_for_repeats(range_pairs: List[RangePair], genome_id: str, repeats_dir: str):
+    for i in range(len(range_pairs)):
         with open(os.path.join(repeats_dir, genome_id + f'_{i}.fmt5'), 'w') as ouf:
             subprocess.run(['blastn', '-query', os.path.join(repeats_dir, genome_id + f'_{i}.left'),
                             '-subject', os.path.join(repeats_dir, genome_id + f'_{i}.right'),

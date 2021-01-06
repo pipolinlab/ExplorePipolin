@@ -2,7 +2,7 @@ from enum import Enum, auto
 from typing import Sequence, MutableSequence, Optional, Set
 
 from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Pipolin, Genome, Range
-from explore_pipolin.tasks_related.misc import get_windows_around_pipolbs
+from explore_pipolin.tasks_related.misc import get_ranges_around_pipolbs
 
 
 class Direction(Enum):
@@ -251,7 +251,7 @@ def _create_pipolin_fragments_single_contig(genome: Genome) -> Pipolin:
         pipolin.atts.extend(genome.features.get_features(FeatureType.ATT))
         return Pipolin(pipolin)
     else:
-        windows = get_windows_around_pipolbs(genome)
+        windows = get_ranges_around_pipolbs(genome)
         if len(windows) != 1:
             raise NotImplementedError('this method is for a single contig => should be only one Window!')
         pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig_id,

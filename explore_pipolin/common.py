@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, NamedTuple
+from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -80,6 +80,13 @@ class Range:
         max_start = max(self.start, other.start)
         min_end = min(self.end, other.end)
         return max_start <= min_end
+
+
+@dataclass(frozen=True)
+class RangePair:
+    left: Range
+    right: Range
+    contig_id: str
 
 
 class Feature:
@@ -194,12 +201,6 @@ class PipolinFragment(Feature):
 class Pipolin:
     def __init__(self, *fragments: PipolinFragment):
         self.fragments: Sequence[PipolinFragment] = fragments
-
-
-class RangePair(NamedTuple):
-    left: Range
-    right: Range
-    contig_id: str
 
 
 def define_genome_id(genome_path: str) -> str:

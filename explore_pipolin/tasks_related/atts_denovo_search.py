@@ -7,7 +7,7 @@ from Bio import SeqIO
 from explore_pipolin.common import Genome, FeatureType, Range, RangePair, Feature, Strand, AttFeature
 from explore_pipolin.utilities.external_tools import blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml
-from explore_pipolin.tasks_related.misc import get_windows_around_pipolbs
+from explore_pipolin.tasks_related.misc import get_ranges_around_pipolbs
 
 
 class AttsDenovoFinder:
@@ -26,10 +26,10 @@ class AttsDenovoFinder:
         self._write_atts_denovo(self.genome.features.get_features(FeatureType.ATT_DENOVO))
 
     def _find_repeats(self) -> List[RangePair]:
-        windows = get_windows_around_pipolbs(self.genome)
-        self._save_left_right_subsequences(windows)
-        blast_for_repeats(windows, genome_id=self.genome.id, repeats_dir=self.output_dir)
-        repeats = self._extract_repeats(windows)
+        range_pairs = get_ranges_around_pipolbs(self.genome)
+        self._save_left_right_subsequences(range_pairs)
+        blast_for_repeats(range_pairs, genome_id=self.genome.id, repeats_dir=self.output_dir)
+        repeats = self._extract_repeats(range_pairs)
         return repeats
 
     def _write_repeats(self, repeats: List[RangePair]):
@@ -49,13 +49,13 @@ class AttsDenovoFinder:
     def _add_atts_denovo_features(self, atts_denovo: List[RangePair]):
         for att in atts_denovo:
             self.genome.features.add_feature(feature=AttFeature(
-                location=att[0],
+                location=att.left,
                 strand=Strand.FORWARD,
                 repeat_id='',
                 contig_id=self.genome.contigs[0].id,
                 genome=self.genome), feature_type=FeatureType.ATT_DENOVO)
             self.genome.features.add_feature(feature=AttFeature(
-                location=att[1],
+                location=att.right,
                 strand=Strand.FORWARD,
                 repeat_id='',
                 contig_id=self.genome.contigs[0].id,
@@ -73,25 +73,25 @@ class AttsDenovoFinder:
             for att in atts_denovo:
                 print(att.start, att.end, sep='\t', file=ouf)
 
-    def _save_left_right_subsequences(self, windows: List[RangePair]):
+    def _save_left_right_subsequences(self, range_pairs: List[RangePair]):
         genome_seq = SeqIO.read(handle=self.genome.file, format='fasta')
 
-        for i, window in enumerate(windows):
-            left_seq = genome_seq[window.left.start:window.left.end]
-            right_seq = genome_seq[window.right.start:window.right.end]
+        for i, range_pair in enumerate(range_pairs):
+            left_seq = genome_seq[range_pair.left.start:range_pair.left.end]
+            right_seq = genome_seq[range_pair.right.start:range_pair.right.end]
             SeqIO.write(sequences=left_seq, format='fasta',
                         handle=os.path.join(self.output_dir, self.genome.id + f'_{i}.left'))
             SeqIO.write(sequences=right_seq, format='fasta',
                         handle=os.path.join(self.output_dir, self.genome.id + f'_{i}.right'))
 
-    def _extract_repeats(self, windows: List[RangePair]) -> List[RangePair]:
+    def _extract_repeats(self, range_pairs: List[RangePair]) -> List[RangePair]:
         repeats = []
-        for i, window in enumerate(windows):
+        for i, range_pair in enumerate(range_pairs):
             repeats_xml = read_blastxml(os.path.join(self.output_dir, self.genome.id + f'_{i}.fmt5'))
             for entry in repeats_xml:
                 for hit in entry:
-                    left_repeat = Range(start=hit.query_start, end=hit.query_end).shift(window.left.start)
-                    right_repeat = Range(start=hit.hit_start, end=hit.hit_end).shift(window.right.start)
-                    repeat_pair = RangePair(left_repeat, right_repeat, window.contig_id)
+                    left_repeat = Range(start=hit.query_start, end=hit.query_end).shift(range_pair.left.start)
+                    right_repeat = Range(start=hit.hit_start, end=hit.hit_end).shift(range_pair.right.start)
+                    repeat_pair = RangePair(left_repeat, right_repeat, range_pair.contig_id)
                     repeats.append(repeat_pair)
         return repeats

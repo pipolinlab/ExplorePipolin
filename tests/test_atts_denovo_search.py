@@ -1,7 +1,8 @@
 import unittest
+from typing import List
 
 from explore_pipolin.common import Contig, Genome, Feature, Range, Strand, FeatureType, RangePair
-from explore_pipolin.tasks_related.misc import get_windows_around_pipolbs
+from explore_pipolin.tasks_related.misc import get_ranges_around_pipolbs
 
 
 class TestAttsDenovoSearch(unittest.TestCase):
@@ -20,11 +21,11 @@ class TestAttsDenovoSearch(unittest.TestCase):
         self.genome.features.add_feature(pipolb2, FeatureType.PIPOLB)
         self.genome.features.add_feature(pipolb3, FeatureType.PIPOLB)
 
-    def test_get_windows_around_pipolbs(self):
-        window1 = RangePair(left=Range(0, 100), right=Range(1100, 1100 + 100000), contig_id=self.contig1_id)
-        window2 = RangePair(left=Range(0, 3000), right=Range(4000, 4000 + 100000), contig_id=self.contig1_id)
-        window3 = RangePair(left=Range(0, 100), right=Range(4000, 4000 + 100000), contig_id=self.contig1_id)
-        window4 = RangePair(left=Range(0, 500), right=Range(1500, 10000), contig_id=self.contig2_id)
+    def test_get_ranges_around_pipolbs(self):
+        range_pair1 = RangePair(left=Range(0, 100), right=Range(1100, 1100 + 100000), contig_id=self.contig1_id)
+        range_pair2 = RangePair(left=Range(0, 3000), right=Range(4000, 4000 + 100000), contig_id=self.contig1_id)
+        range_pair3 = RangePair(left=Range(0, 100), right=Range(4000, 4000 + 100000), contig_id=self.contig1_id)
+        range_pair4 = RangePair(left=Range(0, 500), right=Range(1500, 10000), contig_id=self.contig2_id)
 
-        list_of_windows = get_windows_around_pipolbs(self.genome)
-        self.assertCountEqual([window1, window2, window3, window4], list_of_windows)
+        obt: List[RangePair] = get_ranges_around_pipolbs(self.genome)
+        self.assertCountEqual([range_pair1, range_pair2, range_pair3, range_pair4], obt)
