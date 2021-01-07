@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set
+from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, Iterable
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -157,14 +157,18 @@ class FeaturesContainer:
     def __init__(self):
         self._features: Mapping[FeatureType, FeatureSet] = defaultdict(FeatureSet)
 
-    def add_feature(self, feature: Feature, feature_type: FeatureType):
-        self._features[feature_type].add(feature)
+    def add_features(self, *features: Feature, feature_type: FeatureType):
+        for feature in features:
+            self._features[feature_type].add(feature)
 
     def get_features(self, feature_type: FeatureType) -> FeatureSet:
         return self._features[feature_type]
 
     def pipolbs_dict(self) -> Mapping[str, Sequence[Feature]]:
         return self.get_features(FeatureType.PIPOLB).get_dict_by_contig_sorted()
+
+    def trnas_dict(self) -> Mapping[str, Sequence[Feature]]:
+        return self.get_features(FeatureType.TRNA).get_dict_by_contig_sorted()
 
     def atts_dict(self):
         return self.get_features(FeatureType.ATT).get_dict_by_contig_sorted()
@@ -177,12 +181,6 @@ class FeaturesContainer:
         for feature_type in feature_types:
             target_contigs.extend(f.contig_id for f in self.get_features(feature_type))
         return len(set(target_contigs)) == 1
-
-    def is_overlapping_with(self, qrange: Range, feature_type: FeatureType) -> bool:
-        for other_feature in self.get_features(feature_type):
-            if qrange.is_overlapping(other_feature.location):
-                return True
-        return False
 
 
 class AttFeature(Feature):

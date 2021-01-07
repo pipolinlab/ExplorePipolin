@@ -110,23 +110,23 @@ class TestFeatureClasses(SetUpGenome):
 
     def test_add_get_feature(self):
         feature_type = FeatureType.PIPOLB
-        self.features.add_feature(self.long_contig_feature1, feature_type)
+        self.features.add_features(self.long_contig_feature1, feature_type=feature_type)
         self.assertEqual(self.features.get_features(feature_type).first, self.long_contig_feature1)
 
     def test_get_features_by_contig_sorted(self):
         feature_type = FeatureType.TRNA
-        self.features.add_feature(self.long_contig_feature2, feature_type)
-        self.features.add_feature(self.long_contig_feature3, feature_type)
-        self.features.add_feature(self.long_contig_feature1, feature_type)
+        self.features.add_features(self.long_contig_feature2, feature_type=feature_type)
+        self.features.add_features(self.long_contig_feature3, feature_type=feature_type)
+        self.features.add_features(self.long_contig_feature1, feature_type=feature_type)
 
         features_dict = self.features.get_features(feature_type).get_dict_by_contig_sorted()
         features_list = self.features.get_features(feature_type).get_list_of_contig_sorted(self.long_contig_id)
         self.assertEqual(features_dict[self.long_contig_id], features_list)
 
     def test_get_overlapping_with_feature(self):
-        self.features.add_feature(self.long_contig_feature1, FeatureType.TRNA)
-        self.features.add_feature(self.long_contig_feature2, FeatureType.ATT)
-        self.features.add_feature(self.long_contig_feature3, FeatureType.PIPOLB)
+        self.features.add_features(self.long_contig_feature1, feature_type=FeatureType.TRNA)
+        self.features.add_features(self.long_contig_feature2, feature_type=FeatureType.ATT)
+        self.features.add_features(self.long_contig_feature3, feature_type=FeatureType.PIPOLB)
 
         ofeature_present = self.features.get_features(FeatureType.TRNA).get_overlapping(self.long_contig_feature2)
         self.assertEqual(ofeature_present, self.long_contig_feature1)
@@ -135,24 +135,12 @@ class TestFeatureClasses(SetUpGenome):
         self.assertIsNone(ofeature_absent)
 
     def test_is_on_the_same_contig(self):
-        self.features.add_feature(self.long_contig_feature1, FeatureType.TRNA)
-        self.features.add_feature(self.long_contig_feature2, FeatureType.ATT)
+        self.features.add_features(self.long_contig_feature1, feature_type=FeatureType.TRNA)
+        self.features.add_features(self.long_contig_feature2, feature_type=FeatureType.ATT)
         self.assertTrue(self.features.is_on_the_same_contig(FeatureType.TRNA, FeatureType.ATT))
 
-        self.features.add_feature(self.short_contig_feature, FeatureType.PIPOLB)
+        self.features.add_features(self.short_contig_feature, feature_type=FeatureType.PIPOLB)
         self.assertFalse(self.features.is_on_the_same_contig(FeatureType.ATT, FeatureType.PIPOLB))
-
-    def test_is_overlapping_with(self):
-        qrange = Range(150, 250)
-        self.features.add_feature(self.long_contig_feature1, FeatureType.PIPOLB)
-        self.features.add_feature(self.long_contig_feature3, FeatureType.TRNA)
-
-        self.assertTrue(self.features.is_overlapping_with(qrange, FeatureType.PIPOLB))
-        self.assertFalse(self.features.is_overlapping_with(qrange, FeatureType.TRNA))
-
-
-class TestWindow(SetUpGenome):
-    pass
 
 
 class TestOthers(SetUpGenome):

@@ -19,7 +19,6 @@ from explore_pipolin.tasks_related.misc import join_it, add_features_from_blast_
 from explore_pipolin.utilities.io import read_blastxml, create_pipolb_entries
 from explore_pipolin.utilities.io import create_seqio_records_dict
 from explore_pipolin.utilities.io import read_aragorn_batch
-from explore_pipolin.tasks_related.atts_denovo_search import AttsDenovoFinder
 from explore_pipolin.utilities.external_tools import ExternalTools, RealExternalTools
 from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
 from explore_pipolin.tasks_related.misc import create_fragment_record
@@ -57,7 +56,7 @@ def find_pipolbs(genome: Genome, out_dir: str, ext: ExternalTools = RealExternal
         feature = Feature(location=Range(start=entry[1], end=entry[2]),
                           strand=Strand.from_pm_one_encoding(entry[3]),
                           contig_id=entry[0], genome=genome)
-        genome.features.add_feature(feature=feature, feature_type=FeatureType.PIPOLB)
+        genome.features.add_features(feature, feature_type=FeatureType.PIPOLB)
 
     return genome
 
@@ -101,14 +100,14 @@ def add_trna_features_from_aragorn_entries(entries, genome: Genome):
             end = min(hit[1], genome.get_contig_by_id(contig_id=contig_id).length)
             trna_feature = Feature(location=Range(start=start, end=end),
                                    strand=hit[2], contig_id=contig_id, genome=genome)
-            genome.features.add_feature(feature=trna_feature, feature_type=FeatureType.TRNA)
+            genome.features.add_features(trna_feature, feature_type=FeatureType.TRNA)
 
 
 def find_and_add_target_trnas_features(features: FeaturesContainer):
     for att in features.get_features(FeatureType.ATT):
         target_trna = features.get_features(FeatureType.TRNA).get_overlapping(att)
         if target_trna is not None:
-            features.add_feature(feature=target_trna, feature_type=FeatureType.TARGET_TRNA)
+            features.add_features(target_trna, feature_type=FeatureType.TARGET_TRNA)
 
 
 @task()
@@ -129,17 +128,6 @@ def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> O
         return result_to_filter
 
     return None
-
-
-@task()
-@genome_specific_logging
-def find_atts_denovo(genome: Genome, out_dir) -> Genome:
-    atts_denovo_dir = os.path.join(out_dir, 'atts_denovo_search')
-    os.makedirs(atts_denovo_dir, exist_ok=True)
-
-    AttsDenovoFinder(genome=genome, output_dir=atts_denovo_dir).find_atts_denovo()
-
-    return genome
 
 
 @task()
@@ -166,12 +154,12 @@ def are_atts_present(genome: Genome) -> Genome:
             for att in genome.features.get_features(FeatureType.ATT_DENOVO):
                 reverse_denovo_atts.append(Feature(location=Range(start=att.start, end=att.end),
                                                    strand=-att.strand, contig_id=att.contig_id, genome=genome))
-            [genome.features.add_feature(feature=i, feature_type=FeatureType.ATT) for i in reverse_denovo_atts]
+            [genome.features.add_features(i, feature_type=FeatureType.ATT) for i in reverse_denovo_atts]
         else:
             atts_denovo = genome.features.get_features(FeatureType.ATT_DENOVO)
-            [genome.features.add_feature(feature=i, feature_type=FeatureType.ATT) for i in atts_denovo]
+            [genome.features.add_features(i, feature_type=FeatureType.ATT) for i in atts_denovo]
         target_trnas_denovo = genome.features.get_features(FeatureType.TARGET_TRNA_DENOVO)
-        [genome.features.add_feature(feature=i, feature_type=FeatureType.TARGET_TRNA) for i in target_trnas_denovo]
+        [genome.features.add_features(i, feature_type=FeatureType.TARGET_TRNA) for i in target_trnas_denovo]
 
     elif len(genome.features.get_features(FeatureType.ATT_DENOVO)) != 0:
         logger.warning(f'\n\n>>>Some atts were found by denovo search, but we are not going to use them!'

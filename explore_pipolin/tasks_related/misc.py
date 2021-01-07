@@ -50,4 +50,4 @@ def add_features_from_blast_entries(entries, feature_type: FeatureType, genome: 
     for entry in entries:
         for hit in entry:
             feature = feature_from_blasthit(hit=hit, contig_id=entry.id, genome=genome)
-            genome.features.add_feature(feature=feature, feature_type=feature_type)
+            genome.features.add_features(feature, feature_type=feature_type)

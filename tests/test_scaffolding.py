@@ -39,11 +39,11 @@ def _add_features_to_genome(contigs_schemes, genome):
             feature_start = (triplet_start // 3 * 10 - 5) if triplet == _TRNA else (triplet_start // 3 * 10)
             feature = Feature(Range(feature_start, feature_start + 10), Strand.FORWARD, f'CONTIG_{i}', genome)
             if triplet == _ATT:
-                genome.features.add_feature(feature, FeatureType.ATT)
+                genome.features.add_features(feature, feature_type=FeatureType.ATT)
             if triplet == _PIPOLB:
-                genome.features.add_feature(feature, FeatureType.PIPOLB)
+                genome.features.add_features(feature, feature_type=FeatureType.PIPOLB)
             if triplet == _TRNA:
-                genome.features.add_feature(feature, FeatureType.TARGET_TRNA)
+                genome.features.add_features(feature, feature_type=FeatureType.TARGET_TRNA)
 
 
 class TestScaffolder(unittest.TestCase):
