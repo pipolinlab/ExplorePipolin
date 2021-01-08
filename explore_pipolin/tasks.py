@@ -15,8 +15,8 @@ from explore_pipolin.tasks_related.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, Pipolin, Genome, \
     define_genome_id, FeaturesContainer, Strand, Range
 from explore_pipolin.utilities.logging import genome_specific_logging
-from explore_pipolin.tasks_related.misc import join_it, add_features_from_blast_entries
-from explore_pipolin.utilities.io import read_blastxml, create_pipolb_entries
+from explore_pipolin.tasks_related.misc import join_it
+from explore_pipolin.utilities.io import create_pipolb_entries
 from explore_pipolin.utilities.io import create_seqio_records_dict
 from explore_pipolin.utilities.io import read_aragorn_batch
 from explore_pipolin.utilities.external_tools import ExternalTools, RealExternalTools
@@ -57,21 +57,6 @@ def find_pipolbs(genome: Genome, out_dir: str, ext: ExternalTools = RealExternal
                           strand=Strand.from_pm_one_encoding(entry[3]),
                           contig_id=entry[0], genome=genome)
         genome.features.add_features(feature, feature_type=FeatureType.PIPOLB)
-
-    return genome
-
-
-@task()
-@genome_specific_logging
-def find_atts(genome: Genome, out_dir: str, ext: ExternalTools = RealExternalTools) -> Genome:
-    blast_results_dir = os.path.join(out_dir, 'atts_search')
-    os.makedirs(blast_results_dir, exist_ok=True)
-
-    output_file = os.path.join(blast_results_dir, genome.id) + '.fmt5'
-    ext.blastn_against_ref_att(genome_file=genome.file, output_file=output_file)
-    entries = read_blastxml(blast_xml=output_file)
-
-    add_features_from_blast_entries(entries=entries, feature_type=FeatureType.ATT, genome=genome)
 
     return genome
 

@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, Iterable
+from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, NewType
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -49,12 +49,6 @@ class Genome:
     def is_single_contig(self) -> bool:
         return len(self.contigs) == 1
 
-    # TODO: implement repeats search for incomplete genomes and delete this!
-    def get_complete_genome_contig_id(self) -> str:
-        if not self.is_single_contig():
-            raise AssertionError(f'Not a complete genome {self.id}!')
-        return self.contigs[0].id
-
 
 @dataclass(frozen=True)
 class Range:
@@ -81,12 +75,24 @@ class Range:
         min_end = min(self.end, other.end)
         return max_start <= min_end
 
+    def is_overlapping_any(self, others) -> bool:
+        return any(self.is_overlapping(r) for r in others)
+
+
+ContigID = NewType('ContigID', str)
+
 
 @dataclass(frozen=True)
-class RangePair:
+class PairedLocation:
     left: Range
     right: Range
-    contig_id: str
+    contig_id: ContigID
+
+
+@dataclass(frozen=True)
+class MultiLocation:
+    ranges: MutableSequence[Range]
+    contig_id: ContigID
 
 
 class Feature:
@@ -124,13 +130,6 @@ class FeatureType(Enum):
 
 
 class FeatureSet(Set[Feature]):
-    def get_overlapping(self, feature: Feature) -> Optional[Feature]:
-        try:
-            features_list = self.get_list_of_contig_sorted(feature.contig_id)
-            return self._get_overlapping_with_feature(features_list, feature)
-        except KeyError:
-            return None
-
     def get_dict_by_contig_sorted(self) -> Mapping[str, Sequence[Feature]]:
         result: MutableMapping[str, List[Feature]] = defaultdict(list)
         for feature in self:
@@ -139,9 +138,20 @@ class FeatureSet(Set[Feature]):
             features.sort(key=lambda p: p.start)
         return result
 
+    def get_list_of_contig_sorted(self, contig_id: str) -> Sequence[Feature]:
+        return self.get_dict_by_contig_sorted()[contig_id]
+
     @property
     def first(self) -> Feature:
         return next(iter(self))
+
+    # TODO: do I really need it?
+    def get_overlapping(self, feature: Feature) -> Optional[Feature]:
+        try:
+            features_list = self.get_list_of_contig_sorted(feature.contig_id)
+            return self._get_overlapping_with_feature(features_list, feature)
+        except KeyError:
+            return None
 
     @staticmethod
     def _get_overlapping_with_feature(features_list, feature):
@@ -149,15 +159,17 @@ class FeatureSet(Set[Feature]):
             if feature.location.is_overlapping(other_feature.location):
                 return other_feature
 
-    def get_list_of_contig_sorted(self, contig_id: str) -> Sequence[Feature]:
-        return self.get_dict_by_contig_sorted()[contig_id]
-
 
 class FeaturesContainer:
     def __init__(self):
         self._features: Mapping[FeatureType, FeatureSet] = defaultdict(FeatureSet)
 
     def add_features(self, *features: Feature, feature_type: FeatureType):
+        if feature_type is FeatureType.ATT:
+            for feature in features:
+                if not isinstance(feature, AttFeature):
+                    raise AssertionError('ATT should be instance of AttFeature class!')
+
         for feature in features:
             self._features[feature_type].add(feature)
 
@@ -184,7 +196,7 @@ class FeaturesContainer:
 
 
 class AttFeature(Feature):
-    def __init__(self, location: Range, strand: Strand, repeat_id: str, contig_id: str, genome: Genome):
+    def __init__(self, location: Range, strand: Strand, contig_id: str, genome: Genome, repeat_id):
         Feature.__init__(self, location, strand, contig_id, genome)
         self.repeat_id = repeat_id
 

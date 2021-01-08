@@ -57,10 +57,6 @@ class TestGenome(SetUpGenome):
     def test_is_single_contig(self):
         self.assertTrue(self.single_contig_genome.is_single_contig())
         self.assertFalse(self.multi_contig_genome.is_single_contig())
-        # TODO: implement repeats search for incomplete genomes and delete this!
-        self.assertEqual(self.single_contig_genome.get_complete_genome_contig_id(), self.short_contig_id)
-        with self.assertRaises(AssertionError):
-            self.multi_contig_genome.get_complete_genome_contig_id()
 
     def test_get_contig_by_id(self):
         self.assertEqual(self.single_contig_genome.get_contig_by_id(contig_id=self.short_contig_id), self.short_contig)
@@ -125,7 +121,6 @@ class TestFeatureClasses(SetUpGenome):
 
     def test_get_overlapping_with_feature(self):
         self.features.add_features(self.long_contig_feature1, feature_type=FeatureType.TRNA)
-        self.features.add_features(self.long_contig_feature2, feature_type=FeatureType.ATT)
         self.features.add_features(self.long_contig_feature3, feature_type=FeatureType.PIPOLB)
 
         ofeature_present = self.features.get_features(FeatureType.TRNA).get_overlapping(self.long_contig_feature2)
@@ -136,11 +131,11 @@ class TestFeatureClasses(SetUpGenome):
 
     def test_is_on_the_same_contig(self):
         self.features.add_features(self.long_contig_feature1, feature_type=FeatureType.TRNA)
-        self.features.add_features(self.long_contig_feature2, feature_type=FeatureType.ATT)
-        self.assertTrue(self.features.is_on_the_same_contig(FeatureType.TRNA, FeatureType.ATT))
+        self.features.add_features(self.long_contig_feature2, feature_type=FeatureType.PIPOLB)
+        self.assertTrue(self.features.is_on_the_same_contig(FeatureType.TRNA, FeatureType.PIPOLB))
 
         self.features.add_features(self.short_contig_feature, feature_type=FeatureType.PIPOLB)
-        self.assertFalse(self.features.is_on_the_same_contig(FeatureType.ATT, FeatureType.PIPOLB))
+        self.assertFalse(self.features.is_on_the_same_contig(FeatureType.TRNA, FeatureType.PIPOLB))
 
 
 class TestOthers(SetUpGenome):

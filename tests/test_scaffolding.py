@@ -1,7 +1,8 @@
 import unittest
 from typing import Sequence
 
-from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, Pipolin, PipolinFragment
+from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, Pipolin, PipolinFragment, \
+    AttFeature
 from explore_pipolin.tasks_related.scaffolding import scaffold
 
 
@@ -39,6 +40,8 @@ def _add_features_to_genome(contigs_schemes, genome):
             feature_start = (triplet_start // 3 * 10 - 5) if triplet == _TRNA else (triplet_start // 3 * 10)
             feature = Feature(Range(feature_start, feature_start + 10), Strand.FORWARD, f'CONTIG_{i}', genome)
             if triplet == _ATT:
+                feature = AttFeature(Range(feature_start, feature_start + 10), Strand.FORWARD,
+                                     f'CONTIG_{i}', genome, repeat_id=0)
                 genome.features.add_features(feature, feature_type=FeatureType.ATT)
             if triplet == _PIPOLB:
                 genome.features.add_features(feature, feature_type=FeatureType.PIPOLB)

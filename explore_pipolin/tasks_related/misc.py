@@ -1,6 +1,6 @@
 from typing import List
 
-from explore_pipolin.common import Strand, Genome, Feature, FeatureType, Range, RangePair, PipolinFragment
+from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, PipolinFragment, ContigID
 
 
 def is_single_target_trna_per_contig(genome: Genome):
@@ -24,13 +24,7 @@ def create_fragment_record(fragment: PipolinFragment, genome_dict):
     return genome_dict[fragment.contig_id][fragment.start:fragment.end]
 
 
-def feature_from_blasthit(hit, contig_id: str, genome: Genome) -> Feature:
-    return Feature(location=Range(start=hit.hit_start, end=hit.hit_end),
-                   strand=Strand.from_pm_one_encoding(hit.hit_strand),
-                   contig_id=contig_id, genome=genome)
-
-
-def get_ranges_around_pipolbs(genome: Genome) -> List[RangePair]:
+def get_ranges_around_pipolbs(genome: Genome) -> List[PairedLocation]:
     pipolbs_dict_by_contig = genome.features.pipolbs_dict()
 
     range_pairs = []
@@ -41,13 +35,6 @@ def get_ranges_around_pipolbs(genome: Genome) -> List[RangePair]:
             for j in range(i, len(pipolbs)):
                 pipolbs_range = Range(pipolbs[i].start, pipolbs[j].end)
                 pipolbs_range = pipolbs_range.inflate(100000, _max=contig_length)
-                range_pairs.append(RangePair(Range(pipolbs_range.start, pipolbs[i].start),
-                                             Range(pipolbs[j].end, pipolbs_range.end), contig_id))
+                range_pairs.append(PairedLocation(Range(pipolbs_range.start, pipolbs[i].start),
+                                                  Range(pipolbs[j].end, pipolbs_range.end), ContigID(contig_id)))
     return range_pairs
-
-
-def add_features_from_blast_entries(entries, feature_type: FeatureType, genome: Genome,):
-    for entry in entries:
-        for hit in entry:
-            feature = feature_from_blasthit(hit=hit, contig_id=entry.id, genome=genome)
-            genome.features.add_features(feature, feature_type=feature_type)

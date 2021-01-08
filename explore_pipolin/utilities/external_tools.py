@@ -7,7 +7,7 @@ from typing import List
 import pkg_resources
 from Bio import SeqIO
 
-from explore_pipolin.common import RangePair
+from explore_pipolin.common import PairedLocation
 
 
 def check_blast():
@@ -96,7 +96,7 @@ def blastn_against_ref_att(genome_file, output_file):
                        stdout=ouf)
 
 
-def blast_for_repeats(range_pairs: List[RangePair], genome_id: str, repeats_dir: str):
+def blast_for_repeats(range_pairs: List[PairedLocation], genome_id: str, repeats_dir: str):
     for i in range(len(range_pairs)):
         with open(os.path.join(repeats_dir, genome_id + f'_{i}.fmt5'), 'w') as ouf:
             subprocess.run(['blastn', '-query', os.path.join(repeats_dir, genome_id + f'_{i}.left'),
