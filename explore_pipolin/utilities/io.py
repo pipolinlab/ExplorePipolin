@@ -5,7 +5,7 @@ from typing import MutableMapping, MutableSequence, Sequence, Tuple
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.common import Genome, Strand, Contig
+from explore_pipolin.common import Genome, Strand, Contig, ContigID
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
@@ -14,7 +14,7 @@ def read_genome_contigs_from_file(genome_file: str) -> MutableSequence[Contig]:
     genome_dict = create_seqio_records_dict(file=genome_file, file_format='fasta')
     contigs = []
     for key, value in genome_dict.items():
-        contigs.append(Contig(contig_id=key, contig_length=len(value.seq)))
+        contigs.append(Contig(contig_id=ContigID(key), contig_length=len(value.seq)))
     return contigs
 
 

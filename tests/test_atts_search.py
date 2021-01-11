@@ -32,7 +32,7 @@ class TestAttsDenovoSearch(unittest.TestCase):
 
     def test_is_att_denovo(self):
         att1 = AttFeature(Range(30, 70), Strand.REVERSE, self.contig1_id, self.genome, 0)
-        att2 = AttFeature(Range(2000, 2040), Strand.REVERSE, self.contig1_id, self.genome, att1.repeat_id)
+        att2 = AttFeature(Range(2000, 2040), Strand.REVERSE, self.contig1_id, self.genome, att1.att_id)
         trna1 = Feature(Range(2030, 2060), Strand.FORWARD, self.contig1_id, self.genome)
         trna2 = Feature(Range(5030, 5060), Strand.FORWARD, self.contig1_id, self.genome)
         trna3 = Feature(Range(2000, 2040), Strand.REVERSE, self.contig2_id, self.genome)

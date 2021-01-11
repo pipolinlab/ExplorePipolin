@@ -1,7 +1,7 @@
 import unittest
 
 from explore_pipolin.common import Strand, Contig, Genome, Feature, PipolinFragment, Range, \
-    FeaturesContainer, FeatureType
+    FeaturesContainer, FeatureType, ContigID
 from explore_pipolin.common import define_genome_id
 
 
@@ -23,10 +23,10 @@ class TestOrientation(unittest.TestCase):
 
 class SetUpGenome(unittest.TestCase):
     def setUp(self) -> None:
-        self.short_contig_id = 'foo'
+        self.short_contig_id = ContigID('foo')
         self.short_contig = Contig(contig_id=self.short_contig_id, contig_length=100)
 
-        self.long_contig_id = 'boo'
+        self.long_contig_id = ContigID('boo')
         self.long_contig = Contig(contig_id=self.long_contig_id, contig_length=500)
 
         self.single_contig_genome = Genome(genome_id='bar', genome_file='dir/bar.fa',

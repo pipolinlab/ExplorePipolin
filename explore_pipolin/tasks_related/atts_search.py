@@ -1,8 +1,7 @@
 import os
 from collections import defaultdict
 from itertools import chain
-from random import random
-from typing import List, Mapping, Union
+from typing import List, Mapping, Sequence
 
 from Bio import SeqIO
 from prefect import task, context
@@ -60,16 +59,18 @@ class AttFinder:
         return read_blastxml(blast_xml=output_file)
 
     def add_att_features_from_blast_entries(self, entries):
-        repeat_id = random()
         for entry in entries:
-            for hit in entry:
-                feature = self._create_att_feature(hit=hit, contig_id=entry.id, repeat_id=repeat_id)
-                self.genome.features.add_features(feature, feature_type=FeatureType.ATT)
+            att_features = self._create_att_features(entry)
+            self.genome.features.add_features(*att_features, feature_type=FeatureType.ATT)
 
-    def _create_att_feature(self, hit, contig_id: str, repeat_id) -> AttFeature:
-        return AttFeature(location=Range(start=hit.hit_start, end=hit.hit_end),
-                          strand=Strand.from_pm_one_encoding(hit.hit_strand),
-                          contig_id=contig_id, genome=self.genome, repeat_id=repeat_id)
+    def _create_att_features(self, entry) -> Sequence[AttFeature]:
+        att_id = self.genome.features.get_features(FeatureType.ATT).get_next_att_id()
+        new_att_features = []
+        for hit in entry:
+            new_att_features.append(AttFeature(location=Range(start=hit.hit_start, end=hit.hit_end),
+                                               strand=Strand.from_pm_one_encoding(hit.hit_strand),
+                                               contig_id=entry.id, genome=self.genome, att_id=att_id))
+        return new_att_features
 
 
 class AttDenovoFinder:
@@ -90,10 +91,7 @@ class AttDenovoFinder:
                 ranges = [f'({i.start},{i.end})' for i in loc.ranges]
                 print(loc.contig_id, ' '.join(ranges), sep='\t', file=ouf)
 
-    def is_att_denovo(self, repeat: Union[MultiLocation, PairedLocation]) -> bool:
-        if isinstance(repeat, PairedLocation):
-            return self.is_att_denovo(MultiLocation(
-                ranges=[repeat.left_range, repeat.right_range], contig_id=repeat.contig_id))
+    def is_att_denovo(self, repeat: MultiLocation) -> bool:
         atts_of_contig = self.genome.features.atts_dict()[repeat.contig_id]
         for att in atts_of_contig:
             if repeat.ranges[0].is_overlapping(att):
@@ -107,9 +105,9 @@ class AttDenovoFinder:
 
     def extend_att_features(self, atts_denovo: List[MultiLocation]):
         for att in atts_denovo:
-            repeat_id = random()
+            att_id = self.genome.features.get_features(FeatureType.ATT).get_next_att_id()
             for r in att.ranges:
-                new_att = AttFeature(r, Strand.FORWARD, att.contig_id, self.genome, repeat_id)
+                new_att = AttFeature(r, Strand.FORWARD, att.contig_id, self.genome, att_id)
                 self.genome.features.add_features(new_att, feature_type=FeatureType.ATT)
 
     def extend_target_trna_features(self):

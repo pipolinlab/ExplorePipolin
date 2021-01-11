@@ -27,8 +27,11 @@ class Strand(Enum):
         return self.REVERSE if self is self.FORWARD else self.FORWARD
 
 
+ContigID = NewType('ContigID', str)
+
+
 class Contig:
-    def __init__(self, contig_id: str, contig_length: int):
+    def __init__(self, contig_id: ContigID, contig_length: int):
         self.id = contig_id
         self.length = contig_length
 
@@ -79,9 +82,6 @@ class Range:
         return any(self.is_overlapping(r) for r in others)
 
 
-ContigID = NewType('ContigID', str)
-
-
 @dataclass(frozen=True)
 class PairedLocation:
     left_range: Range
@@ -96,7 +96,7 @@ class MultiLocation:
 
 
 class Feature:
-    def __init__(self, location: Range, strand: Strand, contig_id: str, genome: Genome):
+    def __init__(self, location: Range, strand: Strand, contig_id: ContigID, genome: Genome):
         self.location = location
         self.strand = strand
         self.contig_id = contig_id
@@ -157,6 +157,11 @@ class FeatureSet(Set[Feature]):
             if feature.location.is_overlapping(other_feature.location):
                 return other_feature
 
+    def get_next_att_id(self):
+        if not isinstance(next(iter(self)), AttFeature):
+            raise AssertionError('Features should of type ATT!')
+        return max(self, key=lambda x: x.att_id, default=0) + 1
+
 
 class FeaturesContainer:
     def __init__(self):
@@ -194,13 +199,13 @@ class FeaturesContainer:
 
 
 class AttFeature(Feature):
-    def __init__(self, location: Range, strand: Strand, contig_id: str, genome: Genome, repeat_id):
+    def __init__(self, location: Range, strand: Strand, contig_id: ContigID, genome: Genome, att_id: int):
         Feature.__init__(self, location, strand, contig_id, genome)
-        self.repeat_id = repeat_id
+        self.att_id = att_id
 
 
 class PipolinFragment(Feature):
-    def __init__(self, location: Range, contig_id: str, genome: Genome):
+    def __init__(self, location: Range, contig_id: ContigID, genome: Genome):
         # TODO: do I need orientation here?
         super(PipolinFragment, self).__init__(location, Strand.FORWARD, contig_id, genome)
         self.atts: MutableSequence[Feature] = []

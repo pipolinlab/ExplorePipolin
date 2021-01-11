@@ -13,7 +13,7 @@ from typing import Any, Optional, Sequence
 
 from explore_pipolin.tasks_related.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, Pipolin, Genome, \
-    define_genome_id, FeaturesContainer, Strand, Range
+    define_genome_id, FeaturesContainer, Strand, Range, ContigID
 from explore_pipolin.utilities.logging import genome_specific_logging
 from explore_pipolin.tasks_related.misc import join_it
 from explore_pipolin.utilities.io import create_pipolb_entries
@@ -55,7 +55,7 @@ def find_pipolbs(genome: Genome, out_dir: str, ext: ExternalTools = RealExternal
     for entry in entries_pipolb:
         feature = Feature(location=Range(start=entry[1], end=entry[2]),
                           strand=Strand.from_pm_one_encoding(entry[3]),
-                          contig_id=entry[0], genome=genome)
+                          contig_id=ContigID(entry[0]), genome=genome)
         genome.features.add_features(feature, feature_type=FeatureType.PIPOLB)
 
     return genome

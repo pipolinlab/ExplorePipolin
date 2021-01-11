@@ -9,7 +9,7 @@ from Bio.SeqRecord import SeqRecord
 from prefect import Flow
 
 from explore_pipolin import tasks
-from explore_pipolin.common import Genome, Contig
+from explore_pipolin.common import Genome, Contig, ContigID
 from explore_pipolin.utilities.external_tools import ExternalTools
 from explore_pipolin.utilities.logging import set_logging_dir
 
@@ -18,7 +18,7 @@ from explore_pipolin.utilities.logging import set_logging_dir
 def temp_genome(genome_id: str, seq: Seq):
     with NamedTemporaryFile() as genome_file:
         SeqIO.write([SeqRecord(seq, id=genome_id)], genome_file.name, format='fasta')
-        yield Genome(genome_id, genome_file.name, [Contig(contig_id='pipolb', contig_length=len(seq))])
+        yield Genome(genome_id, genome_file.name, [Contig(contig_id=ContigID('pipolb'), contig_length=len(seq))])
 
 
 class MockExternalTools(ExternalTools):
