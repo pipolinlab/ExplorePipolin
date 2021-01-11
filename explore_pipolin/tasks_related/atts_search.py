@@ -5,7 +5,7 @@ from random import random
 from typing import List, Mapping, Union
 
 from Bio import SeqIO
-from prefect import task
+from prefect import task, context
 
 from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, Strand, AttFeature, ContigID, \
     MultiLocation
@@ -82,8 +82,7 @@ class AttDenovoFinder:
         self._save_seqs_around_pipolbs(ranges_around_pipolbs)
         blast_for_repeats(ranges_around_pipolbs, genome_id=self.genome.id, repeats_dir=self.output_dir)
         paired_repeats: List[PairedLocation] = self._extract_repeats(ranges_around_pipolbs)
-        repeats = self._regroup_paired_repeats(paired_repeats)
-        return repeats
+        return self._regroup_paired_repeats(paired_repeats)
 
     def write_repeats(self, repeats: List[MultiLocation]):
         with open(os.path.join(self.output_dir, self.genome.id + '.repeats'), 'w') as ouf:
@@ -94,7 +93,7 @@ class AttDenovoFinder:
     def is_att_denovo(self, repeat: Union[MultiLocation, PairedLocation]) -> bool:
         if isinstance(repeat, PairedLocation):
             return self.is_att_denovo(MultiLocation(
-                ranges=[repeat.left, repeat.right], contig_id=repeat.contig_id))
+                ranges=[repeat.left_range, repeat.right_range], contig_id=repeat.contig_id))
         atts_of_contig = self.genome.features.atts_dict()[repeat.contig_id]
         for att in atts_of_contig:
             if repeat.ranges[0].is_overlapping(att):
@@ -123,17 +122,16 @@ class AttDenovoFinder:
 
     def write_atts_denovo(self, atts_denovo: List[MultiLocation]):
         with open(os.path.join(self.output_dir, self.genome.id + '.atts_denovo'), 'w') as ouf:
-            print('att_start', 'att_end', sep='\t', file=ouf)
             for att in atts_denovo:
-                for r in att.ranges:
-                    print(r.start, r.end, sep='\t', file=ouf)
+                ranges = [f'({i.start},{i.end}' for i in att.ranges]
+                print(att.contig_id, ' '.join(ranges), sep='\t', file=ouf)
 
     def _save_seqs_around_pipolbs(self, ranges_around_pipolbs: List[PairedLocation]):
         genome_seq = SeqIO.read(handle=self.genome.file, format='fasta')
 
         for i, range_pair in enumerate(ranges_around_pipolbs):
-            left_seq = genome_seq[range_pair.left.start:range_pair.left.end]
-            right_seq = genome_seq[range_pair.right.start:range_pair.right.end]
+            left_seq = genome_seq[range_pair.left_range.start:range_pair.left_range.end]
+            right_seq = genome_seq[range_pair.right_range.start:range_pair.right_range.end]
             SeqIO.write(sequences=left_seq, format='fasta',
                         handle=os.path.join(self.output_dir, self.genome.id + f'_{i}.left'))
             SeqIO.write(sequences=right_seq, format='fasta',
@@ -145,8 +143,8 @@ class AttDenovoFinder:
             repeats_xml = read_blastxml(os.path.join(self.output_dir, self.genome.id + f'_{i}.fmt5'))
             for entry in repeats_xml:
                 for hit in entry:
-                    left_repeat = Range(start=hit.query_start, end=hit.query_end).shift(range_pair.left.start)
-                    right_repeat = Range(start=hit.hit_start, end=hit.hit_end).shift(range_pair.right.start)
+                    left_repeat = Range(start=hit.query_start, end=hit.query_end).shift(range_pair.left_range.start)
+                    right_repeat = Range(start=hit.hit_start, end=hit.hit_end).shift(range_pair.right_range.start)
                     repeat_pair = PairedLocation(left_repeat, right_repeat, range_pair.contig_id)
                     repeats.append(repeat_pair)
         return repeats
@@ -156,13 +154,24 @@ class AttDenovoFinder:
         result: Mapping[ContigID, List[MultiLocation]] = defaultdict(list)
         for repeat in paired_repeats:
             for rs in result[repeat.contig_id]:
-                if repeat.left.is_overlapping_any(rs) and not repeat.right.is_overlapping_any(rs.ranges):
-                    rs.ranges.append(repeat.right)
+                if repeat.left_range.is_overlapping_any(rs) and not repeat.right_range.is_overlapping_any(rs.ranges):
+                    rs.ranges.append(repeat.right_range)
                     break
-                elif repeat.right.is_overlapping_any(rs) and not repeat.left.is_overlapping_any(rs.ranges):
-                    rs.ranges.append(repeat.left)
+                elif repeat.right_range.is_overlapping_any(rs) and not repeat.left_range.is_overlapping_any(rs.ranges):
+                    rs.ranges.append(repeat.left_range)
                     break
             else:
                 result[repeat.contig_id].append(MultiLocation(
-                    ranges=[repeat.right, repeat.left], contig_id=repeat.contig_id))
+                    ranges=[repeat.right_range, repeat.left_range], contig_id=repeat.contig_id))
         return list(chain(*result.values()))
+
+
+@task()
+@genome_specific_logging
+def are_atts_present(genome: Genome) -> Genome:
+    logger = context.get('logger')
+
+    num_atts = len(genome.features.get_features(FeatureType.ATT))
+    if num_atts == 0:
+        logger.warning('\n\n>>>No atts were found! Not able to define pipolin bounds!\n')
+    return genome

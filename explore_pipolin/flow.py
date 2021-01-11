@@ -3,7 +3,7 @@ from prefect import Flow, Parameter, unmapped, case
 from prefect.tasks.control_flow import FilterTask
 from prefect.tasks.core.constants import Constant
 
-from explore_pipolin.tasks_related.atts_search import find_atts, find_atts_denovo
+from explore_pipolin.tasks_related.atts_search import find_atts, find_atts_denovo, are_atts_present
 from explore_pipolin import tasks
 
 _PROTEINS = Constant(pkg_resources.resource_filename('explore_pipolin', '/data/HHpred_proteins.faa'))
@@ -32,7 +32,7 @@ def get_flow():
         genome = find_atts.map(genome=genome, out_dir=unmapped(out_dir))
         genome = find_atts_denovo.map(genome=genome, out_dir=unmapped(out_dir))
 
-        genome = tasks.are_atts_present.map(genome=genome)
+        genome = are_atts_present.map(genome=genome)
 
         pipolins = tasks.scaffold_pipolins.map(genome=genome)
 

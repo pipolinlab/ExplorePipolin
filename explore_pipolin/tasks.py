@@ -117,45 +117,6 @@ def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> O
 
 @task()
 @genome_specific_logging
-def are_atts_present(genome: Genome) -> Genome:
-    logger = context.get('logger')
-
-    num_atts = len(genome.features.get_features(FeatureType.ATT))
-    num_atts_denovo = len(genome.features.get_features(FeatureType.ATT_DENOVO))
-    if num_atts == 0 and num_atts_denovo == 0:
-        logger.warning('\n\n>>>There is piPolB, but no atts were found! Not able to define pipolin bounds!\n')
-        # TODO: probably, it makes sense to output_ecoli piPolB(s) alone
-
-    elif len(genome.features.get_features(FeatureType.ATT)) == 0:
-        logger.warning(f'\n\n>>>No "usual" atts were found, but some atts were found by denovo search!'
-                       f'For more details, check the {genome.id}.atts_denovo file '
-                       f'in the atts_denovo_search directory!\n')
-        # TODO: check that it's only one repeat! Although, this shouldn't be a problem.
-        atts_frames = [att.strand for att in genome.features.get_features(FeatureType.ATT_DENOVO)]
-        if len(set(atts_frames)) != 1:
-            raise AssertionError('ATTs are expected to be in the same frame, as they are direct repeats!')
-        if set(atts_frames).pop() == genome.features.get_features(FeatureType.TARGET_TRNA_DENOVO).first.strand:
-            reverse_denovo_atts = []
-            for att in genome.features.get_features(FeatureType.ATT_DENOVO):
-                reverse_denovo_atts.append(Feature(location=Range(start=att.start, end=att.end),
-                                                   strand=-att.strand, contig_id=att.contig_id, genome=genome))
-            [genome.features.add_features(i, feature_type=FeatureType.ATT) for i in reverse_denovo_atts]
-        else:
-            atts_denovo = genome.features.get_features(FeatureType.ATT_DENOVO)
-            [genome.features.add_features(i, feature_type=FeatureType.ATT) for i in atts_denovo]
-        target_trnas_denovo = genome.features.get_features(FeatureType.TARGET_TRNA_DENOVO)
-        [genome.features.add_features(i, feature_type=FeatureType.TARGET_TRNA) for i in target_trnas_denovo]
-
-    elif len(genome.features.get_features(FeatureType.ATT_DENOVO)) != 0:
-        logger.warning(f'\n\n>>>Some atts were found by denovo search, but we are not going to use them!'
-                       f'For more details, check the {genome.id}.atts file '
-                       f'in the atts_denovo directory!\n')
-
-    return genome
-
-
-@task()
-@genome_specific_logging
 def scaffold_pipolins(genome: Genome) -> Sequence[Pipolin]:
     # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
     # https://github.com/biopython/biopython/issues/1755

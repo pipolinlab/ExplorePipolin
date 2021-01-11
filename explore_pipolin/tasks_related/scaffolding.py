@@ -255,7 +255,8 @@ def _create_pipolin_fragments_single_contig(genome: Genome) -> Pipolin:
         if len(windows) != 1:
             raise NotImplementedError('this method is for a single contig => should be only one Window!')
         pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig_id,
-                                  genome=genome, location=Range(windows[0].left.start, windows[0].right.end))
+                                  genome=genome,
+                                  location=Range(windows[0].left_range.start, windows[0].right_range.end))
         return Pipolin(pipolin)
 
 

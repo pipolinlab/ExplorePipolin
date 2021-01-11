@@ -84,8 +84,8 @@ ContigID = NewType('ContigID', str)
 
 @dataclass(frozen=True)
 class PairedLocation:
-    left: Range
-    right: Range
+    left_range: Range
+    right_range: Range
     contig_id: ContigID
 
 
@@ -125,8 +125,6 @@ class FeatureType(Enum):
     ATT = auto()
     TRNA = auto()
     TARGET_TRNA = auto()
-    ATT_DENOVO = auto()
-    TARGET_TRNA_DENOVO = auto()
 
 
 class FeatureSet(Set[Feature]):

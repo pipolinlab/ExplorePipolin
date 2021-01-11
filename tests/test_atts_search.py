@@ -1,7 +1,8 @@
 import unittest
 from typing import List
 
-from explore_pipolin.common import Contig, Genome, Feature, Range, Strand, FeatureType, PairedLocation, AttFeature, ContigID
+from explore_pipolin.common import Contig, Genome, Feature, Range, Strand, FeatureType, PairedLocation, AttFeature, \
+    ContigID, MultiLocation
 from explore_pipolin.tasks_related.misc import get_ranges_around_pipolbs
 from explore_pipolin.tasks_related.atts_search import AttDenovoFinder
 
@@ -21,10 +22,10 @@ class TestAttsDenovoSearch(unittest.TestCase):
         self.genome.features.add_features(pipolb1, pipolb2, pipolb3, feature_type=FeatureType.PIPOLB)
 
     def test_get_ranges_around_pipolbs(self):
-        range_pair1 = PairedLocation(left=Range(0, 100), right=Range(1100, 1100 + 100000), contig_id=self.contig1_id)
-        range_pair2 = PairedLocation(left=Range(0, 3000), right=Range(4000, 4000 + 100000), contig_id=self.contig1_id)
-        range_pair3 = PairedLocation(left=Range(0, 100), right=Range(4000, 4000 + 100000), contig_id=self.contig1_id)
-        range_pair4 = PairedLocation(left=Range(0, 500), right=Range(1500, 10000), contig_id=self.contig2_id)
+        range_pair1 = PairedLocation(Range(0, 100), Range(1100, 1100 + 100000), self.contig1_id)
+        range_pair2 = PairedLocation(Range(0, 3000), Range(4000, 4000 + 100000), self.contig1_id)
+        range_pair3 = PairedLocation(Range(0, 100), Range(4000, 4000 + 100000), self.contig1_id)
+        range_pair4 = PairedLocation(Range(0, 500), Range(1500, 10000), self.contig2_id)
 
         obt: List[PairedLocation] = get_ranges_around_pipolbs(self.genome)
         self.assertCountEqual([range_pair1, range_pair2, range_pair3, range_pair4], obt)
@@ -39,7 +40,7 @@ class TestAttsDenovoSearch(unittest.TestCase):
         self.genome.features.add_features(trna1, trna2, trna3, feature_type=FeatureType.TRNA)
 
         finder = AttDenovoFinder(self.genome, 'output_dir')
-        self.assertFalse(finder.is_att_denovo(PairedLocation(Range(35, 65), Range(2005, 2035), self.contig1_id)))
-        self.assertTrue(finder.is_att_denovo(PairedLocation(Range(2800, 2850), Range(5000, 5050), self.contig1_id)))
-        self.assertTrue(finder.is_att_denovo(PairedLocation(Range(35, 65), Range(2005, 2035), self.contig2_id)))
-        self.assertFalse(finder.is_att_denovo(PairedLocation(Range(300, 350), Range(3000, 3050), self.contig2_id)))
+        self.assertFalse(finder.is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig1_id)))
+        self.assertTrue(finder.is_att_denovo(MultiLocation([Range(2800, 2850), Range(5000, 5050)], self.contig1_id)))
+        self.assertTrue(finder.is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig2_id)))
+        self.assertFalse(finder.is_att_denovo(MultiLocation([Range(300, 350), Range(3000, 3050)], self.contig2_id)))
