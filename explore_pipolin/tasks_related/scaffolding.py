@@ -1,13 +1,124 @@
 from enum import Enum, auto
-from typing import Sequence, MutableSequence, Optional, Set
+from typing import Sequence, MutableSequence, Optional, Set, List
 
-from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Pipolin, Genome, Range
+from prefect import task
+
+from explore_pipolin.common import PipolinFragment, FeatureType, Contig, Feature, Pipolin, Genome, Range, ContigID, \
+    AttFeature
 from explore_pipolin.tasks_related.misc import get_ranges_around_pipolbs
+from explore_pipolin.utilities.logging import genome_specific_logging
+
+
+@task()
+@genome_specific_logging
+# TODO: rename to find_pipolins?
+def scaffold_pipolins(genome: Genome) -> Sequence[Pipolin]:
+    # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
+    # https://github.com/biopython/biopython/issues/1755
+    return scaffold(genome)
 
 
 class Direction(Enum):
     LEFT = auto()
     RIGHT = auto()
+
+
+class PipolinFinder:
+    def __init__(self, genome: Genome):
+        self.genome = genome
+
+    @property
+    def atts_by_att_id(self):
+        return self.genome.features.get_features(FeatureType.ATT).get_atts_dict_by_att_id()
+
+    def find_pipolins(self) -> Sequence[Pipolin]:
+        pipolins = []
+
+        pipolbs_dict = self.genome.features.pipolbs_dict()
+        for _, pipolbs in pipolbs_dict.items():
+            while len(pipolbs) > 0:
+                leftmost_pipolb = pipolbs[0]
+                atts_around_pipolbs = self._find_atts_around_pipolb(leftmost_pipolb)
+                orphan_atts = self._get_orphan_atts_same_att_ids(atts_around_pipolbs)
+
+                if len(atts_around_pipolbs) == 0:
+                    pipolins.append(self._pipolin_from_orphan_pipobs(pipolbs))
+                else:
+                    if len(orphan_atts) == 0:
+                        pipolins.append(self._create_complete_fragment_pipolin(atts_around_pipolbs))
+                    else:
+                        pipolins.append(self._create_pipolin(leftmost_pipolb, atts_around_pipolbs, orphan_atts))
+
+                pipolbs_to_remove = []
+                for pipolb in pipolbs:
+                    if self._is_pipolb_in_pipolin(pipolb, pipolins[-1]):
+                        pipolbs_to_remove.append(pipolb)
+                pipolbs = [i for i in pipolbs if i not in pipolbs_to_remove]
+
+        return pipolins
+
+    def _pipolin_from_orphan_pipobs(self, pipolbs) -> Pipolin:
+        pipolbs_to_include = [pipolbs[0]]
+        if len(pipolbs) > 1:
+            for i in range(1, len(pipolbs)):
+                if pipolbs[i].start - pipolbs[i - 1].end < 50000:
+                    pipolbs_to_include.append(pipolbs[i])
+        all_pipolbs = self.genome.features.get_features(FeatureType.PIPOLB)
+        if len(pipolbs_to_include) == len(pipolbs) and \
+                len(pipolbs_to_include) == len(all_pipolbs) and \
+                len(self.atts_by_att_id) == 1:
+            return self._single_pipolin_from_fragments()
+        else:
+            return self._pipolin_from_pipolbs(pipolbs_to_include)
+
+    def _create_complete_fragment_pipolin(self, atts: Set[AttFeature]) -> Pipolin:
+        atts = sorted(atts, key=lambda x: x.start)
+        contig_length = self.genome.get_contig_by_id(atts[0].contig_id).length
+        fragment = PipolinFragment(location=Range(atts[0].start, atts[-1].end).inflate(50, _max=contig_length),
+                                   contig_id=atts[0].contig_id, genome=self.genome)
+        return Pipolin(fragment)
+
+    def _create_pipolin(self, pipolb, atts_the_same_contig, orphan_atts) -> Pipolin:
+        raise NotImplementedError('Comes from self._create_pipolin()...')
+
+    def _find_atts_around_pipolb(self, leftmost_pipolb: Feature) -> Set[AttFeature]:
+        atts_around_pipolb = set()
+        contig_atts = self.genome.features.atts_dict()[leftmost_pipolb.contig_id]
+        for att in contig_atts:
+            if att.start > leftmost_pipolb.end:
+                other_atts = self.atts_by_att_id[att.att_id]
+                other_atts.remove(att)
+                for other_att in other_atts:
+                    if other_att.contig_id == att.contig_id and other_att.end < leftmost_pipolb.start:
+                        atts_around_pipolb.add(att)
+                        atts_around_pipolb.add(other_att)
+        return atts_around_pipolb
+
+    def _get_orphan_atts_same_att_ids(self, atts_around_pipolbs) -> Set[AttFeature]:
+        atts_same_att_id = set()
+        att_ids = set(i.att_id for i in atts_around_pipolbs)
+        for att_id in att_ids:
+            for i in self.atts_by_att_id[att_id]:
+                atts_same_att_id.add(i)
+        return atts_same_att_id - atts_same_att_id.intersection(atts_around_pipolbs)
+
+    def _single_pipolin_from_fragments(self) -> Pipolin:
+        raise NotImplementedError('Comes from self._single_pipolin_from_fragments()...')
+
+    def _pipolin_from_pipolbs(self, pipolbs: List[Feature]) -> Pipolin:
+        pipolbs = sorted(pipolbs, key=lambda x: x.start)
+        contig_length = self.genome.get_contig_by_id(pipolbs[0].contig_id).length
+        loc = Range(max(0, pipolbs[0].start - 100000), min(contig_length, pipolbs[-1].end + 100000))
+        fragment = PipolinFragment(location=loc, contig_id=pipolbs[0].contig_id, genome=self.genome)
+        return Pipolin(fragment)
+
+    @staticmethod
+    def _is_pipolb_in_pipolin(pipolb: Feature, pipolin: Pipolin) -> bool:
+        for fragment in pipolin.fragments:
+            if pipolb.contig_id == fragment.contig_id:
+                if pipolb.start >= fragment.start and pipolb.end <= fragment.end:
+                    return True
+        return False
 
 
 def scaffold(genome: Genome) -> Sequence[Pipolin]:

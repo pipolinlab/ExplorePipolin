@@ -110,12 +110,15 @@ def run_aragorn(genome_file, output_file):
         subprocess.run(['aragorn', '-l', '-w', genome_file], stdout=ouf)
 
 
-def run_prokka(genome_id, pipolins_dir, proteins, prokka_results_dir):
+_PROTEINS = pkg_resources.resource_filename('explore_pipolin', '/data/HHpred_proteins.faa')
+
+
+def run_prokka(genome_id, pipolins_dir, prokka_results_dir):
     subprocess.run(['prokka', '--outdir', prokka_results_dir,
                     '--prefix', genome_id,
                     # TODO: number of CPUs is hardcoded. To pass it as an argument?
                     '--rawproduct', '--cdsrnaolap', '--cpus', '4',
-                    '--rfam', '--proteins', proteins, '--force',
+                    '--rfam', '--proteins', _PROTEINS, '--force',
                     '--locustag', genome_id,
                     os.path.join(pipolins_dir, genome_id + '.fa')],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

@@ -2,7 +2,8 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, NewType
+from itertools import groupby
+from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, NewType, Iterator, Tuple
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -127,8 +128,14 @@ class FeatureType(Enum):
     TARGET_TRNA = auto()
 
 
+class AttFeature(Feature):
+    def __init__(self, location: Range, strand: Strand, contig_id: ContigID, genome: Genome, att_id: int):
+        Feature.__init__(self, location, strand, contig_id, genome)
+        self.att_id = att_id
+
+
 class FeatureSet(Set[Feature]):
-    def get_dict_by_contig_sorted(self) -> Mapping[str, Sequence[Feature]]:
+    def get_dict_by_contig_sorted(self) -> Mapping[str, MutableSequence[Feature]]:
         result: MutableMapping[str, List[Feature]] = defaultdict(list)
         for feature in self:
             result[feature.contig_id].append(feature)
@@ -143,6 +150,15 @@ class FeatureSet(Set[Feature]):
     def first(self) -> Feature:
         return next(iter(self))
 
+    def get_next_att_id(self):
+        return max(self, key=lambda x: x.att_id, default=0) + 1
+
+    def get_atts_dict_by_att_id(self: Set[AttFeature]) -> Mapping[int, MutableSequence[AttFeature]]:
+        atts_by_att_id = defaultdict(list)
+        for att in self:
+            atts_by_att_id[att.att_id].append(att)
+        return atts_by_att_id
+
     # TODO: do I really need it?
     def get_overlapping(self, feature: Feature) -> Optional[Feature]:
         try:
@@ -156,11 +172,6 @@ class FeatureSet(Set[Feature]):
         for other_feature in features_list:
             if feature.location.is_overlapping(other_feature.location):
                 return other_feature
-
-    def get_next_att_id(self):
-        if not isinstance(next(iter(self)), AttFeature):
-            raise AssertionError('Features should of type ATT!')
-        return max(self, key=lambda x: x.att_id, default=0) + 1
 
 
 class FeaturesContainer:
@@ -179,7 +190,7 @@ class FeaturesContainer:
     def get_features(self, feature_type: FeatureType) -> FeatureSet:
         return self._features[feature_type]
 
-    def pipolbs_dict(self) -> Mapping[str, Sequence[Feature]]:
+    def pipolbs_dict(self) -> Mapping[str, MutableSequence[Feature]]:
         return self.get_features(FeatureType.PIPOLB).get_dict_by_contig_sorted()
 
     def trnas_dict(self) -> Mapping[str, Sequence[Feature]]:
@@ -196,12 +207,6 @@ class FeaturesContainer:
         for feature_type in feature_types:
             target_contigs.extend(f.contig_id for f in self.get_features(feature_type))
         return len(set(target_contigs)) == 1
-
-
-class AttFeature(Feature):
-    def __init__(self, location: Range, strand: Strand, contig_id: ContigID, genome: Genome, att_id: int):
-        Feature.__init__(self, location, strand, contig_id, genome)
-        self.att_id = att_id
 
 
 class PipolinFragment(Feature):

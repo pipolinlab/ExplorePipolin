@@ -9,7 +9,7 @@ from Bio.SeqRecord import SeqRecord
 from prefect import Flow
 
 from explore_pipolin import tasks
-from explore_pipolin.common import Genome, Contig, ContigID
+from explore_pipolin.common import Genome, Contig, ContigID, FeatureType
 from explore_pipolin.utilities.external_tools import ExternalTools
 from explore_pipolin.utilities.logging import set_logging_dir
 

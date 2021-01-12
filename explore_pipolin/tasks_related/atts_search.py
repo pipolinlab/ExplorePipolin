@@ -158,6 +158,8 @@ class AttDenovoFinder:
                 elif repeat.right_range.is_overlapping_any(rs) and not repeat.left_range.is_overlapping_any(rs.ranges):
                     rs.ranges.append(repeat.left_range)
                     break
+                elif repeat.left_range.is_overlapping_any(rs) and repeat.right_range.is_overlapping_any(rs):
+                    break
             else:
                 result[repeat.contig_id].append(MultiLocation(
                     ranges=[repeat.right_range, repeat.left_range], contig_id=repeat.contig_id))

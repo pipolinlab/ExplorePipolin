@@ -28,7 +28,6 @@ from explore_pipolin.tasks_related.including_atts import include_atts_into_gff
 from explore_pipolin.utilities.io import write_genbank_records
 from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities.io import read_genome_contigs_from_file
-from explore_pipolin.tasks_related.scaffolding import scaffold
 
 _REF_PIPOLB = pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB_Firmicutes.faa')
 
@@ -117,14 +116,6 @@ def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> O
 
 @task()
 @genome_specific_logging
-def scaffold_pipolins(genome: Genome) -> Sequence[Pipolin]:
-    # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
-    # https://github.com/biopython/biopython/issues/1755
-    return scaffold(genome)
-
-
-@task()
-@genome_specific_logging
 def extract_pipolin_regions(genome: Genome, pipolins: Sequence[Pipolin], out_dir: str):
     genome_dict = create_seqio_records_dict(file=genome.file, file_format='fasta')
 
@@ -153,11 +144,10 @@ def extract_pipolin_regions(genome: Genome, pipolins: Sequence[Pipolin], out_dir
 
 @task()
 @genome_specific_logging
-def annotate_pipolins(genome: Genome, pipolins_dir, proteins, out_dir):
+def annotate_pipolins(genome: Genome, pipolins_dir, out_dir):
     prokka_results_dir = os.path.join(out_dir, 'prokka_results')
     os.makedirs(prokka_results_dir, exist_ok=True)
-    run_prokka(genome_id=genome.id, pipolins_dir=pipolins_dir,
-               proteins=proteins, prokka_results_dir=prokka_results_dir)
+    run_prokka(genome_id=genome.id, pipolins_dir=pipolins_dir, prokka_results_dir=prokka_results_dir)
     return prokka_results_dir
 
 
