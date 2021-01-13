@@ -2,8 +2,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from itertools import groupby
-from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, NewType, Iterator, Tuple
+from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, NewType
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -211,9 +210,12 @@ class FeaturesContainer:
 
 class PipolinFragment(Feature):
     def __init__(self, location: Range, contig_id: ContigID, genome: Genome):
-        # TODO: do I need orientation here?
+        # TODO: do I need orientation here? genome?
         super(PipolinFragment, self).__init__(location, Strand.FORWARD, contig_id, genome)
         self.atts: MutableSequence[Feature] = []
+
+    def __repr__(self):
+        return str(self.__class__) + ': ' + str(self.__dict__)
 
 
 class Pipolin:
