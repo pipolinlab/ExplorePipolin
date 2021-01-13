@@ -3,7 +3,6 @@ from typing import Sequence
 
 from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, Pipolin, PipolinFragment, \
     AttFeature, ContigID
-from explore_pipolin.tasks_related.scaffolding import scaffold
 from explore_pipolin.tasks_related.find_pipolins import PipolinFinder
 
 _GENOME_ID = 'GENOME'
