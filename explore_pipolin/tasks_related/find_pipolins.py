@@ -1,8 +1,26 @@
 from itertools import groupby
 from typing import Sequence, Set, List, Tuple, Optional
 
+from prefect import task
+
 from explore_pipolin.common import Genome, FeatureType, Pipolin, AttFeature, PipolinFragment, Range, \
     Feature, FeatureSet
+
+
+@task()
+def find_pipolins(genome: Genome) -> Sequence[Pipolin]:
+    # TODO: do I really need to look for target_trnas here or to leave it for scaffolding step???
+    finder = PipolinFinder(genome)
+    pipolins = []
+
+    pipolbs_dict = genome.features.pipolbs_dict()
+    for _, pipolbs in pipolbs_dict.items():
+        pipolbs = delete_used_pipolbs(pipolbs, pipolins)
+        while len(pipolbs) > 0:
+            pipolins.append(finder.pipolin_from_part_of_pipolbs(pipolbs))
+            pipolbs = delete_used_pipolbs(pipolbs, pipolins)
+
+    return pipolins
 
 
 class PipolinFinder:
@@ -13,38 +31,7 @@ class PipolinFinder:
     def atts_by_att_id(self):
         return self.genome.features.get_features(FeatureType.ATT).get_atts_dict_by_att_id()
 
-    def find_pipolins(self) -> Sequence[Pipolin]:
-        # TODO: do I really need to look for target_trnas here or to leave it for scaffolding step???
-        pipolins = []
-
-        pipolbs_dict = self.genome.features.pipolbs_dict()
-        for _, pipolbs in pipolbs_dict.items():
-            pipolbs = self._delete_used_pipolbs(pipolbs, pipolins)
-            while len(pipolbs) > 0:
-                pipolins.append(self._pipolin_from_part_of_pipolbs(pipolbs))
-                pipolbs = self._delete_used_pipolbs(pipolbs, pipolins)
-
-        return pipolins
-
-    def _delete_used_pipolbs(self, pipolbs, pipolins):
-        pipolbs_in_pipolins = []
-        for pipolb in pipolbs:
-            for pipolin in pipolins:
-                if self._is_pipolb_in_pipolin(pipolb, pipolin):
-                    pipolbs_in_pipolins.append(pipolb)
-
-        pipolbs = [i for i in pipolbs if i not in pipolbs_in_pipolins]
-        return pipolbs
-
-    @staticmethod
-    def _is_pipolb_in_pipolin(pipolb: Feature, pipolin: Pipolin) -> bool:
-        for fragment in pipolin.fragments:
-            if pipolb.contig_id == fragment.contig_id:
-                if pipolb.start >= fragment.start and pipolb.end <= fragment.end:
-                    return True
-        return False
-
-    def _pipolin_from_part_of_pipolbs(self, pipolbs: Sequence[Feature]) -> Pipolin:
+    def pipolin_from_part_of_pipolbs(self, pipolbs: Sequence[Feature]) -> Pipolin:
         leftmost_pipolb = pipolbs[0]
         atts_around_pipolb = self._find_atts_around_pipolb(leftmost_pipolb)
         orphan_atts = self._get_orphan_atts(atts_around_pipolb)
@@ -196,3 +183,22 @@ class PipolinFinder:
         orphan_fragments = self._fragments_from_orphan_atts(orphan_atts)
 
         return Pipolin.from_fragments(fragment, *orphan_fragments)
+
+
+def delete_used_pipolbs(pipolbs, pipolins):
+    pipolbs_in_pipolins = []
+    for pipolb in pipolbs:
+        for pipolin in pipolins:
+            if _is_pipolb_in_pipolin(pipolb, pipolin):
+                pipolbs_in_pipolins.append(pipolb)
+
+    pipolbs = [i for i in pipolbs if i not in pipolbs_in_pipolins]
+    return pipolbs
+
+
+def _is_pipolb_in_pipolin(pipolb: Feature, pipolin: Pipolin) -> bool:
+    for fragment in pipolin.fragments:
+        if pipolb.contig_id == fragment.contig_id:
+            if pipolb.start >= fragment.start and pipolb.end <= fragment.end:
+                return True
+    return False

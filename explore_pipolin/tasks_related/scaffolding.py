@@ -10,7 +10,7 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def scaffold_pipolins(genome: Genome) -> Sequence[Pipolin]:
+def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]) -> Sequence[Pipolin]:
     # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
     # https://github.com/biopython/biopython/issues/1755
     return scaffold(genome)

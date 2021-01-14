@@ -158,7 +158,6 @@ class FeatureSet(Set[Feature]):
             atts_by_att_id[att.att_id].append(att)
         return atts_by_att_id
 
-    # TODO: do I really need it?
     def get_overlapping(self, feature: Feature) -> Optional[Feature]:
         try:
             features_list = self.get_list_of_contig_sorted(feature.contig_id)
