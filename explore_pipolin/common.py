@@ -208,19 +208,19 @@ class FeaturesContainer:
         return len(set(target_contigs)) == 1
 
 
+@dataclass(frozen=True)
 class PipolinFragment(Feature):
-    def __init__(self, location: Range, contig_id: ContigID, genome: Genome):
-        # TODO: do I need orientation here? genome?
-        super(PipolinFragment, self).__init__(location, Strand.FORWARD, contig_id, genome)
-        self.atts: MutableSequence[Feature] = []
-
-    def __repr__(self):
-        return str(self.__class__) + ': ' + str(self.__dict__)
+    location: Range
+    contig_id: ContigID
 
 
+@dataclass(frozen=True)
 class Pipolin:
-    def __init__(self, *fragments: PipolinFragment):
-        self.fragments: Sequence[PipolinFragment] = fragments
+    fragments: Sequence[PipolinFragment]
+
+    @staticmethod
+    def from_fragments(*fragments: PipolinFragment):
+        return Pipolin(fragments)
 
 
 def define_genome_id(genome_path: str) -> str:

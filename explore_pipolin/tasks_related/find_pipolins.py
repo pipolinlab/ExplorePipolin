@@ -88,7 +88,7 @@ class PipolinFinder:
         else:
             raise AssertionError
         other_fragments = self._fragments_from_orphan_atts(orphan_atts)
-        return Pipolin(fragment, *other_fragments)
+        return Pipolin.from_fragments(fragment, *other_fragments)
 
     def _atts_nextto_pipolb_and_orphan_atts(self, contig_atts: Sequence[AttFeature], anchor_ind: int) \
             -> Tuple[Set[AttFeature], Set[AttFeature]]:
@@ -108,7 +108,7 @@ class PipolinFinder:
         else:
             loc = Range(start_feature.start, end_feature.end).inflate(inflate_size, _max=contig_length)
 
-        return PipolinFragment(location=loc, contig_id=start_feature.contig_id, genome=self.genome)
+        return PipolinFragment(location=loc, contig_id=start_feature.contig_id)
 
     def _fragments_from_orphan_atts(self, orphan_atts: Set[AttFeature]) -> Sequence[PipolinFragment]:
         orphan_fragments = []
@@ -135,25 +135,25 @@ class PipolinFinder:
 
     def _single_disrupted_pipolin(self, pipolbs: Sequence[Feature]) -> Pipolin:
         """
-        contig1 contains all pipolb
-        single att repeat on separate contigs
+        a contig contains all pipolbs
+        att repeats with the same att_id on separate contigs
         """
         fragment = self._create_pipolin_fragment(pipolbs[0], pipolbs[-1])
 
         atts = self.genome.features.get_features(FeatureType.ATT)
         orphan_fragments = self._fragments_from_orphan_atts(atts)
 
-        return Pipolin(fragment, *orphan_fragments)
+        return Pipolin.from_fragments(fragment, *orphan_fragments)
 
     def _pipolin_from_just_pipolbs(self, pipolbs: List[Feature]) -> Pipolin:
         pipolbs = sorted(pipolbs, key=lambda x: x.start)
         fragment = self._create_pipolin_fragment(pipolbs[0], pipolbs[-1])
-        return Pipolin(fragment)
+        return Pipolin.from_fragments(fragment)
 
     def _complete_fragment_pipolin(self, atts: Set[AttFeature]) -> Pipolin:
         atts = sorted(atts, key=lambda x: x.start)
         fragment = self._create_pipolin_fragment(atts[0], atts[-1], inflate_size=50)
-        return Pipolin(fragment)
+        return Pipolin.from_fragments(fragment)
 
     def _pipolin_with_orphan_atts(self, atts: Set[AttFeature], orphan_atts: Set[AttFeature]) -> Pipolin:
         atts = sorted(atts, key=lambda x: x.start)
@@ -161,4 +161,4 @@ class PipolinFinder:
 
         orphan_fragments = self._fragments_from_orphan_atts(orphan_atts)
 
-        return Pipolin(fragment, *orphan_fragments)
+        return Pipolin.from_fragments(fragment, *orphan_fragments)

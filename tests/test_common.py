@@ -45,8 +45,7 @@ class SetUpGenome(unittest.TestCase):
                                             contig_id=self.short_contig_id, genome=self.multi_contig_genome)
         self.features = FeaturesContainer()
 
-        self.pipolin = PipolinFragment(contig_id='boo', genome=self.multi_contig_genome,
-                                       location=Range(start=300, end=400))
+        self.pipolin = PipolinFragment(location=Range(start=300, end=400), contig_id=ContigID('boo'))
 
         self.repeat_f1 = Range(start=10, end=15)
         self.repeat_f2 = Range(start=60, end=65)
