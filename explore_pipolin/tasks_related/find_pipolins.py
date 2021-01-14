@@ -1,7 +1,8 @@
 from itertools import groupby
-from typing import Sequence, Set, List, Tuple
+from typing import Sequence, Set, List, Tuple, Optional
 
-from explore_pipolin.common import Genome, FeatureType, Pipolin, AttFeature, PipolinFragment, Range, Feature
+from explore_pipolin.common import Genome, FeatureType, Pipolin, AttFeature, PipolinFragment, Range, \
+    Feature, FeatureSet
 
 
 class PipolinFinder:
@@ -77,14 +78,22 @@ class PipolinFinder:
             return self._pipolin_from_orphan_pipolbs(pipolbs)
 
     def _pipolin_pipolb_nextto_att(self, pipolb: Feature, contig_atts: Sequence[AttFeature]) -> Pipolin:
+        target_trnas = FeatureSet(self.genome.features.target_trnas_dict()[pipolb.contig_id])
+
         if contig_atts[0].start > pipolb.end:  # atts are on the right
             right_atts, orphan_atts = self._atts_nextto_pipolb_and_orphan_atts(contig_atts, 0)
             right_atts = sorted(right_atts, key=lambda x: x.start)
-            fragment = self._create_pipolin_fragment(pipolb, right_atts[-1])
+            right_trna = target_trnas.get_overlapping(right_atts[-1])
+            right_3 = right_trna is not None and right_trna.end > right_atts[-1].end
+
+            fragment = self._create_pipolin_fragment(pipolb, right_atts[-1], trna_from_the_right=right_3)
         elif contig_atts[-1].end < pipolb.start:  # atts are on the left
             left_atts, orphan_atts = self._atts_nextto_pipolb_and_orphan_atts(contig_atts, -1)
             left_atts = sorted(left_atts, key=lambda x: x.start)
-            fragment = self._create_pipolin_fragment(left_atts[0], pipolb)
+            left_trna = target_trnas.get_overlapping(left_atts[0])
+            left_3 = left_trna is not None and left_trna.start < left_atts[0].start
+
+            fragment = self._create_pipolin_fragment(left_atts[0], pipolb, trna_from_the_left=left_3)
         else:
             raise AssertionError
         other_fragments = self._fragments_from_orphan_atts(orphan_atts)
@@ -97,25 +106,47 @@ class PipolinFinder:
         orphan_atts = atts_same_att_id - atts_nextto_pipolb
         return atts_nextto_pipolb, orphan_atts
 
-    def _create_pipolin_fragment(self, start_feature: Feature, end_feature: Feature, inflate_size=100000) \
-            -> PipolinFragment:
-        contig_length = self.genome.get_contig_by_id(start_feature.contig_id).length
+    def _create_pipolin_fragment(self, start_feature: Feature, end_feature: Feature,
+                                 inflate_size: Optional[int] = 100000,
+                                 trna_from_the_left=False, trna_from_the_right=False) -> PipolinFragment:
 
-        if not isinstance(start_feature, AttFeature):
-            loc = Range(0, min(end_feature.end + inflate_size, contig_length))
-        elif not isinstance(end_feature, AttFeature):
-            loc = Range(max(0, start_feature.start - inflate_size), contig_length)
+        contig_length = self.genome.get_contig_by_id(start_feature.contig_id).length
+        is_start_feature_att = isinstance(start_feature, AttFeature)
+        is_end_feature_att = isinstance(end_feature, AttFeature)
+
+        left_inflate = 50 if trna_from_the_left else inflate_size
+        right_inflate = 50 if trna_from_the_right else inflate_size
+
+        if not is_start_feature_att and not is_end_feature_att and inflate_size is None:
+            loc = Range(0, contig_length)
+
+        elif not is_start_feature_att and is_end_feature_att:
+            loc = Range(0, min(end_feature.end + right_inflate, contig_length))
+
+        elif is_start_feature_att and not is_end_feature_att:
+            loc = Range(max(0, start_feature.start - left_inflate), contig_length)
+
         else:
-            loc = Range(start_feature.start, end_feature.end).inflate(inflate_size, _max=contig_length)
+            loc = Range(max(0, start_feature.start - left_inflate),
+                        min(end_feature.end + right_inflate, contig_length))
 
         return PipolinFragment(location=loc, contig_id=start_feature.contig_id)
 
     def _fragments_from_orphan_atts(self, orphan_atts: Set[AttFeature]) -> Sequence[PipolinFragment]:
         orphan_fragments = []
-        grouped_orphan_atts = groupby(orphan_atts, lambda x: x.contig_id)
+        grouped_orphan_atts = groupby(sorted(orphan_atts, key=lambda x: x.contig_id), lambda x: x.contig_id)
         for contig_id, atts in grouped_orphan_atts:
-            atts = sorted(atts, key=lambda x: x.start)
-            orphan_fragments.append(self._create_pipolin_fragment(atts[0], atts[-1]))
+            atts: List[AttFeature] = sorted(atts, key=lambda x: x.start)
+            target_trnas = FeatureSet(self.genome.features.target_trnas_dict()[contig_id])
+
+            left_trna = target_trnas.get_overlapping(atts[0])
+            left_3 = left_trna is not None and left_trna.start < atts[0].start
+            right_trna = target_trnas.get_overlapping(atts[-1])
+            right_3 = right_trna is not None and right_trna.end > atts[-1].end
+
+            orphan_fragments.append(self._create_pipolin_fragment(atts[0], atts[-1],
+                                                                  trna_from_the_left=left_3,
+                                                                  trna_from_the_right=right_3))
         return orphan_fragments
 
     def _pipolin_from_orphan_pipolbs(self, pipolbs: Sequence[Feature]) -> Pipolin:
@@ -138,7 +169,7 @@ class PipolinFinder:
         a contig contains all pipolbs
         att repeats with the same att_id on separate contigs
         """
-        fragment = self._create_pipolin_fragment(pipolbs[0], pipolbs[-1])
+        fragment = self._create_pipolin_fragment(pipolbs[0], pipolbs[-1], inflate_size=None)
 
         atts = self.genome.features.get_features(FeatureType.ATT)
         orphan_fragments = self._fragments_from_orphan_atts(atts)

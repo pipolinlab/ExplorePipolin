@@ -124,7 +124,7 @@ class TestScaffolder(unittest.TestCase):
 
     def test_genome7(self):
         genome = create_genome_from_scheme('---at1---...---pol---at1---at1(t)---')
-        f1 = PipolinFragment(Range(50, 300), ContigID('CONTIG_0'))
+        f1 = PipolinFragment(Range(0, 300), ContigID('CONTIG_0'))
         f2 = PipolinFragment(Range(0, 650), ContigID('CONTIG_1'))
         exp = [Pipolin.from_fragments(f1, f2)]
 
@@ -132,7 +132,7 @@ class TestScaffolder(unittest.TestCase):
 
     def test_genome8(self):
         genome = create_genome_from_scheme('---at1---pol---...---at1---at1(t)---')
-        f1 = PipolinFragment(Range(50, 500), ContigID('CONTIG_0'))
+        f1 = PipolinFragment(Range(0, 500), ContigID('CONTIG_0'))
         f2 = PipolinFragment(Range(0, 450), ContigID('CONTIG_1'))
         exp = [Pipolin.from_fragments(f1, f2)]
 
@@ -148,7 +148,7 @@ class TestScaffolder(unittest.TestCase):
 
     def test_genome10(self):
         genome = create_genome_from_scheme('---at1---...---pol---...---at1---at1(t)---')
-        f1 = PipolinFragment(Range(50, 300), ContigID('CONTIG_0'))
+        f1 = PipolinFragment(Range(0, 300), ContigID('CONTIG_0'))
         f2 = PipolinFragment(Range(0, 300), ContigID('CONTIG_1'))
         f3 = PipolinFragment(Range(0, 450), ContigID('CONTIG_2'))
         exp = [Pipolin.from_fragments(f1, f2, f3)]
