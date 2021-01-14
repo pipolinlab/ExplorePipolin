@@ -10,7 +10,6 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-# TODO: rename to find_pipolins?
 def scaffold_pipolins(genome: Genome) -> Sequence[Pipolin]:
     # Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
     # https://github.com/biopython/biopython/issues/1755
@@ -48,32 +47,29 @@ def scaffold(genome: Genome) -> Sequence[Pipolin]:
                     )
                     pipolin_range = pipolin_range.inflate(50, _max=contig_length)
 
-                    pipolin = PipolinFragment(contig_id=unchangeable_contig.id, genome=genome,
-                                              location=pipolin_range)
-                    pipolin.atts.extend(genome.features.atts_dict()[unchangeable_contig.id])
-                    return [Pipolin(pipolin)]
+                    pipolin = PipolinFragment(contig_id=unchangeable_contig.id, location=pipolin_range)
+                    return [Pipolin.from_fragments(pipolin)]
                     # TODO: if att_only_contig has a target_trna, it could be added on the right
                 if direction.RIGHT:
                     left_fragment = _create_unchangeable_fragment(genome, unchangeable_contig, direction)
-                    right_fragment = _create_att_contig_fragment(genome, orphan_atts, direction)
-                    return [Pipolin(left_fragment, right_fragment)]
+                    right_fragment = _create_att_contig_fragment(orphan_atts, direction)
+                    return [Pipolin.from_fragments(left_fragment, right_fragment)]
                 else:
-                    left_fragment = _create_att_contig_fragment(genome, orphan_atts, direction)
+                    left_fragment = _create_att_contig_fragment(orphan_atts, direction)
                     right_fragment = _create_unchangeable_fragment(genome, unchangeable_contig, direction)
-                    return [Pipolin(left_fragment, right_fragment)]
+                    return [Pipolin.from_fragments(left_fragment, right_fragment)]
             elif len(att_only_contigs) == 2:
                 # TODO: the order can be also [middle_fragment, left_fragment, right_fragment]
-                middle_fragment = PipolinFragment(contig_id=unchangeable_contig.id, genome=genome,
+                middle_fragment = PipolinFragment(contig_id=unchangeable_contig.id,
                                                   location=Range(0, unchangeable_contig.length))
-                middle_fragment.atts.extend(genome.features.atts_dict()[unchangeable_contig.id])
 
                 left_atts = genome.features.atts_dict()[att_only_contigs[0].id]
-                left_fragment = _create_att_contig_fragment(genome, left_atts, Direction.LEFT)
+                left_fragment = _create_att_contig_fragment(left_atts, Direction.LEFT)
 
                 right_atts = genome.features.atts_dict()[att_only_contigs[1].id]
-                right_fragment = _create_att_contig_fragment(genome, right_atts, Direction.RIGHT)
+                right_fragment = _create_att_contig_fragment(right_atts, Direction.RIGHT)
 
-                return [Pipolin(left_fragment, middle_fragment, right_fragment)]
+                return [Pipolin.from_fragments(left_fragment, middle_fragment, right_fragment)]
             else:
                 raise NotImplementedError
         elif len(unchangeable_contigs) == 2:
@@ -96,7 +92,7 @@ def scaffold(genome: Genome) -> Sequence[Pipolin]:
             right_direction = _get_direction_of_unchangeable(genome, right_contig.id)
             right_fragment = _create_unchangeable_fragment(genome, right_contig, right_direction)
 
-            return [Pipolin(left_fragment, right_fragment)]
+            return [Pipolin.from_fragments(left_fragment, right_fragment)]
         elif len(unchangeable_contigs) > 2:
             raise NotImplementedError
         else:
@@ -107,14 +103,12 @@ def _create_unchangeable_fragment(genome: Genome, contig: Contig, direction: Dir
     if direction is Direction.RIGHT:
         fragment_range = Range(genome.features.atts_dict()[contig.id][0].start, contig.length)
         fragment_range = fragment_range.inflate(50, _max=contig.length)
-        fragment = PipolinFragment(contig_id=contig.id, genome=genome,
-                                   location=fragment_range)
+        fragment = PipolinFragment(contig_id=contig.id, location=fragment_range)
     else:
         fragment_range = Range(0, genome.features.atts_dict()[contig.id][-1].end)
         fragment_range = fragment_range.inflate(50, _max=contig.length)
-        fragment = PipolinFragment(contig_id=contig.id, genome=genome, location=fragment_range)
+        fragment = PipolinFragment(contig_id=contig.id, location=fragment_range)
 
-    fragment.atts.extend(genome.features.atts_dict()[contig.id])
     return fragment
 
 
@@ -127,7 +121,7 @@ def _try_finish_separate(genome: Genome) -> Pipolin:
     the_target_trna: Feature = next(iter(genome.features.get_features(FeatureType.TARGET_TRNA)))
 
     right_fragment = _create_att_contig_fragment(
-        genome, genome.features.atts_dict()[the_target_trna.contig_id], Direction.RIGHT)
+        genome.features.atts_dict()[the_target_trna.contig_id], Direction.RIGHT)
 
     atts_contigs = set([i.contig for i in genome.features.get_features(FeatureType.ATT)])
     if len(atts_contigs) == 2:
@@ -140,11 +134,11 @@ def _try_finish_separate(genome: Genome) -> Pipolin:
             left_contig = atts_contigs[0]
 
         left_fragment = _create_att_contig_fragment(
-            genome, genome.features.atts_dict()[left_contig.id], Direction.LEFT)
+            genome.features.atts_dict()[left_contig.id], Direction.LEFT)
     else:
         raise NotImplementedError
 
-    return Pipolin(left_fragment, *polbs_fragments, right_fragment)
+    return Pipolin.from_fragments(left_fragment, *polbs_fragments, right_fragment)
 
 
 def _create_polbs_fragments(genome: Genome) -> Sequence[PipolinFragment]:
@@ -153,9 +147,9 @@ def _create_polbs_fragments(genome: Genome) -> Sequence[PipolinFragment]:
         print('Two "polb only contigs" were found!')
         polbs_contigs = list(polbs_contigs)
         if polbs_contigs[0].length + polbs_contigs[1].length < 15000:
-            polb0_fragment = PipolinFragment(contig_id=polbs_contigs[0].id, genome=genome,
+            polb0_fragment = PipolinFragment(contig_id=polbs_contigs[0].id,
                                              location=Range(0, polbs_contigs[0].length))
-            polb1_fragment = PipolinFragment(contig_id=polbs_contigs[1].id, genome=genome,
+            polb1_fragment = PipolinFragment(contig_id=polbs_contigs[1].id,
                                              location=Range(0, polbs_contigs[1].length))
 
             contig_features = genome.features.get_features(FeatureType.PIPOLB).get_list_of_contig_sorted(
@@ -174,8 +168,7 @@ def _create_polbs_fragments(genome: Genome) -> Sequence[PipolinFragment]:
 
     elif len(polbs_contigs) == 1:
         the_polb_contig, = polbs_contigs
-        return [PipolinFragment(contig_id=the_polb_contig.id, genome=genome,
-                                location=Range(0, the_polb_contig.length))]
+        return [PipolinFragment(contig_id=the_polb_contig.id, location=Range(0, the_polb_contig.length))]
 
     raise NotImplementedError
 
@@ -192,7 +185,7 @@ def _get_unchangeable_contigs(genome: Genome) -> MutableSequence[Contig]:
     return contigs_to_return
 
 
-def _create_att_contig_fragment(genome: Genome, contig_atts: Sequence[Feature], direction: Direction)\
+def _create_att_contig_fragment(contig_atts: Sequence[Feature], direction: Direction)\
         -> PipolinFragment:
     contig = contig_atts[0].contig
     contig_length = contig.length
@@ -201,9 +194,7 @@ def _create_att_contig_fragment(genome: Genome, contig_atts: Sequence[Feature], 
     else:
         fragment_range = Range(max(0, contig_atts[0].start - 50), contig_length)
 
-    fragment = PipolinFragment(contig_id=contig.id, genome=genome,
-                               location=fragment_range.clamp(0, contig_length))
-    fragment.atts.extend(contig_atts)
+    fragment = PipolinFragment(contig_id=contig.id, location=fragment_range.clamp(0, contig_length))
     return fragment
 
 
@@ -258,18 +249,16 @@ def _create_pipolin_fragments_single_contig(genome: Genome) -> Pipolin:
     if len(genome.features.atts_dict()) != 0:
         pipolin_range = _get_pipolin_bounds(genome)
         pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig_id,
-                                  genome=genome, location=pipolin_range)
+                                  location=pipolin_range)
 
-        pipolin.atts.extend(genome.features.get_features(FeatureType.ATT))
-        return Pipolin(pipolin)
+        return Pipolin.from_fragments(pipolin)
     else:
         windows = get_ranges_around_pipolbs(genome)
         if len(windows) != 1:
             raise NotImplementedError('this method is for a single contig => should be only one Window!')
         pipolin = PipolinFragment(contig_id=genome.features.get_features(FeatureType.PIPOLB).first.contig_id,
-                                  genome=genome,
                                   location=Range(windows[0].left_range.start, windows[0].right_range.end))
-        return Pipolin(pipolin)
+        return Pipolin.from_fragments(pipolin)
 
 
 def _get_pipolin_bounds(genome: Genome) -> Range:
