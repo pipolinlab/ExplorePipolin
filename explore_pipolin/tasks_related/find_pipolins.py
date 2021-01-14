@@ -14,24 +14,27 @@ class PipolinFinder:
         return self.genome.features.get_features(FeatureType.ATT).get_atts_dict_by_att_id()
 
     def find_pipolins(self) -> Sequence[Pipolin]:
+        # TODO: do I really need to look for target_trnas here or to leave it for scaffolding step???
         pipolins = []
 
         pipolbs_dict = self.genome.features.pipolbs_dict()
         for _, pipolbs in pipolbs_dict.items():
+            pipolbs = self._delete_used_pipolbs(pipolbs, pipolins)
             while len(pipolbs) > 0:
                 pipolins.append(self._pipolin_from_part_of_pipolbs(pipolbs))
-
-                pipolbs_in_pipolin = self._pipolbs_already_in_pipolin(pipolbs, pipolins[-1])
-                pipolbs = [i for i in pipolbs if i not in pipolbs_in_pipolin]
+                pipolbs = self._delete_used_pipolbs(pipolbs, pipolins)
 
         return pipolins
 
-    def _pipolbs_already_in_pipolin(self, pipolbs: Sequence[Feature], pipolin: Pipolin) -> Sequence[Feature]:
-        pipolbs_in_pipolin = []
+    def _delete_used_pipolbs(self, pipolbs, pipolins):
+        pipolbs_in_pipolins = []
         for pipolb in pipolbs:
-            if self._is_pipolb_in_pipolin(pipolb, pipolin):
-                pipolbs_in_pipolin.append(pipolb)
-        return pipolbs_in_pipolin
+            for pipolin in pipolins:
+                if self._is_pipolb_in_pipolin(pipolb, pipolin):
+                    pipolbs_in_pipolins.append(pipolb)
+
+        pipolbs = [i for i in pipolbs if i not in pipolbs_in_pipolins]
+        return pipolbs
 
     @staticmethod
     def _is_pipolb_in_pipolin(pipolb: Feature, pipolin: Pipolin) -> bool:
