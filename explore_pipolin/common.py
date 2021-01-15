@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, NewType
+from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, NewType, Tuple
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -95,13 +95,14 @@ class MultiLocation:
     contig_id: ContigID
 
 
+@dataclass(frozen=True)
 class Feature:
-    def __init__(self, location: Range, strand: Strand, contig_id: ContigID, genome: Genome):
-        self.location = location
-        self.strand = strand
-        self.contig_id = contig_id
-        self.genome = genome
+    location: Range
+    strand: Strand
+    contig_id: ContigID
+    genome: Genome
 
+    def __post_init__(self):
         if self.location.end > self.contig.length:
             raise AssertionError(f'Feature end cannot be greater than contig length! '
                                  f'{self.location.end} > {self.contig.length}')
@@ -127,10 +128,9 @@ class FeatureType(Enum):
     TARGET_TRNA = auto()
 
 
+@dataclass(frozen=True)
 class AttFeature(Feature):
-    def __init__(self, location: Range, strand: Strand, contig_id: ContigID, genome: Genome, att_id: int):
-        Feature.__init__(self, location, strand, contig_id, genome)
-        self.att_id = att_id
+    att_id: int
 
 
 class FeatureSet(Set[Feature]):
@@ -212,9 +212,7 @@ class PipolinFragment:
     location: Range
     contig_id: ContigID
 
-    pipolbs: Sequence[Feature] = ()
-    atts: Sequence[AttFeature] = ()
-    target_trnas: Sequence[Feature] = ()
+    features: Sequence[Tuple[Feature, FeatureType]] = ()
 
     @property
     def start(self):

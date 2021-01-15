@@ -1,8 +1,8 @@
-from typing import Sequence, Tuple
+from typing import Sequence
 
 from prefect import task
 
-from explore_pipolin.common import PipolinFragment, FeatureType, Feature, Pipolin, Genome, Range, Strand
+from explore_pipolin.common import PipolinFragment, FeatureType, Pipolin, Genome, Range, Strand
 from explore_pipolin.utilities.logging import genome_specific_logging
 
 
@@ -38,14 +38,14 @@ class PipolinRefiner:
     def _create_new_fragments_ordered(self) -> Sequence[PipolinFragment]:
         pass
 
+    @staticmethod
     def _cut_fragment_if_necessary(
-            self, fragment: PipolinFragment, cut_atts: bool = False) -> PipolinFragment:
-        fragment_features = self._get_fragment_features_sorted(fragment)
+            fragment: PipolinFragment, cut_atts: bool = False) -> PipolinFragment:
 
-        first = fragment_features[0]
-        second = fragment_features[1]
-        next_to_last = fragment_features[-2]
-        last = fragment_features[-1]
+        first = fragment.features[0]
+        second = fragment.features[1]
+        next_to_last = fragment.features[-2]
+        last = fragment.features[-1]
 
         if first[1] == FeatureType.ATT and cut_atts:
             fragment_start = max(fragment.start, first[0].start - 50)
@@ -63,41 +63,21 @@ class PipolinRefiner:
 
         return PipolinFragment(Range(fragment_start, fragment_end), contig_id=fragment.contig_id)
 
-    def _get_fragment_features_sorted(
-            self, fragment: PipolinFragment) -> Sequence[Tuple[Feature, FeatureType]]:
-
-        fragment_pipolbs = self._get_fragment_features_of_type(fragment, FeatureType.PIPOLB)
-        fragment_atts = self._get_fragment_features_of_type(fragment, FeatureType.ATT)
-        fragment_ttrnas = self._get_fragment_features_of_type(fragment, FeatureType.TARGET_TRNA)
-
-        fragment_features = [(i, FeatureType.PIPOLB) for i in fragment_pipolbs]
-        fragment_features.extend([(i, FeatureType.ATT) for i in fragment_atts])
-        fragment_features.extend([(i, FeatureType.TARGET_TRNA) for i in fragment_ttrnas])
-
-        return sorted(fragment_features, key=lambda x: x[0].start)
-
-    def _get_fragment_features_of_type(self, fragment: PipolinFragment, feature_type: FeatureType):
-        features = self.genome.features.get_features(feature_type)
-        contig_features = features.get_dict_by_contig_sorted()[fragment.contig_id]
-        return [f for f in contig_features if f.start >= fragment.start and f.end <= fragment.end]
-
     def _classify_fragments(self, fragments: Sequence[PipolinFragment]):
         for fragment in fragments:
-            features = self._get_fragment_features_sorted(fragment)
-
-            if all([i[1] == FeatureType.PIPOLB for i in features]):
+            if all([i[1] == FeatureType.PIPOLB for i in fragment.features]):
                 self.pipolb_only_fragments.append(fragment)
-            elif all([i[1] == FeatureType.ATT for i in features]):
+            elif all([i[1] == FeatureType.ATT for i in fragment.features]):
                 self.att_only_fragments.append(fragment)
-            elif any([i[1] == FeatureType.TARGET_TRNA for i in features]):
+            elif any([i[1] == FeatureType.TARGET_TRNA for i in fragment.features]):
                 self.trna_fragments.append(fragment)
-            elif features[0][1] == FeatureType.ATT:
-                if features[0][0].strand == Strand.FORWARD:
+            elif fragment.features[0][1] == FeatureType.ATT:
+                if fragment.features[0][0].strand == Strand.FORWARD:
                     self.att_pipolb_fragments.append(fragment)
                 else:
                     self.pipolb_att_fragments.append(fragment)
-            elif features[-1][1] == FeatureType.ATT:
-                if features[-1][0].strand == Strand.FORWARD:
+            elif fragment.features[-1][1] == FeatureType.ATT:
+                if fragment.features[-1][0].strand == Strand.FORWARD:
                     self.pipolb_only_fragments.append(fragment)
                 else:
                     self.att_pipolb_fragments.append(fragment)
