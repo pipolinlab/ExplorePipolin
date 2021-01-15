@@ -208,9 +208,21 @@ class FeaturesContainer:
 
 
 @dataclass(frozen=True)
-class PipolinFragment(Feature):
+class PipolinFragment:
     location: Range
     contig_id: ContigID
+
+    pipolbs: Sequence[Feature] = ()
+    atts: Sequence[AttFeature] = ()
+    target_trnas: Sequence[Feature] = ()
+
+    @property
+    def start(self):
+        return self.location.start
+
+    @property
+    def end(self):
+        return self.location.end
 
 
 @dataclass(frozen=True)

@@ -32,6 +32,10 @@ from explore_pipolin.utilities.io import read_genome_contigs_from_file
 _REF_PIPOLB = pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB_Firmicutes.faa')
 
 
+# Useful link to check feature's qualifiers: https://www.ebi.ac.uk/ena/WebFeat/
+# https://github.com/biopython/biopython/issues/1755
+
+
 @task()
 def create_genome(genome_file) -> Genome:
     contigs = read_genome_contigs_from_file(genome_file=genome_file)

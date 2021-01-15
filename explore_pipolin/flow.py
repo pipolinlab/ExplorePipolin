@@ -3,7 +3,7 @@ from prefect.tasks.control_flow import FilterTask
 
 from explore_pipolin.tasks_related.atts_search import find_atts, find_atts_denovo, are_atts_present
 from explore_pipolin.tasks_related.find_pipolins import find_pipolins
-from explore_pipolin.tasks_related.scaffolding import scaffold_pipolins
+from explore_pipolin.tasks_related.scaffolding import refine_pipolins
 from explore_pipolin import tasks
 
 _DEFAULT_FILTER = FilterTask()
@@ -32,7 +32,7 @@ def get_flow():
         genome = are_atts_present.map(genome=genome)
 
         pipolins = find_pipolins(genome=genome)
-        pipolins = scaffold_pipolins.map(genome=genome, pipolins=pipolins)
+        pipolins = refine_pipolins.map(genome=genome, pipolins=pipolins)
 
         pipolin_sequences = tasks.extract_pipolin_regions.map(genome=genome, pipolins=pipolins,
                                                               out_dir=unmapped(out_dir))
