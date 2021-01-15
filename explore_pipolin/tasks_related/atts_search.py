@@ -59,12 +59,12 @@ class AttFinder:
         return read_blastxml(blast_xml=output_file)
 
     def add_att_features_from_blast_entries(self, entries):
+        att_id = self.genome.features.get_features(FeatureType.ATT).get_next_att_id()
         for entry in entries:
-            att_features = self._create_att_features(entry)
+            att_features = self._create_att_features(entry, att_id)
             self.genome.features.add_features(*att_features, feature_type=FeatureType.ATT)
 
-    def _create_att_features(self, entry) -> Sequence[AttFeature]:
-        att_id = self.genome.features.get_features(FeatureType.ATT).get_next_att_id()
+    def _create_att_features(self, entry, att_id) -> Sequence[AttFeature]:
         new_att_features = []
         for hit in entry:
             new_att_features.append(AttFeature(location=Range(start=hit.hit_start, end=hit.hit_end),
