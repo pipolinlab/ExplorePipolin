@@ -115,6 +115,12 @@ class Feature:
     def end(self) -> int:
         return self.location.end
 
+    def is_right_of(self, other) -> bool:
+        return other.end < self.start
+
+    def is_left_of(self, other) -> bool:
+        return other.is_right_of(self)
+
     @property
     # TODO: do I really need it?
     def contig(self) -> Contig:
@@ -222,6 +228,10 @@ class PipolinFragment:
     def end(self):
         return self.location.end
 
+    def is_overlapping(self, other):
+        if self.contig_id == other.contig_id:
+            return self.location.is_overlapping(other.location)
+
 
 @dataclass(frozen=True)
 class Pipolin:
@@ -229,6 +239,9 @@ class Pipolin:
 
     @staticmethod
     def from_fragments(*fragments: PipolinFragment):
+        contigs = set(i.contig_id for i in fragments)
+        if len(contigs) != len(fragments):
+            raise AssertionError('Two fragments from the same contig!')
         return Pipolin(fragments)
 
 
