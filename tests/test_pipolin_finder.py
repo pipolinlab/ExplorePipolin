@@ -24,13 +24,13 @@ class TestPipolinFinder(unittest.TestCase):
         self.pipolins = self.finder.find_pipolin_candidates(self.fragments)
 
         # expected
-        f1 = PipolinFragment(self.pipolb.location, self.contig1_id,
+        f1 = PipolinFragment(self.pipolb.location, self.contig1_id, self.genome,
                              features=((self.pipolb, FeatureType.PIPOLB),))
-        f2 = PipolinFragment(Range(self.att1.start, self.pipolb.end), self.contig1_id,
+        f2 = PipolinFragment(Range(self.att1.start, self.pipolb.end), self.contig1_id, self.genome,
                              features=((self.att1, FeatureType.ATT), (self.pipolb, FeatureType.PIPOLB)))
-        f3 = PipolinFragment(Range(self.pipolb.start, self.att2.end), self.contig1_id,
+        f3 = PipolinFragment(Range(self.pipolb.start, self.att2.end), self.contig1_id, self. genome,
                              features=((self.pipolb, FeatureType.PIPOLB), (self.att2, FeatureType.ATT)))
-        f4 = PipolinFragment(Range(self.att1.start, self.att2.end), self.contig1_id,
+        f4 = PipolinFragment(Range(self.att1.start, self.att2.end), self.contig1_id, self.genome,
                              features=((self.att1, FeatureType.ATT),
                                        (self.pipolb, FeatureType.PIPOLB),
                                        (self.att2, FeatureType.ATT)))
@@ -49,7 +49,7 @@ class TestPipolinFinder(unittest.TestCase):
 
         obs = PipolinFinder(self.genome).find_pipolin_fragment_candidates()
 
-        additional_fragment = PipolinFragment(pipolb2.location, self.contig2_id,
+        additional_fragment = PipolinFragment(pipolb2.location, self.contig2_id, self.genome,
                                               features=((pipolb2, FeatureType.PIPOLB),))
 
         self.assertEqual(set(self.exp_fragments + [additional_fragment]), set(obs))

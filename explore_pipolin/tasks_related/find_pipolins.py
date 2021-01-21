@@ -5,9 +5,11 @@ from typing import Sequence, Set, Tuple, MutableSequence, Optional
 from prefect import task
 
 from explore_pipolin.common import Genome, FeatureType, Pipolin, AttFeature, PipolinFragment, Range, Feature
+from explore_pipolin.utilities.logging import genome_specific_logging
 
 
 @task()
+@genome_specific_logging
 def find_pipolins(genome: Genome) -> Sequence[Pipolin]:
     return PipolinFinder(genome).find_pipolins()
 
@@ -200,26 +202,6 @@ class PipolinFinder:
 
     def _create_pipolin_fragment(self, start_feature: Feature, end_feature: Feature) -> PipolinFragment:
         loc = Range(start_feature.start, end_feature.end)
-        fragment = PipolinFragment(location=loc, contig_id=start_feature.contig_id)
-        fragment_features = self._get_fragment_features_sorted(fragment)
-        return PipolinFragment(fragment.location, fragment.contig_id, fragment_features)
-
-    def _get_fragment_features_sorted(
-            self, fragment: PipolinFragment) -> Sequence[Tuple[Feature, FeatureType]]:
-
-        fragment_pipolbs = self._get_fragment_features_of_type(fragment, FeatureType.PIPOLB)
-        fragment_atts = self._get_fragment_features_of_type(fragment, FeatureType.ATT)
-        fragment_ttrnas = self._get_fragment_features_of_type(fragment, FeatureType.TARGET_TRNA)
-
-        fragment_features = [(i, FeatureType.PIPOLB) for i in fragment_pipolbs]
-        fragment_features.extend([(i, FeatureType.ATT) for i in fragment_atts])
-        fragment_features.extend([(i, FeatureType.TARGET_TRNA) for i in fragment_ttrnas])
-
-        return tuple(sorted(fragment_features, key=lambda x: x[0].start))
-
-    def _get_fragment_features_of_type(
-            self, fragment: PipolinFragment, feature_type: FeatureType) -> Sequence[Feature]:
-
-        features = self.genome.features.get_features(feature_type)
-        contig_features = features.get_dict_by_contig_sorted()[fragment.contig_id]
-        return [f for f in contig_features if f.start >= fragment.start and f.end <= fragment.end]
+        fragment = PipolinFragment(location=loc, contig_id=start_feature.contig_id, genome=self.genome)
+        fragment_features = fragment.get_fragment_features_sorted()
+        return PipolinFragment(fragment.location, fragment.contig_id, fragment.genome, fragment_features)

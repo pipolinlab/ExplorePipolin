@@ -217,6 +217,7 @@ class FeaturesContainer:
 class PipolinFragment:
     location: Range
     contig_id: ContigID
+    genome: Genome
 
     features: Sequence[Tuple[Feature, FeatureType]] = ()
 
@@ -231,6 +232,25 @@ class PipolinFragment:
     def is_overlapping(self, other):
         if self.contig_id == other.contig_id:
             return self.location.is_overlapping(other.location)
+
+    def get_fragment_features_sorted(self) -> Sequence[Tuple[Feature, FeatureType]]:
+
+        fragment_pipolbs = self._get_fragment_features_of_type(FeatureType.PIPOLB)
+        fragment_atts = self._get_fragment_features_of_type(FeatureType.ATT)
+        fragment_ttrnas = self._get_fragment_features_of_type(FeatureType.TARGET_TRNA)
+
+        fragment_features = [(i, FeatureType.PIPOLB) for i in fragment_pipolbs]
+        fragment_features.extend([(i, FeatureType.ATT) for i in fragment_atts])
+        fragment_features.extend([(i, FeatureType.TARGET_TRNA) for i in fragment_ttrnas])
+
+        return tuple(sorted(fragment_features, key=lambda x: x[0].start))
+
+    def _get_fragment_features_of_type(
+            self, feature_type: FeatureType) -> Sequence[Feature]:
+
+        features = self.genome.features.get_features(feature_type)
+        contig_features = features.get_dict_by_contig_sorted()[self.contig_id]
+        return [f for f in contig_features if f.start >= self.start and f.end <= self.end]
 
 
 @dataclass(frozen=True)

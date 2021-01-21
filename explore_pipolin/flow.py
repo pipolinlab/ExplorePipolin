@@ -31,7 +31,7 @@ def get_flow():
 
         genome = are_atts_present.map(genome=genome)
 
-        pipolins = find_pipolins(genome=genome)
+        pipolins = find_pipolins.map(genome=genome)
         pipolins = refine_pipolins.map(genome=genome, pipolins=pipolins)
 
         pipolin_sequences = tasks.extract_pipolin_regions.map(genome=genome, pipolins=pipolins,
