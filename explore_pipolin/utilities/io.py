@@ -1,11 +1,10 @@
-import os
 from collections import defaultdict
 from typing import MutableMapping, MutableSequence, Sequence, Tuple
 
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.common import Genome, Strand, Contig, ContigID
+from explore_pipolin.common import Strand, Contig, ContigID
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
@@ -36,15 +35,15 @@ def read_gff_records(file) -> SeqIORecords:
     return gff_records
 
 
-def write_genbank_records(gb_records: SeqIORecords, out_dir, genome: Genome):
+def write_genbank_records(gb_records: SeqIORecords, output_file: str):
     records = [record for record in gb_records.values()]
-    with open(os.path.join(out_dir, f'{genome.id}.gbk'), 'w') as ouf:
+    with open(output_file, 'w') as ouf:
         SeqIO.write(records, ouf, 'genbank')
 
 
-def write_gff_records(gff_records: SeqIORecords, out_dir, genome: Genome):
+def write_gff_records(gff_records: SeqIORecords, output_file: str):
     records = [record for record in gff_records.values()]
-    with open(os.path.join(out_dir, f'{genome.id}.gff'), 'w') as ouf:
+    with open(output_file, 'w') as ouf:
         GFF.write(records, ouf)
         print('##FASTA', file=ouf)
         SeqIO.write(records, ouf, format='fasta')

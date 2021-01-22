@@ -113,14 +113,12 @@ def run_aragorn(genome_file, output_file):
 _PROTEINS = pkg_resources.resource_filename('explore_pipolin', '/data/HHpred_proteins.faa')
 
 
-def run_prokka(genome_id, pipolins_dir, prokka_results_dir):
-    subprocess.run(['prokka', '--outdir', prokka_results_dir,
-                    '--prefix', genome_id,
+def run_prokka(prefix, input_file, prokka_results_dir):
+    subprocess.run(['prokka', '--outdir', prokka_results_dir, '--prefix', prefix,
                     # TODO: number of CPUs is hardcoded. To pass it as an argument?
                     '--rawproduct', '--cdsrnaolap', '--cpus', '4',
-                    '--rfam', '--proteins', _PROTEINS, '--force',
-                    '--locustag', genome_id,
-                    os.path.join(pipolins_dir, genome_id + '.fa')],
+                    # '--locustag', prefix,   # as we have separate fragments now, let's keep original contig names
+                    '--rfam', '--proteins', _PROTEINS, '--force', input_file],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 

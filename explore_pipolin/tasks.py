@@ -7,7 +7,6 @@ import pkg_resources
 from prefect import task
 from prefect import context
 
-from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 from typing import Any, Optional, Sequence
 
@@ -15,7 +14,6 @@ from explore_pipolin.tasks_related.easyfig_coloring import add_colours
 from explore_pipolin.common import Feature, FeatureType, Pipolin, Genome, \
     define_genome_id, FeaturesContainer, Strand, Range, ContigID
 from explore_pipolin.utilities.logging import genome_specific_logging
-from explore_pipolin.tasks_related.misc import join_it
 from explore_pipolin.utilities.io import create_pipolb_entries
 from explore_pipolin.utilities.io import create_seqio_records_dict
 from explore_pipolin.utilities.io import read_aragorn_batch
@@ -139,33 +137,54 @@ def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin], out_dir:
 def annotate_pipolins(genome: Genome, pipolins_dir, out_dir):
     prokka_results_dir = os.path.join(out_dir, 'prokka_results')
     os.makedirs(prokka_results_dir, exist_ok=True)
-    run_prokka(genome_id=genome.id, pipolins_dir=pipolins_dir, prokka_results_dir=prokka_results_dir)
+
+    for fasta_file in os.listdir(pipolins_dir):
+        if fasta_file.startswith(genome.id):
+            prefix = os.path.splitext(fasta_file)
+            input_file = os.path.join(pipolins_dir, fasta_file)
+            run_prokka(prefix=prefix, input_file=input_file, prokka_results_dir=prokka_results_dir)
+
     return prokka_results_dir
 
 
 @task()
 @genome_specific_logging
 def include_atts(genome: Genome, prokka_dir, out_dir, pipolins: Sequence[Pipolin]):
-    gb_records = create_seqio_records_dict(file=os.path.join(prokka_dir, genome.id + '.gbk'),
-                                           file_format='genbank')
-    gff_records = read_gff_records(file=os.path.join(prokka_dir, genome.id + '.gff'))
+    results_dir = os.path.join(out_dir, 'results')
+    os.makedirs(results_dir, exist_ok=True)
 
-    include_atts_into_gb(gb_records=gb_records, genome=genome, pipolins=pipolins)
-    include_atts_into_gff(gff_records=gff_records, genome=genome, pipolins=pipolins)
+    for prokka_file in os.listdir(prokka_dir):
 
-    prokka_atts_dir = os.path.join(out_dir, 'results')
-    os.makedirs(prokka_atts_dir, exist_ok=True)
+        pipolin_index = int(os.path.splitext(prokka_file)[0].split(sep='_')[-1])
+        cur_pipolin = pipolins[pipolin_index]
 
-    write_genbank_records(gb_records=gb_records, out_dir=prokka_atts_dir, genome=genome)
-    write_gff_records(gff_records=gff_records, out_dir=prokka_atts_dir, genome=genome)
+        if prokka_file.startswith(genome.id) and prokka_file.endswith('.gbk'):
+            gb_records = create_seqio_records_dict(file=os.path.join(prokka_dir, prokka_file),
+                                                   file_format='genbank')
 
-    return prokka_atts_dir
+            include_atts_into_gb(gb_records=gb_records, pipolin=cur_pipolin)
+
+            output_file = os.path.join(results_dir, f'{prokka_file}.gbk')
+            write_genbank_records(gb_records=gb_records, output_file=output_file)
+
+        if prokka_file.startswith(genome.id) and prokka_file.endswith('.gff'):
+            gff_records = read_gff_records(file=os.path.join(prokka_dir, prokka_file))
+            include_atts_into_gff(gff_records=gff_records, pipolin=cur_pipolin)
+
+            output_file = os.path.join(results_dir, f'{prokka_file}.gff')
+            write_gff_records(gff_records=gff_records, output_file=output_file)
+
+    return results_dir
 
 
 @task()
 @genome_specific_logging
 def easyfig_add_colours(genome: Genome, in_dir):
-    gb_records = create_seqio_records_dict(file=os.path.join(in_dir, genome.id + '.gbk'),
-                                           file_format='genbank')
-    add_colours(gb_records[genome.id])
-    write_genbank_records(gb_records=gb_records, out_dir=in_dir, genome=genome)
+    for gbk_file in os.listdir(in_dir):
+        if gbk_file.startswith(genome.id):
+            gb_records = create_seqio_records_dict(file=os.path.join(in_dir, gbk_file),
+                                                   file_format='genbank')
+            for record in gb_records.values():
+                add_colours(record)
+
+            write_genbank_records(gb_records=gb_records, output_file=os.path.join(in_dir, gbk_file))

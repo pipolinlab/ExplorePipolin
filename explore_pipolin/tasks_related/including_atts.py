@@ -1,50 +1,50 @@
 from random import randrange
-from typing import MutableSequence, Sequence
+from typing import MutableSequence, Tuple
 
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 
-from explore_pipolin.common import Strand, Pipolin, Genome
+from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID
 from explore_pipolin.utilities.io import SeqIORecords
 
 
-def include_atts_into_gb(gb_records: SeqIORecords, genome: Genome, pipolins: Sequence[Pipolin]):
-    att_seq_features = _generate_att_seq_features(record_format='gb', genome=genome, pipolins=pipolins)
+def include_atts_into_gb(gb_records: SeqIORecords, pipolin: Pipolin):
+    att_seq_features = _generate_att_seq_features(record_format='gb', pipolin=pipolin)
     for att in att_seq_features:
-        _add_att_seq_feature(att_seq_feature=att, seq_record=gb_records[genome.id])
+        _add_att_seq_feature(att_seq_feature=att[0], seq_record=gb_records[att[1]])
 
 
-def include_atts_into_gff(gff_records: SeqIORecords, genome: Genome, pipolins: Sequence[Pipolin]):
-    att_seq_features = _generate_att_seq_features(record_format='gff', genome=genome, pipolins=pipolins)
+def include_atts_into_gff(gff_records: SeqIORecords, pipolin: Pipolin):
+    att_seq_features = _generate_att_seq_features(record_format='gff', pipolin=pipolin)
     for att in att_seq_features:
-        _add_att_seq_feature(att_seq_feature=att, seq_record=gff_records[genome.id])
+        _add_att_seq_feature(att_seq_feature=att[0], seq_record=gff_records[att[1]])
 
 
-def _generate_att_seq_features(record_format: str, genome: Genome, pipolins: Sequence[Pipolin]) \
-        -> MutableSequence[SeqFeature]:
-    att_seq_features = []
-    in_start = 0
-    for fragment in pipolins.fragments:
+def _generate_att_seq_features(record_format: str, pipolin: Pipolin):
+    att_seq_features: MutableSequence[Tuple[SeqFeature, ContigID]] = []
+
+    for fragment in pipolin.fragments:
         fragment_shift = fragment.start
-        for att in fragment.atts:
-            att_start, att_end = sorted([abs(att.start - fragment_shift), abs(att.end - fragment_shift)])
+
+        for att in [f[0] for f in fragment.features if f[1] == FeatureType.ATT]:
+            att_start, att_end = (att.start - fragment_shift), (att.end - fragment_shift)
             if record_format == 'gb':
-                att_feature = _create_gb_att_seq_feature(start=att_start + in_start, end=att_end + in_start,
-                                                         strand=att.strand, genome_id=genome.id, )
+                att_feature = _create_gb_att_seq_feature(start=att_start, end=att_end,
+                                                         strand=att.strand, contig_id=fragment.contig_id)
             elif record_format == 'gff':
-                att_feature = _create_gff_att_seq_feature(start=att_start + in_start, end=att_end + in_start,
-                                                          strand=att.strand, genome_id=genome.id)
+                att_feature = _create_gff_att_seq_feature(start=att_start, end=att_end,
+                                                          strand=att.strand, contig_id=fragment.contig_id)
             else:
                 raise AssertionError
-            att_seq_features.append(att_feature)
-        in_start += (fragment.end - fragment.start) + 100
+
+            att_seq_features.append((att_feature, fragment.contig_id))
 
     return att_seq_features
 
 
-def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, genome_id: str) -> SeqFeature:
+def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str) -> SeqFeature:
     random_number = randrange(10000, 99999)
-    gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{genome_id}_{random_number}'],
+    gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{contig_id}_{random_number}'],
                      'rpt_family': ['Att'], 'rpt_type': ['direct']}
     att_seq_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=strand.to_pm_one_encoding()),
@@ -52,11 +52,11 @@ def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, genome_id: 
     return att_seq_feature
 
 
-def _create_gff_att_seq_feature(start: int, end: int, strand: Strand, genome_id: str) -> SeqFeature:
+def _create_gff_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str) -> SeqFeature:
     random_number = randrange(10000, 99999)
     gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
-                      'ID': [f'{genome_id}_{random_number}'], 'inference': ['HMM:custom'],
-                      'locus_tag': [f'{genome_id}_{random_number}'],
+                      'ID': [f'{contig_id}_{random_number}'], 'inference': ['HMM:custom'],
+                      'locus_tag': [f'{contig_id}_{random_number}'],
                       'rpt_family': ['Att'], 'rpt_type': ['direct']}
     att_seq_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=strand.to_pm_one_encoding()),
