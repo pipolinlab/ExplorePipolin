@@ -4,7 +4,7 @@ from typing import Sequence, Tuple, List
 from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, \
     Pipolin, PipolinFragment, AttFeature, ContigID
 from explore_pipolin.tasks_related.find_pipolins import find_pipolins
-from explore_pipolin.tasks_related.scaffolding import refine_pipolins
+from explore_pipolin.tasks_related.refine_pipolins import refine_pipolins
 
 _GENOME_ID = 'GENOME'
 _GENOME_FILE = 'GENOME.fa'

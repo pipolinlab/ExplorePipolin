@@ -120,28 +120,16 @@ def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> O
 
 @task()
 @genome_specific_logging
-def extract_pipolin_regions(genome: Genome, pipolins: Sequence[Pipolin], out_dir: str):
-    genome_dict = create_seqio_records_dict(file=genome.file, file_format='fasta')
-
+def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin], out_dir: str):
     pipolins_dir = os.path.join(out_dir, 'pipolin_sequences')
     os.makedirs(pipolins_dir, exist_ok=True)
 
-    logger = context.get('logger')
+    genome_dict = create_seqio_records_dict(file=genome.file, file_format='fasta')
 
-    with open(os.path.join(pipolins_dir, genome.id + '.fa'), 'w') as ouf:
-        fragment_records = [create_fragment_record(fragment=f, genome_dict=genome_dict) for f in pipolins.fragments]
-
-        for fragment_record, fragment in zip(fragment_records, pipolins.fragments):
-            logger.info(f'@pipolin fragment length {len(fragment_record)} from {fragment.contig_id}')
-
-        record = sum(join_it(fragment_records, SeqRecord(seq='N' * 100)), SeqRecord(seq=''))
-
-        logger.info(f'@@@pipolin record total length {len(record)}')
-
-        record.id = genome.id
-        record.name = genome.id
-        record.description = genome.id
-        SeqIO.write(sequences=record, handle=ouf, format='fasta')
+    for i, pipolin in enumerate(pipolins):
+        with open(os.path.join(pipolins_dir, genome.id + f'_{i}.fa'), 'w') as ouf:
+            records = [create_fragment_record(f, genome_dict) for f in pipolin.fragments]
+            SeqIO.write(records, ouf, 'fasta')
 
     return pipolins_dir
 
