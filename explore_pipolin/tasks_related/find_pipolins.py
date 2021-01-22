@@ -8,6 +8,9 @@ from explore_pipolin.common import Genome, FeatureType, Pipolin, AttFeature, Pip
 from explore_pipolin.utilities.logging import genome_specific_logging
 
 
+_INFLATE = 49   # should be large enough to include tRNAs (~100) that might overlap with att
+
+
 @task()
 @genome_specific_logging
 def find_pipolins(genome: Genome) -> Sequence[Pipolin]:
@@ -201,7 +204,8 @@ class PipolinFinder:
         return orphan_atts
 
     def _create_pipolin_fragment(self, start_feature: Feature, end_feature: Feature) -> PipolinFragment:
-        loc = Range(start_feature.start, end_feature.end)
+        contig_length = self.genome.get_contig_by_id(start_feature.contig_id).length
+        loc = Range(max(0, start_feature.start - _INFLATE), min(end_feature.end + _INFLATE, contig_length))
         fragment = PipolinFragment(location=loc, contig_id=start_feature.contig_id, genome=self.genome)
         fragment_features = fragment.get_fragment_features_sorted()
         return PipolinFragment(fragment.location, fragment.contig_id, fragment.genome, fragment_features)

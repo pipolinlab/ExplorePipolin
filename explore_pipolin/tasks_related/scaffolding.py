@@ -18,7 +18,7 @@ def refine_pipolins(genome: Genome, pipolins: Sequence[Pipolin]) -> Sequence[Pip
     return refined_pipolins
 
 
-_BORDER_INFLATE_SIZE = 50
+_BORDER_INFLATE_SIZE = 0
 _NO_BORDER_INFLATE_SIZE = 100000
 
 
@@ -78,6 +78,13 @@ class PipolinRefiner:
                 return [self.att_only_fragments[0]] + self.pipolb_only_fragments + [self.att_only_fragments[1]]
             else:
                 return self.pipolb_only_fragments
+
+        elif not self.att_pipolb_fragments and not self.pipolb_att_fragments:
+            if len(self.att_only_fragments) == 2:
+                return [self.att_only_fragments[0]] + self.pipolb_only_fragments + \
+                       [self.att_only_fragments[1]] + self.trna_fragments
+            else:
+                return self.att_only_fragments + self.pipolb_only_fragments + self.trna_fragments
 
         elif len(self.trna_fragments) == 2:
             return [self.trna_fragments[0]] + self.att_pipolb_fragments + self.pipolb_only_fragments + \
