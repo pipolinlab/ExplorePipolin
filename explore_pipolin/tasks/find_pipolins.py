@@ -8,9 +8,6 @@ from explore_pipolin.common import Genome, FeatureType, Pipolin, AttFeature, Pip
 from explore_pipolin.utilities.logging import genome_specific_logging
 
 
-_INFLATE = 49   # should be large enough to include tRNAs (~100) that might overlap with att
-
-
 @task()
 @genome_specific_logging
 def find_pipolins(genome: Genome) -> Sequence[Pipolin]:
@@ -198,7 +195,23 @@ class PipolinFinder:
 
     def _create_pipolin_fragment(self, start_feature: Feature, end_feature: Feature) -> PipolinFragment:
         contig_length = self.genome.get_contig_by_id(start_feature.contig_id).length
-        loc = Range(max(0, start_feature.start - _INFLATE), min(end_feature.end + _INFLATE, contig_length))
+
+        start_feature, end_feature = self._include_ttrnas_if_there_are(start_feature, end_feature)
+
+        loc = Range(max(0, start_feature.start), min(end_feature.end, contig_length))
         fragment = PipolinFragment(location=loc, contig_id=start_feature.contig_id, genome=self.genome)
         fragment_features = fragment.get_fragment_features_sorted()
         return PipolinFragment(fragment.location, fragment.contig_id, fragment.genome, fragment_features)
+
+    def _include_ttrnas_if_there_are(self, start_feature, end_feature):
+        target_trnas = self.genome.features.get_features(FeatureType.TARGET_TRNA)
+        ttrna_o_start = target_trnas.get_overlapping(start_feature)
+        ttrna_o_end = target_trnas.get_overlapping(end_feature)
+
+        if ttrna_o_start is not None and ttrna_o_start.start < start_feature.start:
+            start_feature = ttrna_o_start
+
+        if ttrna_o_end is not None and ttrna_o_end.end > end_feature.end:
+            end_feature = ttrna_o_end
+
+        return start_feature, end_feature
