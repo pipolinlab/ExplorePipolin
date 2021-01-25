@@ -17,14 +17,10 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 from explore_pipolin.utilities.io import create_pipolb_entries
 from explore_pipolin.utilities.io import create_seqio_records_dict
 from explore_pipolin.utilities.io import read_aragorn_batch
-from explore_pipolin.utilities.external_tools import ExternalTools, RealExternalTools
+from explore_pipolin.utilities.external_tools import run_prodigal, run_hmmsearch
 from explore_pipolin.utilities.external_tools import run_prokka, run_aragorn
 from explore_pipolin.tasks_related.misc import create_fragment_record
-from explore_pipolin.utilities.io import read_gff_records
-from explore_pipolin.tasks_related.including_atts import include_atts_into_gb
-from explore_pipolin.tasks_related.including_atts import include_atts_into_gff
 from explore_pipolin.utilities.io import write_genbank_records
-from explore_pipolin.utilities.io import write_gff_records
 from explore_pipolin.utilities.io import read_genome_contigs_from_file
 
 _REF_PIPOLB = pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB_Firmicutes.faa')
@@ -43,14 +39,14 @@ def create_genome(genome_file) -> Genome:
 
 @task()
 @genome_specific_logging
-def find_pipolbs(genome: Genome, out_dir: str, ext: ExternalTools = RealExternalTools) -> Genome:
+def find_pipolbs(genome: Genome, out_dir: str) -> Genome:
     results_dir = os.path.join(out_dir, 'pipolbs_search')
     os.makedirs(results_dir, exist_ok=True)
 
     prodigal_output_file = os.path.join(results_dir, genome.id + '.faa')
-    ext.find_cdss(genome_file=genome.file, output_file=prodigal_output_file)
+    run_prodigal(genome_file=genome.file, output_file=prodigal_output_file)
     hmm_output_file = os.path.join(results_dir, genome.id + '.tbl')
-    ext.find_pipolbs(prodigal_output_file, hmm_output_file)
+    run_hmmsearch(prodigal_output_file, hmm_output_file)
     entries_pipolb = create_pipolb_entries(hmmsearch_table=hmm_output_file)
 
     for entry in entries_pipolb:
@@ -140,41 +136,11 @@ def annotate_pipolins(genome: Genome, pipolins_dir, out_dir):
 
     for fasta_file in os.listdir(pipolins_dir):
         if fasta_file.startswith(genome.id):
-            prefix = os.path.splitext(fasta_file)
+            prefix = os.path.splitext(fasta_file)[0]
             input_file = os.path.join(pipolins_dir, fasta_file)
             run_prokka(prefix=prefix, input_file=input_file, prokka_results_dir=prokka_results_dir)
 
     return prokka_results_dir
-
-
-@task()
-@genome_specific_logging
-def include_atts(genome: Genome, prokka_dir, out_dir, pipolins: Sequence[Pipolin]):
-    results_dir = os.path.join(out_dir, 'results')
-    os.makedirs(results_dir, exist_ok=True)
-
-    for prokka_file in os.listdir(prokka_dir):
-
-        pipolin_index = int(os.path.splitext(prokka_file)[0].split(sep='_')[-1])
-        cur_pipolin = pipolins[pipolin_index]
-
-        if prokka_file.startswith(genome.id) and prokka_file.endswith('.gbk'):
-            gb_records = create_seqio_records_dict(file=os.path.join(prokka_dir, prokka_file),
-                                                   file_format='genbank')
-
-            include_atts_into_gb(gb_records=gb_records, pipolin=cur_pipolin)
-
-            output_file = os.path.join(results_dir, f'{prokka_file}.gbk')
-            write_genbank_records(gb_records=gb_records, output_file=output_file)
-
-        if prokka_file.startswith(genome.id) and prokka_file.endswith('.gff'):
-            gff_records = read_gff_records(file=os.path.join(prokka_dir, prokka_file))
-            include_atts_into_gff(gff_records=gff_records, pipolin=cur_pipolin)
-
-            output_file = os.path.join(results_dir, f'{prokka_file}.gff')
-            write_gff_records(gff_records=gff_records, output_file=output_file)
-
-    return results_dir
 
 
 @task()

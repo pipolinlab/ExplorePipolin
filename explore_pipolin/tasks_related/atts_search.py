@@ -10,7 +10,7 @@ from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, S
     MultiLocation
 from explore_pipolin.tasks_related.misc import get_ranges_around_pipolbs
 from explore_pipolin.utilities.external_tools import blastn_against_ref_att, blast_for_repeats
-from explore_pipolin.utilities.io import read_blastxml
+from explore_pipolin.utilities.io import read_blastxml, create_seqio_records_dict
 from explore_pipolin.utilities.logging import genome_specific_logging
 
 
@@ -125,11 +125,11 @@ class AttDenovoFinder:
                 print(att.contig_id, ' '.join(ranges), sep='\t', file=ouf)
 
     def _save_seqs_around_pipolbs(self, ranges_around_pipolbs: List[PairedLocation]):
-        genome_seq = SeqIO.read(handle=self.genome.file, format='fasta')
+        genome_dict = create_seqio_records_dict(file=self.genome.file, file_format='fasta')
 
         for i, range_pair in enumerate(ranges_around_pipolbs):
-            left_seq = genome_seq[range_pair.left_range.start:range_pair.left_range.end]
-            right_seq = genome_seq[range_pair.right_range.start:range_pair.right_range.end]
+            left_seq = genome_dict[range_pair.contig_id][range_pair.left_range.start:range_pair.left_range.end]
+            right_seq = genome_dict[range_pair.contig_id][range_pair.right_range.start:range_pair.right_range.end]
             SeqIO.write(sequences=left_seq, format='fasta',
                         handle=os.path.join(self.output_dir, self.genome.id + f'_{i}.left'))
             SeqIO.write(sequences=right_seq, format='fasta',
@@ -152,13 +152,16 @@ class AttDenovoFinder:
         result: Mapping[ContigID, List[MultiLocation]] = defaultdict(list)
         for repeat in paired_repeats:
             for rs in result[repeat.contig_id]:
-                if repeat.left_range.is_overlapping_any(rs) and not repeat.right_range.is_overlapping_any(rs.ranges):
+                if repeat.left_range.is_overlapping_any(rs.ranges) and \
+                        not repeat.right_range.is_overlapping_any(rs.ranges):
                     rs.ranges.append(repeat.right_range)
                     break
-                elif repeat.right_range.is_overlapping_any(rs) and not repeat.left_range.is_overlapping_any(rs.ranges):
+                elif repeat.right_range.is_overlapping_any(rs.ranges) and \
+                        not repeat.left_range.is_overlapping_any(rs.ranges):
                     rs.ranges.append(repeat.left_range)
                     break
-                elif repeat.left_range.is_overlapping_any(rs) and repeat.right_range.is_overlapping_any(rs):
+                elif repeat.left_range.is_overlapping_any(rs.ranges) and \
+                        repeat.right_range.is_overlapping_any(rs.ranges):
                     break
             else:
                 result[repeat.contig_id].append(MultiLocation(

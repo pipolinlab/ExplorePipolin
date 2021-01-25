@@ -1,6 +1,7 @@
 from prefect import Flow, Parameter, unmapped, case
 from prefect.tasks.control_flow import FilterTask
 
+from explore_pipolin.tasks_related.include_atts import include_atts
 from explore_pipolin.tasks_related.atts_search import find_atts, find_atts_denovo, are_atts_present
 from explore_pipolin.tasks_related.find_pipolins import find_pipolins
 from explore_pipolin.tasks_related.refine_pipolins import refine_pipolins
@@ -38,8 +39,8 @@ def get_flow():
                                                             out_dir=unmapped(out_dir))
         prokka_dir = tasks.annotate_pipolins.map(genome=genome, pipolins_dir=pipolin_seqs_dir,
                                                  out_dir=unmapped(out_dir))
-        results_dir = tasks.include_atts.map(genome=genome, prokka_dir=prokka_dir,
-                                             pipolins=pipolins, out_dir=unmapped(out_dir))
+        results_dir = include_atts.map(genome=genome, prokka_dir=prokka_dir,
+                                       pipolins=pipolins, out_dir=unmapped(out_dir))
         with case(add_colours, True):
             tasks.easyfig_add_colours.map(genome=genome, in_dir=results_dir)
 
