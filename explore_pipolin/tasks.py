@@ -31,16 +31,18 @@ _REF_PIPOLB = pkg_resources.resource_filename('explore_pipolin', 'data/pi-polB_F
 
 
 @task()
-def create_genome(genome_file) -> Genome:
-    contigs = read_genome_contigs_from_file(genome_file=genome_file)
+def create_genome(genome_file, output_dir) -> Genome:
+    contigs = read_genome_contigs_from_file(genome_file)
     genome_id = define_genome_id(genome_file)
-    return Genome(genome_id=genome_id, genome_file=genome_file, contigs=contigs)
+    results_dir = os.path.join(output_dir, genome_id)
+    print(results_dir)
+    return Genome(genome_id, genome_file, results_dir, contigs)
 
 
 @task()
 @genome_specific_logging
-def find_pipolbs(genome: Genome, out_dir: str) -> Genome:
-    results_dir = os.path.join(out_dir, 'pipolbs_search')
+def find_pipolbs(genome: Genome) -> Genome:
+    results_dir = os.path.join(genome.results_dir, 'pipolbs_search')
     os.makedirs(results_dir, exist_ok=True)
 
     prodigal_output_file = os.path.join(results_dir, genome.id + '.faa')
@@ -60,8 +62,8 @@ def find_pipolbs(genome: Genome, out_dir: str) -> Genome:
 
 @task()
 @genome_specific_logging
-def find_trnas(genome: Genome, out_dir) -> Genome:
-    aragorn_results_dir = os.path.join(out_dir, 'trnas_search')
+def find_trnas(genome: Genome) -> Genome:
+    aragorn_results_dir = os.path.join(genome.results_dir, 'trnas_search')
     os.makedirs(aragorn_results_dir, exist_ok=True)
 
     output_file = os.path.join(aragorn_results_dir, genome.id + '.batch')
@@ -114,8 +116,8 @@ def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> O
 
 @task()
 @genome_specific_logging
-def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin], out_dir: str):
-    pipolins_dir = os.path.join(out_dir, 'pipolin_sequences')
+def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin]):
+    pipolins_dir = os.path.join(genome.results_dir, 'pipolin_sequences')
     os.makedirs(pipolins_dir, exist_ok=True)
 
     genome_dict = create_seqio_records_dict(file=genome.file, file_format='fasta')
@@ -130,8 +132,8 @@ def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin], out_dir:
 
 @task()
 @genome_specific_logging
-def annotate_pipolins(genome: Genome, pipolins_dir, out_dir):
-    prokka_results_dir = os.path.join(out_dir, 'prokka_results')
+def annotate_pipolins(genome: Genome, pipolins_dir):
+    prokka_results_dir = os.path.join(genome.results_dir, 'prokka_results')
     os.makedirs(prokka_results_dir, exist_ok=True)
 
     for fasta_file in os.listdir(pipolins_dir):

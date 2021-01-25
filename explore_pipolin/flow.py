@@ -16,31 +16,28 @@ def get_flow():
         out_dir = Parameter('out_dir')
         add_colours = Parameter('add_colours')
 
-        genome = tasks.create_genome.map(genome_file=genome_file)
+        genome = tasks.create_genome.map(genome_file=genome_file, output_dir=unmapped(out_dir))
 
-        genome = tasks.find_pipolbs.map(genome=genome, out_dir=unmapped(out_dir))
+        genome = tasks.find_pipolbs.map(genome=genome)
 
         t_check_pipolbs = tasks.are_pipolbs_present.map(genome=genome)
         genome = _DEFAULT_FILTER(tasks.return_result_if_true_else_none.map(
             result_to_filter=genome, filter_by=t_check_pipolbs)
         )
 
-        genome = tasks.find_trnas.map(genome=genome, out_dir=unmapped(out_dir))
+        genome = tasks.find_trnas.map(genome=genome)
 
-        genome = find_atts.map(genome=genome, out_dir=unmapped(out_dir))
-        genome = find_atts_denovo.map(genome=genome, out_dir=unmapped(out_dir))
+        genome = find_atts.map(genome=genome)
+        genome = find_atts_denovo.map(genome=genome)
 
         genome = are_atts_present.map(genome=genome)
 
         pipolins = find_pipolins.map(genome=genome)
         pipolins = refine_pipolins.map(genome=genome, pipolins=pipolins)
 
-        pipolin_seqs_dir = tasks.save_pipolin_sequences.map(genome=genome, pipolins=pipolins,
-                                                            out_dir=unmapped(out_dir))
-        prokka_dir = tasks.annotate_pipolins.map(genome=genome, pipolins_dir=pipolin_seqs_dir,
-                                                 out_dir=unmapped(out_dir))
-        results_dir = include_atts.map(genome=genome, prokka_dir=prokka_dir,
-                                       pipolins=pipolins, out_dir=unmapped(out_dir))
+        pipolin_seqs_dir = tasks.save_pipolin_sequences.map(genome=genome, pipolins=pipolins)
+        prokka_dir = tasks.annotate_pipolins.map(genome=genome, pipolins_dir=pipolin_seqs_dir)
+        results_dir = include_atts.map(genome=genome, prokka_dir=prokka_dir, pipolins=pipolins)
         with case(add_colours, True):
             tasks.easyfig_add_colours.map(genome=genome, in_dir=results_dir)
 

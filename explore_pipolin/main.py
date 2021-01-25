@@ -48,7 +48,7 @@ def explore_pipolin(genome, out_dir, add_colours):
 
     check_external_dependencies()
 
-    logging_dir = os.path.join(out_dir, 'results')
+    logging_dir = os.path.join(out_dir, 'logs')
     os.makedirs(logging_dir, exist_ok=True)
     set_logging_dir(logging_dir)
 

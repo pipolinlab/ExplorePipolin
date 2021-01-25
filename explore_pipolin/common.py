@@ -37,9 +37,10 @@ class Contig:
 
 
 class Genome:
-    def __init__(self, genome_id: str, genome_file: str, contigs: MutableSequence[Contig]):
+    def __init__(self, genome_id: str, genome_file: str, results_dir: str, contigs: MutableSequence[Contig]):
         self.id = genome_id
         self.file = genome_file
+        self.results_dir = results_dir
         self.contigs = contigs
         self.features: FeaturesContainer = FeaturesContainer()
 
