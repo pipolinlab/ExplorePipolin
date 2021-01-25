@@ -42,7 +42,7 @@ def create_genome(genome_file, output_dir) -> Genome:
 @task()
 @genome_specific_logging
 def find_pipolbs(genome: Genome) -> Genome:
-    results_dir = os.path.join(genome.results_dir, 'pipolbs_search')
+    results_dir = os.path.join(genome.results_dir, 'pipolbs')
     os.makedirs(results_dir, exist_ok=True)
 
     prodigal_output_file = os.path.join(results_dir, genome.id + '.faa')
@@ -63,7 +63,7 @@ def find_pipolbs(genome: Genome) -> Genome:
 @task()
 @genome_specific_logging
 def find_trnas(genome: Genome) -> Genome:
-    aragorn_results_dir = os.path.join(genome.results_dir, 'trnas_search')
+    aragorn_results_dir = os.path.join(genome.results_dir, 'trnas')
     os.makedirs(aragorn_results_dir, exist_ok=True)
 
     output_file = os.path.join(aragorn_results_dir, genome.id + '.batch')
@@ -117,7 +117,7 @@ def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> O
 @task()
 @genome_specific_logging
 def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin]):
-    pipolins_dir = os.path.join(genome.results_dir, 'pipolin_sequences')
+    pipolins_dir = os.path.join(genome.results_dir, 'pipolins')
     os.makedirs(pipolins_dir, exist_ok=True)
 
     genome_dict = create_seqio_records_dict(file=genome.file, file_format='fasta')
@@ -133,7 +133,7 @@ def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin]):
 @task()
 @genome_specific_logging
 def annotate_pipolins(genome: Genome, pipolins_dir):
-    prokka_results_dir = os.path.join(genome.results_dir, 'prokka_results')
+    prokka_results_dir = os.path.join(genome.results_dir, 'prokka')
     os.makedirs(prokka_results_dir, exist_ok=True)
 
     for fasta_file in os.listdir(pipolins_dir):

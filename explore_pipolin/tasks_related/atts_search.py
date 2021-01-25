@@ -17,7 +17,7 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 @task()
 @genome_specific_logging
 def find_atts(genome: Genome) -> Genome:
-    atts_dir = os.path.join(genome.results_dir, 'atts_search')
+    atts_dir = os.path.join(genome.results_dir, 'atts')
     os.makedirs(atts_dir, exist_ok=True)
 
     finder = AttFinder(genome=genome, output_dir=atts_dir)
@@ -31,7 +31,7 @@ def find_atts(genome: Genome) -> Genome:
 @task()
 @genome_specific_logging
 def find_atts_denovo(genome: Genome) -> Genome:
-    atts_denovo_dir = os.path.join(genome.results_dir, 'atts_denovo_search')
+    atts_denovo_dir = os.path.join(genome.results_dir, 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
     finder = AttDenovoFinder(genome=genome, output_dir=atts_denovo_dir)
