@@ -3,8 +3,8 @@ from typing import Sequence, Tuple, List
 
 from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, \
     Pipolin, PipolinFragment, AttFeature, ContigID
-from explore_pipolin.tasks_related.find_pipolins import find_pipolins
-from explore_pipolin.tasks_related.refine_pipolins import refine_pipolins
+from explore_pipolin.tasks.find_pipolins import find_pipolins
+from explore_pipolin.tasks.refine_pipolins import refine_pipolins
 
 _GENOME_ID = 'GENOME'
 _GENOME_FILE = 'GENOME.fa'
@@ -30,7 +30,7 @@ def _create_genome_with_contigs(contigs_schemes: Sequence[str]) -> Genome:
     contigs = []
     for i in range(len(contigs_schemes)):
         contigs.append(Contig(ContigID(f'CONTIG_{i}'), len(contigs_schemes[i]) // 3 * 100))
-    genome = Genome(_GENOME_ID, _GENOME_FILE, contigs)
+    genome = Genome(_GENOME_ID, _GENOME_FILE, 'output/' + _GENOME_ID, contigs)
     return genome
 
 

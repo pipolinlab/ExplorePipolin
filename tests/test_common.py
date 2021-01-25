@@ -29,10 +29,10 @@ class SetUpGenome(unittest.TestCase):
         self.long_contig_id = ContigID('boo')
         self.long_contig = Contig(contig_id=self.long_contig_id, contig_length=500)
 
-        self.single_contig_genome = Genome(genome_id='bar', genome_file='dir/bar.fa',
+        self.single_contig_genome = Genome(genome_id='bar', genome_file='dir/bar.fa', results_dir='output/bar',
                                            contigs=[self.short_contig])
 
-        self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa',
+        self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa', results_dir='output/car',
                                           contigs=[self.short_contig, self.long_contig])
 
         self.long_contig_feature1 = Feature(Range(123, 231), strand=Strand.REVERSE,

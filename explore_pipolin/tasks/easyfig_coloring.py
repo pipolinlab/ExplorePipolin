@@ -1,5 +1,24 @@
+import os
 from enum import Enum
 from Bio.SeqIO import SeqRecord
+from prefect import task
+
+from explore_pipolin.common import Genome
+from explore_pipolin.utilities.io import create_seqio_records_dict, write_genbank_records
+from explore_pipolin.utilities.logging import genome_specific_logging
+
+
+@task()
+@genome_specific_logging
+def easyfig_add_colours(genome: Genome, in_dir):
+    for gbk_file in os.listdir(in_dir):
+        if gbk_file.startswith(genome.id):
+            gb_records = create_seqio_records_dict(file=os.path.join(in_dir, gbk_file),
+                                                   file_format='genbank')
+            for record in gb_records.values():
+                add_colours(record)
+
+            write_genbank_records(gb_records=gb_records, output_file=os.path.join(in_dir, gbk_file))
 
 
 class EasyfigColour(Enum):

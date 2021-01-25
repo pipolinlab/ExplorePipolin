@@ -3,8 +3,8 @@ from typing import List
 
 from explore_pipolin.common import Contig, Genome, Feature, Range, Strand, FeatureType, PairedLocation, AttFeature, \
     ContigID, MultiLocation
-from explore_pipolin.tasks_related.misc import get_ranges_around_pipolbs
-from explore_pipolin.tasks_related.atts_search import AttDenovoFinder
+from explore_pipolin.tasks.misc import get_ranges_around_pipolbs
+from explore_pipolin.tasks.atts_search import AttDenovoFinder
 
 
 class TestAttsDenovoSearch(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestAttsDenovoSearch(unittest.TestCase):
         self.contig2_id = ContigID('CONTIG_2')
         contig1 = Contig(self.contig1_id, 1000000)
         contig2 = Contig(self.contig2_id, 10000)
-        self.genome = Genome('GENOME_ID', 'genome.fa', contigs=[contig1, contig2])
+        self.genome = Genome('GENOME_ID', 'genome.fa', 'output/genome', contigs=[contig1, contig2])
 
         pipolb1 = Feature(Range(100, 1100), Strand.FORWARD, self.contig1_id, self.genome)
         pipolb2 = Feature(Range(3000, 4000), Strand.FORWARD, self.contig1_id, self.genome)

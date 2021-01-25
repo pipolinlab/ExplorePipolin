@@ -1,10 +1,9 @@
-from collections import defaultdict
-from typing import MutableMapping, MutableSequence, Sequence, Tuple
+from typing import MutableMapping, MutableSequence
 
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.common import Strand, Contig, ContigID
+from explore_pipolin.common import Contig, ContigID
 
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
 
@@ -49,39 +48,5 @@ def write_gff_records(gff_records: SeqIORecords, output_file: str):
         SeqIO.write(records, ouf, format='fasta')
 
 
-def read_aragorn_batch(aragorn_batch) -> MutableMapping[str, MutableSequence]:
-    entries = defaultdict(list)
-    with open(aragorn_batch) as inf:
-        for line in inf:
-            if line[0] == '>':
-                entry = line.strip().split(sep=' ')[0][1:]
-            else:
-                hit = line.split(sep='\t')
-                if len(hit) > 1:
-                    coordinates = hit[0].split(sep=' ')[-1]
-                    if coordinates[0] == 'c':
-                        start, end = (int(i) for i in coordinates[2:-1].split(sep=','))
-                        entries[entry].append((start, end, Strand.REVERSE))
-                    else:
-                        start, end = (int(i) for i in coordinates[1:-1].split(sep=','))
-                        entries[entry].append((start, end, Strand.FORWARD))
-
-    return entries
-
-
 def read_blastxml(blast_xml):
     return SearchIO.read(blast_xml, 'blast-xml')
-
-
-def create_pipolb_entries(hmmsearch_table: str) -> Sequence[Tuple[str, int, int, int]]:
-    entries = []
-    with open(hmmsearch_table) as inf:
-        content = list(SearchIO.parse(inf, 'hmmer3-tab'))
-        if len(content) != 1:
-            raise AssertionError(f'More than a single query in {hmmsearch_table}! Should be only one.')
-        for hit in content[0]:
-            name = '_'.join(hit.id.split(sep='_')[:-1])
-            description = hit.description.split(sep=' ')
-            entries.append((name, int(description[1]), int(description[3]), int(description[5])))
-
-    return entries
