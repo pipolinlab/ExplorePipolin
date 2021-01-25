@@ -4,7 +4,7 @@ from typing import MutableMapping, MutableSequence
 
 from prefect import task
 
-from explore_pipolin.common import Genome, Feature, Range, FeatureType, FeaturesContainer, Strand
+from explore_pipolin.common import Genome, Feature, Range, FeatureType, Strand
 from explore_pipolin.utilities.external_tools import run_aragorn
 from explore_pipolin.utilities.logging import genome_specific_logging
 
@@ -12,20 +12,19 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 @task()
 @genome_specific_logging
 def find_trnas(genome: Genome) -> Genome:
-    aragorn_results_dir = os.path.join(genome.results_dir, 'trnas')
+    aragorn_results_dir = os.path.join(genome.work_dir, 'trnas')
     os.makedirs(aragorn_results_dir, exist_ok=True)
 
     output_file = os.path.join(aragorn_results_dir, genome.id + '.batch')
     run_aragorn(genome_file=genome.file, output_file=output_file)
     entries = read_aragorn_batch(aragorn_batch=output_file)
 
-    add_trna_features_from_aragorn_entries(entries=entries, genome=genome)
-    find_and_add_target_trnas_features(genome.features)
+    add_trna_features(entries=entries, genome=genome)
 
     return genome
 
 
-def add_trna_features_from_aragorn_entries(entries, genome: Genome):
+def add_trna_features(entries, genome: Genome):
     for contig_id, hits in entries.items():
         for hit in hits:
             # "correct strange coordinates in -l mode" as in Prokka
@@ -34,13 +33,6 @@ def add_trna_features_from_aragorn_entries(entries, genome: Genome):
             trna_feature = Feature(location=Range(start=start, end=end),
                                    strand=hit[2], contig_id=contig_id, genome=genome)
             genome.features.add_features(trna_feature, feature_type=FeatureType.TRNA)
-
-
-def find_and_add_target_trnas_features(features: FeaturesContainer):
-    for att in features.get_features(FeatureType.ATT):
-        target_trna = features.get_features(FeatureType.TRNA).get_overlapping(att)
-        if target_trna is not None:
-            features.add_features(target_trna, feature_type=FeatureType.TARGET_TRNA)
 
 
 def read_aragorn_batch(aragorn_batch) -> MutableMapping[str, MutableSequence]:

@@ -35,9 +35,9 @@ class PipolinFinder:
         return self.genome.features.get_features(FeatureType.ATT).get_atts_dict_by_att_id()
 
     def find_pipolins(self) -> Sequence[Pipolin]:
-        pipolin_fragment_candidates = self.find_pipolin_fragment_candidates()
-        pipolin_candidates = self.find_pipolin_candidates(pipolin_fragment_candidates)
-        scores = [self.calc_pipolin_score(i) for i in pipolin_candidates]
+        pipolin_fragment_candidates = self._find_pipolin_fragment_candidates()
+        pipolin_candidates = self._find_pipolin_candidates(pipolin_fragment_candidates)
+        scores = [self._calc_pipolin_score(i) for i in pipolin_candidates]
         candidates = [PipolinCandidate(i, y) for i, y in zip(pipolin_candidates, scores)]
 
         best_pipolins = self._find_best_non_overlapping(candidates)
@@ -52,11 +52,11 @@ class PipolinFinder:
             best_candidate = candidates[0]
             result.append(best_candidate.pipolin)
 
-            candidates = self.filter_candidates(best_candidate, candidates)
+            candidates = self._filter_candidates(best_candidate, candidates)
 
         return result
 
-    def filter_candidates(self, best_candidate, candidates):
+    def _filter_candidates(self, best_candidate, candidates):
         filtered_candidates = []
         for cdt in candidates:
             if not self._is_candidate_overlapping_best(cdt.pipolin, best_candidate.pipolin):
@@ -71,13 +71,13 @@ class PipolinFinder:
                     return True
         return False
 
-    def calc_pipolin_score(self, pipolin: Pipolin) -> PipolinScore:
-        max_score = max(self.calc_pipolin_fragment_score(f) for f in pipolin.fragments)
-        sum_score = sum(self.calc_pipolin_fragment_score(f) for f in pipolin.fragments)
+    def _calc_pipolin_score(self, pipolin: Pipolin) -> PipolinScore:
+        max_score = max(self._calc_pipolin_fragment_score(f) for f in pipolin.fragments)
+        sum_score = sum(self._calc_pipolin_fragment_score(f) for f in pipolin.fragments)
         return max_score, sum_score
 
     @staticmethod
-    def calc_pipolin_fragment_score(fragment: PipolinFragment) -> int:
+    def _calc_pipolin_fragment_score(fragment: PipolinFragment) -> int:
         atts_and_pipolbs = [f for f in fragment.features if f[1] != FeatureType.TARGET_TRNA]
         first_feature_type = atts_and_pipolbs[0][1]
         last_feature_type = atts_and_pipolbs[-1][1]
@@ -92,26 +92,26 @@ class PipolinFinder:
         else:
             return 1 * len(atts_and_pipolbs)
 
-    def find_pipolin_fragment_candidates(self) -> Sequence[PipolinFragment]:
+    def _find_pipolin_fragment_candidates(self):
         pipolin_fragments: MutableSequence[PipolinFragment] = []
         pipolbs_dict = self.genome.features.pipolbs_dict()
         for pipolbs in pipolbs_dict.values():
             for pipolb in pipolbs:
-                pipolin_fragments.extend(self.find_pipolin_fragments_with_pipolb(pipolb))
+                pipolin_fragments.extend(self._find_pipolin_fragments_with_pipolb(pipolb))
         return pipolin_fragments
 
-    def find_pipolin_fragments_with_pipolb(self, pipolb: Feature):
+    def _find_pipolin_fragments_with_pipolb(self, pipolb: Feature):
         pipolin_fragments: MutableSequence[PipolinFragment] = []
 
-        atts_around_pipolb = sorted(self.find_atts_around_pipolb(pipolb), key=lambda x: x.start)
+        atts_around_pipolb = sorted(self._find_atts_around_pipolb(pipolb), key=lambda x: x.start)
         if atts_around_pipolb:
             pipolin_fragments.append(self._create_pipolin_fragment(atts_around_pipolb[0], atts_around_pipolb[-1]))
 
-        att_left = self.get_closest_att_left(pipolb)
+        att_left = self._get_closest_att_left(pipolb)
         if att_left is not None:
             pipolin_fragments.append(self._create_pipolin_fragment(att_left, pipolb))
 
-        att_right = self.get_closest_att_right(pipolb)
+        att_right = self._get_closest_att_right(pipolb)
         if att_right is not None:
             pipolin_fragments.append(self._create_pipolin_fragment(pipolb, att_right))
 
@@ -119,21 +119,21 @@ class PipolinFinder:
 
         return pipolin_fragments
 
-    def get_closest_att_left(self, pipolb: Feature) -> Optional[AttFeature]:
+    def _get_closest_att_left(self, pipolb: Feature) -> Optional[AttFeature]:
         contig_atts = self.genome.features.atts_dict()[pipolb.contig_id]
         atts_to_the_left = [att for att in contig_atts if att.is_left_of(pipolb)]
         for att in atts_to_the_left:
             if att.att_id == atts_to_the_left[-1].att_id:
                 return att
 
-    def get_closest_att_right(self, pipolb: Feature) -> Optional[AttFeature]:
+    def _get_closest_att_right(self, pipolb: Feature) -> Optional[AttFeature]:
         contig_atts = self.genome.features.atts_dict()[pipolb.contig_id]
         atts_to_the_right = [att for att in contig_atts if att.is_right_of(pipolb)]
         for att in atts_to_the_right[::-1]:
             if att.att_id == atts_to_the_right[0].att_id:
                 return att
 
-    def find_atts_around_pipolb(self, pipolb: Feature):
+    def _find_atts_around_pipolb(self, pipolb: Feature):
         atts_around_pipolb: Set[AttFeature] = set()
         contig_atts = self.genome.features.atts_dict()[pipolb.contig_id]
         for att in contig_atts:
@@ -143,24 +143,17 @@ class PipolinFinder:
                         atts_around_pipolb.update([att, other_att])
         return atts_around_pipolb
 
-    def get_orphan_atts(self, atts_around_pipolbs: Set[AttFeature]) -> Set[AttFeature]:
-        atts_same_att_id = set()
-        att_ids = set(i.att_id for i in atts_around_pipolbs)
-        for att_id in att_ids:
-            atts_same_att_id.update(i for i in self.atts_by_att_id[att_id])
-        return atts_same_att_id - atts_around_pipolbs
-
-    def find_pipolin_candidates(self, candidates: Sequence[PipolinFragment]):
+    def _find_pipolin_candidates(self, candidates: Sequence[PipolinFragment]):
         pipolin_candidates: MutableSequence[Pipolin] = []
         for fragment in candidates:
             pipolin_candidates.append(Pipolin.from_fragments(fragment))
 
-            for other_fragments in self.find_remaining_fragments(fragment):
+            for other_fragments in self._find_remaining_fragments(fragment):
                 pipolin_candidates.append(Pipolin.from_fragments(fragment, *other_fragments))
 
         return pipolin_candidates
 
-    def find_remaining_fragments(self, fragment: PipolinFragment) -> Sequence[Sequence[PipolinFragment]]:
+    def _find_remaining_fragments(self, fragment: PipolinFragment) -> Sequence[Sequence[PipolinFragment]]:
         # [*sorted_by_att_id[*sorted_by_contig_id]]
         fragment_atts = set(f for f, ft in fragment.features if ft == FeatureType.ATT)
 

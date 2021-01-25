@@ -20,8 +20,8 @@ class TestPipolinFinder(unittest.TestCase):
 
         # analysis
         self.finder = PipolinFinder(self.genome)
-        self.fragments = self.finder.find_pipolin_fragment_candidates()
-        self.pipolins = self.finder.find_pipolin_candidates(self.fragments)
+        self.fragments = self.finder._find_pipolin_fragment_candidates()
+        self.pipolins = self.finder._find_pipolin_candidates(self.fragments)
 
         # expected
         f1 = PipolinFragment(self.pipolb.location, self.contig1_id, self.genome,
@@ -48,7 +48,7 @@ class TestPipolinFinder(unittest.TestCase):
         pipolb2 = Feature(Range(500, 1500), Strand.FORWARD, self.contig2_id, self.genome)
         self.genome.features.add_features(pipolb2, feature_type=FeatureType.PIPOLB)
 
-        obs = PipolinFinder(self.genome).find_pipolin_fragment_candidates()
+        obs = PipolinFinder(self.genome)._find_pipolin_fragment_candidates()
 
         additional_fragment = PipolinFragment(pipolb2.location, self.contig2_id, self.genome,
                                               features=((pipolb2, FeatureType.PIPOLB),))

@@ -15,7 +15,7 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 @task()
 @genome_specific_logging
 def include_atts(genome: Genome, prokka_dir, pipolins: Sequence[Pipolin]):
-    results_dir = os.path.join(genome.results_dir, 'pipolins')
+    results_dir = os.path.join(genome.work_dir, 'pipolins')
     os.makedirs(results_dir, exist_ok=True)
 
     for prokka_file in os.listdir(prokka_dir):

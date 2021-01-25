@@ -4,7 +4,7 @@ from typing import List
 from explore_pipolin.common import Contig, Genome, Feature, Range, Strand, FeatureType, PairedLocation, AttFeature, \
     ContigID, MultiLocation
 from explore_pipolin.tasks.misc import get_ranges_around_pipolbs
-from explore_pipolin.tasks.atts_search import AttDenovoFinder
+from explore_pipolin.tasks.find_atts import AttDenovoFinder
 
 
 class TestAttsDenovoSearch(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestAttsDenovoSearch(unittest.TestCase):
         self.genome.features.add_features(trna1, trna2, trna3, feature_type=FeatureType.TRNA)
 
         finder = AttDenovoFinder(self.genome, 'output_dir')
-        self.assertFalse(finder.is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig1_id)))
-        self.assertTrue(finder.is_att_denovo(MultiLocation([Range(2800, 2850), Range(5000, 5050)], self.contig1_id)))
-        self.assertTrue(finder.is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig2_id)))
-        self.assertFalse(finder.is_att_denovo(MultiLocation([Range(300, 350), Range(3000, 3050)], self.contig2_id)))
+        self.assertFalse(finder._is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig1_id)))
+        self.assertTrue(finder._is_att_denovo(MultiLocation([Range(2800, 2850), Range(5000, 5050)], self.contig1_id)))
+        self.assertTrue(finder._is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig2_id)))
+        self.assertFalse(finder._is_att_denovo(MultiLocation([Range(300, 350), Range(3000, 3050)], self.contig2_id)))

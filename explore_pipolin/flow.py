@@ -5,7 +5,7 @@ from explore_pipolin.tasks.misc import create_genome
 from explore_pipolin.tasks.find_pipolbs import find_pipolbs, are_pipolbs_present, \
     return_result_if_true_else_none
 from explore_pipolin.tasks.find_trnas import find_trnas
-from explore_pipolin.tasks.atts_search import find_atts, find_atts_denovo, are_atts_present
+from explore_pipolin.tasks.find_atts import find_atts, find_atts_denovo, are_atts_present
 from explore_pipolin.tasks.find_pipolins import find_pipolins
 from explore_pipolin.tasks.refine_pipolins import refine_pipolins
 from explore_pipolin.tasks.annotate_pipolins import save_pipolin_sequences, annotate_pipolins

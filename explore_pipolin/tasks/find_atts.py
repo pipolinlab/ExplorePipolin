@@ -7,7 +7,7 @@ from Bio import SeqIO
 from prefect import task, context
 
 from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, Strand, AttFeature, ContigID, \
-    MultiLocation
+    MultiLocation, FeaturesContainer
 from explore_pipolin.tasks.misc import get_ranges_around_pipolbs
 from explore_pipolin.utilities.external_tools import blastn_against_ref_att, blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml, create_seqio_records_dict
@@ -17,33 +17,11 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 @task()
 @genome_specific_logging
 def find_atts(genome: Genome) -> Genome:
-    atts_dir = os.path.join(genome.results_dir, 'atts')
+    atts_dir = os.path.join(genome.work_dir, 'atts')
     os.makedirs(atts_dir, exist_ok=True)
 
     finder = AttFinder(genome=genome, output_dir=atts_dir)
-
-    entries = finder.blast_for_atts()
-    finder.add_att_features_from_blast_entries(entries)
-
-    return genome
-
-
-@task()
-@genome_specific_logging
-def find_atts_denovo(genome: Genome) -> Genome:
-    atts_denovo_dir = os.path.join(genome.results_dir, 'atts_denovo')
-    os.makedirs(atts_denovo_dir, exist_ok=True)
-
-    finder = AttDenovoFinder(genome=genome, output_dir=atts_denovo_dir)
-
-    repeats: List[MultiLocation] = finder.find_repeats()
-    finder.write_repeats(repeats)
-
-    atts_denovo: List[MultiLocation] = [rep for rep in repeats if finder.is_att_denovo(rep)]
-    finder.write_atts_denovo(atts_denovo)
-
-    finder.extend_att_features(atts_denovo)
-    finder.extend_target_trna_features()
+    finder.find_atts()
 
     return genome
 
@@ -53,12 +31,23 @@ class AttFinder:
         self.genome = genome
         self.output_dir = output_dir
 
-    def blast_for_atts(self):
+    def find_atts(self):
         output_file = os.path.join(self.output_dir, self.genome.id + '.fmt5')
+        self._blast_for_atts(output_file)
+        entries = self._read_blast_entries(output_file)
+
+        self._add_att_features(entries)
+
+        self._add_target_trnas_features()
+
+    def _blast_for_atts(self, output_file):
         blastn_against_ref_att(genome_file=self.genome.file, output_file=output_file)
+
+    @staticmethod
+    def _read_blast_entries(output_file):
         return read_blastxml(blast_xml=output_file)
 
-    def add_att_features_from_blast_entries(self, entries):
+    def _add_att_features(self, entries):
         att_id = self.genome.features.get_features(FeatureType.ATT).get_next_att_id()
         for entry in entries:
             att_features = self._create_att_features(entry, att_id)
@@ -72,26 +61,54 @@ class AttFinder:
                                                contig_id=entry.id, genome=self.genome, att_id=att_id))
         return new_att_features
 
+    def _add_target_trnas_features(self):
+        for att in self.genome.features.get_features(FeatureType.ATT):
+            target_trna = self.genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
+            if target_trna is not None:
+                self.genome.features.add_features(target_trna, feature_type=FeatureType.TARGET_TRNA)
+
+
+@task()
+@genome_specific_logging
+def find_atts_denovo(genome: Genome) -> Genome:
+    atts_denovo_dir = os.path.join(genome.work_dir, 'atts_denovo')
+    os.makedirs(atts_denovo_dir, exist_ok=True)
+
+    finder = AttDenovoFinder(genome=genome, output_dir=atts_denovo_dir)
+    finder.find_atts_denovo()
+
+    return genome
+
 
 class AttDenovoFinder:
     def __init__(self, genome: Genome, output_dir: str):
         self.genome = genome
         self.output_dir = output_dir
 
-    def find_repeats(self) -> List[MultiLocation]:
+    def find_atts_denovo(self):
+        repeats: List[MultiLocation] = self._find_repeats()
+        self._write_repeats(repeats)
+
+        atts_denovo: List[MultiLocation] = [rep for rep in repeats if self._is_att_denovo(rep)]
+        self._write_atts_denovo(atts_denovo)
+
+        self._extend_att_features(atts_denovo)
+        self._extend_target_trna_features()
+
+    def _find_repeats(self) -> List[MultiLocation]:
         ranges_around_pipolbs = get_ranges_around_pipolbs(self.genome)
         self._save_seqs_around_pipolbs(ranges_around_pipolbs)
         blast_for_repeats(ranges_around_pipolbs, genome_id=self.genome.id, repeats_dir=self.output_dir)
         paired_repeats: List[PairedLocation] = self._extract_repeats(ranges_around_pipolbs)
         return self._regroup_paired_repeats(paired_repeats)
 
-    def write_repeats(self, repeats: List[MultiLocation]):
+    def _write_repeats(self, repeats: List[MultiLocation]):
         with open(os.path.join(self.output_dir, self.genome.id + '.repeats'), 'w') as ouf:
             for loc in repeats:
                 ranges = [f'({i.start},{i.end})' for i in loc.ranges]
                 print(loc.contig_id, ' '.join(ranges), sep='\t', file=ouf)
 
-    def is_att_denovo(self, repeat: MultiLocation) -> bool:
+    def _is_att_denovo(self, repeat: MultiLocation) -> bool:
         atts_of_contig = self.genome.features.atts_dict()[repeat.contig_id]
         for att in atts_of_contig:
             if repeat.ranges[0].is_overlapping(att):
@@ -103,14 +120,14 @@ class AttDenovoFinder:
                 return True
         return False
 
-    def extend_att_features(self, atts_denovo: List[MultiLocation]):
+    def _extend_att_features(self, atts_denovo: List[MultiLocation]):
         for att in atts_denovo:
             att_id = self.genome.features.get_features(FeatureType.ATT).get_next_att_id()
             for r in att.ranges:
                 new_att = AttFeature(r, Strand.FORWARD, att.contig_id, self.genome, att_id)
                 self.genome.features.add_features(new_att, feature_type=FeatureType.ATT)
 
-    def extend_target_trna_features(self):
+    def _extend_target_trna_features(self):
         target_trnas_dict = self.genome.features.target_trnas_dict()
         for att in self.genome.features.get_features(FeatureType.ATT):
             target_trna = self.genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
@@ -118,7 +135,7 @@ class AttDenovoFinder:
                 if target_trna not in target_trnas_dict[target_trna.contig_id]:
                     self.genome.features.add_features(target_trna, feature_type=FeatureType.TARGET_TRNA)
 
-    def write_atts_denovo(self, atts_denovo: List[MultiLocation]):
+    def _write_atts_denovo(self, atts_denovo: List[MultiLocation]):
         with open(os.path.join(self.output_dir, self.genome.id + '.atts_denovo'), 'w') as ouf:
             for att in atts_denovo:
                 ranges = [f'({i.start},{i.end}' for i in att.ranges]

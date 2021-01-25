@@ -12,7 +12,7 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 @task()
 @genome_specific_logging
 def find_pipolbs(genome: Genome) -> Genome:
-    results_dir = os.path.join(genome.results_dir, 'pipolbs')
+    results_dir = os.path.join(genome.work_dir, 'pipolbs')
     os.makedirs(results_dir, exist_ok=True)
 
     prodigal_output_file = os.path.join(results_dir, genome.id + '.faa')
