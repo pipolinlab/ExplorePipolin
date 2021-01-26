@@ -222,6 +222,8 @@ class PipolinFragment:
 
     features: Sequence[Tuple[Feature, FeatureType]] = ()
 
+    orientation: Strand = Strand.FORWARD
+
     @property
     def start(self):
         return self.location.start

@@ -7,6 +7,7 @@ from explore_pipolin.tasks.find_pipolbs import find_pipolbs, are_pipolbs_present
 from explore_pipolin.tasks.find_trnas import find_trnas
 from explore_pipolin.tasks.find_atts import find_atts, find_atts_denovo, are_atts_present
 from explore_pipolin.tasks.find_pipolins import find_pipolins
+from explore_pipolin.tasks.scaffold_pipolins import scaffold_pipolins
 from explore_pipolin.tasks.refine_pipolins import refine_pipolins
 from explore_pipolin.tasks.annotate_pipolins import save_pipolin_sequences, annotate_pipolins
 from explore_pipolin.tasks.include_atts import include_atts
@@ -38,6 +39,7 @@ def get_flow():
         genome = are_atts_present.map(genome=genome)
 
         pipolins = find_pipolins.map(genome=genome)
+        scaffolded_pipolins, other_pipolins = scaffold_pipolins.map(genome=genome, pipolins=pipolins)
         pipolins = refine_pipolins.map(genome=genome, pipolins=pipolins)
 
         pipolin_seqs_dir = save_pipolin_sequences.map(genome=genome, pipolins=pipolins)
