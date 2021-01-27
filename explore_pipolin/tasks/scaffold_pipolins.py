@@ -1,3 +1,4 @@
+from itertools import combinations, chain
 from typing import Sequence, MutableSequence, List, Tuple, Iterable
 
 from prefect import task
@@ -12,9 +13,10 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
     logger = context.get('logger')
 
-    scaffolded_pipolins: MutableSequence[Pipolin] = []
     single_fragment_pipolins: MutableSequence[Pipolin] = []
     other_pipolins: MutableSequence[Pipolin] = []
+
+    result: MutableSequence[Pipolin] = []
 
     for pipolin in pipolins:
         if len(pipolin.fragments) == 1:
@@ -24,18 +26,21 @@ def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
             logger.warning('>>> Trying to scaffold...')
             scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
             try:
-                scaffolded_pipolins.append(scaffolder.scaffold_pipolin())
+                result.append(scaffolder.scaffold_pipolin())
                 logger.warning('>>> Scaffolding is done!')
             except CannotScaffoldError:
                 logger.warning('>>> Cannot scaffold!')
                 other_pipolins.append(pipolin)
 
-    other_pipolins.extend(_filter_overlapping(single_fragment_pipolins, scaffolded_pipolins))
+    for pipolin in single_fragment_pipolins:
+        scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
+        result.append(scaffolder.inflate_single_fragment_pipolin())
+
     for pipolin in other_pipolins:
         scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
-        scaffolded_pipolins.append(scaffolder.inflate_pipolin())
+        result.append(scaffolder.inflate_unscaffolded_pipolin())
 
-    return scaffolded_pipolins
+    return _filter_overlapping(result)
 
 
 class CannotScaffoldError(Exception):
@@ -158,7 +163,15 @@ class Scaffolder:
     # auxiliary functions
     # -----------------------------------
 
-    def inflate_pipolin(self):
+    def inflate_single_fragment_pipolin(self):
+        atts_and_pipolbs = self._get_fragment_atts_and_pipolbs(self.pipolin.fragments[0])
+
+        left = _BORDER_INFLATE if atts_and_pipolbs[0][1] == FeatureType.ATT else _NO_BORDER_INFLATE
+        right = _BORDER_INFLATE if atts_and_pipolbs[-1][1] == FeatureType.ATT else _NO_BORDER_INFLATE
+        fragment = self._inflate_fragment(self.pipolin.fragments[0], left, right)
+        return Pipolin.from_fragments(fragment)
+
+    def inflate_unscaffolded_pipolin(self):
         inflated_fragments = []
         for fragment in self.pipolin.fragments:
             inflated_fragments.append(self._inflate_fragment(fragment, _NO_BORDER_INFLATE, _NO_BORDER_INFLATE))
@@ -294,17 +307,15 @@ class Scaffolder:
         return [f for f in fragment.features if f[1] != FeatureType.TARGET_TRNA]
 
 
-def _filter_overlapping(pipolins_to_filter, scaffolded_pipolins):
-    filtered = []
-    for ptf in pipolins_to_filter:
-        if not _is_overlapping_scaffolded(ptf, scaffolded_pipolins):
-            filtered.append(ptf)
-    return filtered
-
-
-def _is_overlapping_scaffolded(pipolin, scaffolded_pipolins):
-    for sc_pipolin in scaffolded_pipolins:
-        for fr in sc_pipolin.fragments:
-            if fr.is_overlapping(pipolin.fragments[0]):
-                return True
-    return False
+def _filter_overlapping(pipolins_to_filter: Sequence[Pipolin]) -> Sequence[Pipolin]:
+    filtered = set()
+    for comb in combinations(pipolins_to_filter, 2):
+        p1_features = [chain.from_iterable(f.features) for f in comb[0].fragments]
+        p2_features = [chain.from_iterable(f.features) for f in comb[1].fragments]
+        if set(p1_features) in set(p2_features):
+            filtered.add(comb[1])
+        elif set(p2_features) in set(p1_features):
+            filtered.add(comb[0])
+        else:
+            filtered.update(comb)
+    return list(filtered)
