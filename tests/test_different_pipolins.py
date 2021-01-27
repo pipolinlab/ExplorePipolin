@@ -161,6 +161,8 @@ class TestPipolinFinder(unittest.TestCase):
         f2 = PipolinFragment(Range(100, 200), ContigID('CONTIG_1'), genome)
         found = self.check_found_pipolins(genome, scheme, [f1, f2])
 
+        f1 = PipolinFragment(Range(100, 500), ContigID('CONTIG_0'), genome)
+        f2 = PipolinFragment(Range(0, 200), ContigID('CONTIG_1'), genome)
         self.check_scaffolded_pipolin(genome, scheme, [f1, f2], found[0])
 
     def test_genome5(self):
@@ -182,6 +184,9 @@ class TestPipolinFinder(unittest.TestCase):
         f3 = PipolinFragment(Range(100, 240), ContigID('CONTIG_2'), genome)
         found = self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
+        f1 = PipolinFragment(Range(100, 300), ContigID('CONTIG_0'), genome)
+        f2 = PipolinFragment(Range(0, 300), ContigID('CONTIG_1'), genome)
+        f3 = PipolinFragment(Range(0, 240), ContigID('CONTIG_2'), genome)
         self.check_scaffolded_pipolin(genome, scheme, [f1, f2, f3], found[0])
 
     def test_genome6(self):
@@ -197,6 +202,8 @@ class TestPipolinFinder(unittest.TestCase):
         f2 = PipolinFragment(Range(100, 640), ContigID('CONTIG_1'), genome)
         found = self.check_found_pipolins(genome, scheme, [f1, f2])
 
+        f1 = PipolinFragment(Range(100, 300), ContigID('CONTIG_0'), genome)
+        f2 = PipolinFragment(Range(0, 640), ContigID('CONTIG_1'), genome)
         self.check_scaffolded_pipolin(genome, scheme, [f1, f2], found[0])
 
     def test_genome8(self):
@@ -206,6 +213,8 @@ class TestPipolinFinder(unittest.TestCase):
         f2 = PipolinFragment(Range(100, 440), ContigID('CONTIG_1'), genome)
         found = self.check_found_pipolins(genome, scheme, [f1, f2])
 
+        f1 = PipolinFragment(Range(100, 500), ContigID('CONTIG_0'), genome)
+        f2 = PipolinFragment(Range(0, 440), ContigID('CONTIG_1'), genome)
         self.check_scaffolded_pipolin(genome, scheme, [f1, f2], found[0])
 
     def test_genome9(self):
@@ -215,6 +224,8 @@ class TestPipolinFinder(unittest.TestCase):
         f2 = PipolinFragment(Range(100, 240), ContigID('CONTIG_1'), genome)
         found = self.check_found_pipolins(genome, scheme, [f1, f2])
 
+        f1 = PipolinFragment(Range(100, 700), ContigID('CONTIG_0'), genome)
+        f2 = PipolinFragment(Range(0, 240), ContigID('CONTIG_1'), genome)
         self.check_scaffolded_pipolin(genome, scheme, [f1, f2], found[0])
 
     def test_genome10(self):
@@ -225,6 +236,9 @@ class TestPipolinFinder(unittest.TestCase):
         f3 = PipolinFragment(Range(100, 440), ContigID('CONTIG_2'), genome)
         found = self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
+        f1 = PipolinFragment(Range(100, 300), ContigID('CONTIG_0'), genome)
+        f2 = PipolinFragment(Range(0, 300), ContigID('CONTIG_1'), genome)
+        f3 = PipolinFragment(Range(0, 440), ContigID('CONTIG_2'), genome)
         self.check_scaffolded_pipolin(genome, scheme, [f1, f2, f3], found[0])
 
     def test_genome11(self):
@@ -246,6 +260,9 @@ class TestPipolinFinder(unittest.TestCase):
         f3 = PipolinFragment(Range(100, 240), ContigID('CONTIG_2'), genome)
         found = self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
+        f1 = PipolinFragment(Range(100, 300), ContigID('CONTIG_0'), genome)
+        f2 = PipolinFragment(Range(0, 500), ContigID('CONTIG_1'), genome)
+        f3 = PipolinFragment(Range(0, 240), ContigID('CONTIG_2'), genome)
         self.check_scaffolded_pipolin(genome, scheme, [f1, f2, f3], found[0])
 
     # fails from time to time (it's expected)

@@ -7,7 +7,7 @@ from Bio import SeqIO
 from prefect import task, context
 
 from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, Strand, AttFeature, ContigID, \
-    MultiLocation, FeaturesContainer
+    MultiLocation
 from explore_pipolin.tasks.misc import get_ranges_around_pipolbs
 from explore_pipolin.utilities.external_tools import blastn_against_ref_att, blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml, create_seqio_records_dict

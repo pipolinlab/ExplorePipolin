@@ -3,7 +3,7 @@ from typing import Sequence, MutableSequence, List, Tuple, Iterable
 from prefect import task
 from prefect import context
 
-from explore_pipolin.common import Genome, Pipolin, FeatureType, PipolinFragment, Strand, Feature
+from explore_pipolin.common import Genome, Pipolin, FeatureType, PipolinFragment, Strand, Feature, Range
 from explore_pipolin.utilities.logging import genome_specific_logging
 
 
@@ -13,12 +13,13 @@ def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
     logger = context.get('logger')
 
     scaffolded_pipolins: MutableSequence[Pipolin] = []
+    single_fragment_pipolins: MutableSequence[Pipolin] = []
     other_pipolins: MutableSequence[Pipolin] = []
 
     for pipolin in pipolins:
         if len(pipolin.fragments) == 1:
             logger.warning('>>> Scaffolding is not required!')
-            scaffolded_pipolins.append(pipolin)
+            single_fragment_pipolins.append(pipolin)
         else:
             logger.warning('>>> Trying to scaffold...')
             scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
@@ -29,11 +30,20 @@ def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
                 logger.warning('>>> Cannot scaffold!')
                 other_pipolins.append(pipolin)
 
-    return scaffolded_pipolins, other_pipolins
+    other_pipolins.extend(_filter_overlapping(single_fragment_pipolins, scaffolded_pipolins))
+    for pipolin in other_pipolins:
+        scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
+        scaffolded_pipolins.append(scaffolder.inflate_pipolin())
+
+    return scaffolded_pipolins
 
 
 class CannotScaffoldError(Exception):
     pass
+
+
+_BORDER_INFLATE = 0
+_NO_BORDER_INFLATE = 100000
 
 
 class Scaffolder:
@@ -70,9 +80,9 @@ class Scaffolder:
             left_fragment = self.att_pipolb_att_fragments[0]
 
             ttrna = self._get_ttrna_of_fragment(right_fragment)
-            right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(ttrna, right_fragment, left_fragment)
-
-            return Pipolin.from_fragments(left_fragment, right_fragment)
+            right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(ttrna,
+                                                                                      right_fragment, left_fragment)
+            return self._create_pipolin(left=left_fragment, right=right_fragment)
         else:
             raise CannotScaffoldError
 
@@ -99,7 +109,8 @@ class Scaffolder:
             right_fragment = self._orient_fragment_according_main(left_fragment, right_fragment)
         else:
             raise AssertionError
-        return Pipolin.from_fragments(left_fragment, right_fragment)
+
+        return self._create_pipolin(left=left_fragment, right=right_fragment)
 
     def _att_pipolb_plus_two_atts(self) -> Pipolin:
         # 2) ---att---...---pol---att---...---att(t)---   tRNA is required
@@ -107,8 +118,9 @@ class Scaffolder:
         left_fragment, right_fragment, ttrna = self._define_left_right_fragments_and_ttrna()
         right_fragment, (left_fragment, middle_fragment) = \
             self._orient_fragments_according_ttrna(ttrna, right_fragment, left_fragment, middle_fragment)
+
         if middle_fragment.features[0][1] == FeatureType.PIPOLB:
-            return Pipolin.from_fragments(left_fragment, middle_fragment, right_fragment)
+            return self._create_pipolin(left=left_fragment, middle=middle_fragment, right=right_fragment)
         else:
             raise CannotScaffoldError
 
@@ -131,18 +143,48 @@ class Scaffolder:
         right_fragment = self.att_only_fragments[0]
         ttrna = self._get_ttrna_of_fragment(right_fragment)
         right_fragment, _ = self._orient_fragments_according_ttrna(ttrna, right_fragment)
-        return Pipolin.from_fragments(middle_fragment, right_fragment)
+
+        return self._create_pipolin(middle=middle_fragment, right=right_fragment)
 
     def _pipolb_plus_two_atts(self):
         # 2) ---att---...---pol---...---att(t)---        tRNA is required
         middle_fragment = self._orient_pipolb_only_fragment()
         left_fragment, right_fragment, ttrna = self._define_left_right_fragments_and_ttrna()
         right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(ttrna, right_fragment, left_fragment)
-        return Pipolin.from_fragments(left_fragment, middle_fragment, right_fragment)
 
-    #-----------------------------------
+        return self._create_pipolin(left=left_fragment, middle=middle_fragment, right=right_fragment)
+
+    # -----------------------------------
     # auxiliary functions
-    #-----------------------------------
+    # -----------------------------------
+
+    def inflate_pipolin(self):
+        inflated_fragments = []
+        for fragment in self.pipolin.fragments:
+            inflated_fragments.append(self._inflate_fragment(fragment, _NO_BORDER_INFLATE, _NO_BORDER_INFLATE))
+        return Pipolin.from_fragments(*inflated_fragments)
+
+    def _inflate_fragment(self, fragment: PipolinFragment, left: int, right: int) -> PipolinFragment:
+        contig_length = self.genome.get_contig_by_id(fragment.contig_id).length
+
+        if fragment.orientation == Strand.FORWARD:
+            loc = Range(max(0, fragment.start - left), min(fragment.end + right, contig_length))
+        else:
+            loc = Range(max(0, fragment.start - right), min(fragment.end + left, contig_length))
+
+        new = PipolinFragment(loc, fragment.contig_id, fragment.genome, orientation=fragment.orientation)
+        new_features = new.get_fragment_features_sorted()
+        return PipolinFragment(new.location, new.contig_id, new.genome, new_features, new.orientation)
+
+    def _create_pipolin(self, left=None, middle=None, right=None) -> Pipolin:
+        fragments = []
+        if left is not None:
+            fragments.append(self._inflate_fragment(left, _BORDER_INFLATE, _NO_BORDER_INFLATE))
+        if middle is not None:
+            fragments.append(self._inflate_fragment(middle, _NO_BORDER_INFLATE, _NO_BORDER_INFLATE))
+        if right is not None:
+            fragments.append(self._inflate_fragment(right, _NO_BORDER_INFLATE, _BORDER_INFLATE))
+        return Pipolin.from_fragments(*fragments)
 
     def _orient_pipolb_only_fragment(self) -> PipolinFragment:
         pipolb_only_fragment = self.pipolb_only_fragments[0]
@@ -250,3 +292,19 @@ class Scaffolder:
     @staticmethod
     def _get_fragment_atts_and_pipolbs(fragment: PipolinFragment):
         return [f for f in fragment.features if f[1] != FeatureType.TARGET_TRNA]
+
+
+def _filter_overlapping(pipolins_to_filter, scaffolded_pipolins):
+    filtered = []
+    for ptf in pipolins_to_filter:
+        if not _is_overlapping_scaffolded(ptf, scaffolded_pipolins):
+            filtered.append(ptf)
+    return filtered
+
+
+def _is_overlapping_scaffolded(pipolin, scaffolded_pipolins):
+    for sc_pipolin in scaffolded_pipolins:
+        for fr in sc_pipolin.fragments:
+            if fr.is_overlapping(pipolin.fragments[0]):
+                return True
+    return False
