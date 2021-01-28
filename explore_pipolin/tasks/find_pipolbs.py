@@ -34,7 +34,9 @@ def create_pipolb_entries(hmmsearch_table: str) -> Sequence[Tuple[str, int, int,
     entries = []
     with open(hmmsearch_table) as inf:
         content = list(SearchIO.parse(inf, 'hmmer3-tab'))
-        if len(content) != 1:
+        if len(content) == 0:
+            return entries
+        elif len(content) != 1:
             raise AssertionError(f'More than a single query in {hmmsearch_table}! Should be only one.')
         for hit in content[0]:
             name = '_'.join(hit.id.split(sep='_')[:-1])

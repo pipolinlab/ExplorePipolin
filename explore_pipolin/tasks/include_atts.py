@@ -65,10 +65,10 @@ def _generate_att_seq_features(record_format: str, pipolin: Pipolin):
             att_start, att_end = (att.start - fragment_shift), (att.end - fragment_shift)
             if record_format == 'gb':
                 att_feature = _create_gb_att_seq_feature(start=att_start, end=att_end,
-                                                         strand=att.strand, contig_id=fragment.contig_id)
+                                                         strand=att.strand, contig_id=att.contig_id)
             elif record_format == 'gff':
                 att_feature = _create_gff_att_seq_feature(start=att_start, end=att_end,
-                                                          strand=att.strand, contig_id=fragment.contig_id)
+                                                          strand=att.strand, contig_id=att.contig_id)
             else:
                 raise AssertionError
 

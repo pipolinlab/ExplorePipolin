@@ -156,8 +156,9 @@ class FeatureSet(Set[Feature]):
     def first(self) -> Feature:
         return next(iter(self))
 
-    def get_next_att_id(self):
-        return max(self, key=lambda x: x.att_id, default=0) + 1
+    def get_next_att_id(self) -> int:
+        att_ids = [i.att_id for i in self]
+        return max(att_ids, default=0) + 1
 
     def get_atts_dict_by_att_id(self: Set[AttFeature]) -> Mapping[int, MutableSequence[AttFeature]]:
         atts_by_att_id = defaultdict(list)

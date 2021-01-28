@@ -28,8 +28,8 @@ def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
             try:
                 result.append(scaffolder.scaffold_pipolin())
                 logger.warning('>>> Scaffolding is done!')
-            except CannotScaffoldError:
-                logger.warning('>>> Cannot scaffold!')
+            except CannotScaffoldError as e:
+                logger.warning(f'>>> Cannot scaffold! {e}')
                 other_pipolins.append(pipolin)
 
     for pipolin in single_fragment_pipolins:
@@ -39,8 +39,7 @@ def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
     for pipolin in other_pipolins:
         scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
         result.append(scaffolder.inflate_unscaffolded_pipolin())
-
-    return _filter_overlapping(result)
+    return _filter_overlapping(result) if len(result) > 1 else result
 
 
 class CannotScaffoldError(Exception):
@@ -84,12 +83,15 @@ class Scaffolder:
             right_fragment = self.att_only_fragments[0]
             left_fragment = self.att_pipolb_att_fragments[0]
 
-            ttrna = self._get_ttrna_of_fragment(right_fragment)
+            try:
+                ttrna = self._get_ttrna_of_fragment(right_fragment)
+            except CannotScaffoldError:   # let's leave it as ---att---pol---att---
+                return Pipolin.from_fragments(self._inflate_fragment(left_fragment, _BORDER_INFLATE, _BORDER_INFLATE))
             right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(ttrna,
                                                                                       right_fragment, left_fragment)
             return self._create_pipolin(left=left_fragment, right=right_fragment)
         else:
-            raise CannotScaffoldError
+            raise CannotScaffoldError('---att---pol---att---...---att---...---att---...')
 
     def _att_pipolb_plus_atts(self) -> Pipolin:
         # we can scaffold the cases:
@@ -124,10 +126,15 @@ class Scaffolder:
         right_fragment, (left_fragment, middle_fragment) = \
             self._orient_fragments_according_ttrna(ttrna, right_fragment, left_fragment, middle_fragment)
 
-        if middle_fragment.features[0][1] == FeatureType.PIPOLB:
+        if middle_fragment.orientation == Strand.FORWARD:
+            _is_pipolb_left = middle_fragment.features[0][1] == FeatureType.PIPOLB
+        else:
+            _is_pipolb_left = middle_fragment.features[-1][1] == FeatureType.PIPOLB
+
+        if _is_pipolb_left:
             return self._create_pipolin(left=left_fragment, middle=middle_fragment, right=right_fragment)
         else:
-            raise CannotScaffoldError
+            raise CannotScaffoldError('---att---...---att---pol---...---att(t)---')
 
     def _pipolb_plus_atts(self) -> Pipolin:
         # we can scaffold the cases, assuming that pipolb is on the plus strand:
@@ -297,7 +304,8 @@ class Scaffolder:
             elif all([i[1] == FeatureType.ATT for i in fragment_atts_and_pipolbs]):
                 self.att_only_fragments.append(fragment)
 
-            elif fragment.features[0][1] == FeatureType.ATT and fragment.features[-1][1] == FeatureType.ATT:
+            elif fragment_atts_and_pipolbs[0][1] == FeatureType.ATT and \
+                    fragment_atts_and_pipolbs[-1][1] == FeatureType.ATT:
                 self.att_pipolb_att_fragments.append(fragment)
             else:
                 self.att_pipolb_fragments.append(fragment)

@@ -42,7 +42,7 @@ def get_flow():
 
         pipolin_seqs_dir = save_pipolin_sequences.map(genome=genome, pipolins=scaffolded_pipolins)
         prokka_dir = annotate_pipolins.map(genome=genome, pipolins_dir=pipolin_seqs_dir)
-        results_dir = include_atts.map(genome=genome, prokka_dir=prokka_dir, pipolins=pipolins)
+        results_dir = include_atts.map(genome=genome, prokka_dir=prokka_dir, pipolins=scaffolded_pipolins)
         with case(add_colours, True):
             easyfig_add_colours.map(genome=genome, in_dir=results_dir)
 

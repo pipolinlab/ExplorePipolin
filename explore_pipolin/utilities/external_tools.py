@@ -83,7 +83,7 @@ _PIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/p
 
 
 def run_hmmsearch(proteins_file: str, output_file: str):
-    subprocess.run(['hmmsearch', '--tblout', output_file, '-E', '0.01', _PIPOLB_HMM_PROFILE, proteins_file],
+    subprocess.run(['hmmsearch', '--tblout', output_file, '-E', '1e-50', _PIPOLB_HMM_PROFILE, proteins_file],
                    stdout=subprocess.DEVNULL)
 
 
@@ -101,7 +101,7 @@ def blast_for_repeats(range_pairs: List[PairedLocation], genome_id: str, repeats
         with open(os.path.join(repeats_dir, genome_id + f'_{i}.fmt5'), 'w') as ouf:
             subprocess.run(['blastn', '-query', os.path.join(repeats_dir, genome_id + f'_{i}.left'),
                             '-subject', os.path.join(repeats_dir, genome_id + f'_{i}.right'),
-                            '-outfmt', '5', '-perc_identity', '90', '-word_size', '6',
+                            '-outfmt', '5', '-perc_identity', '85', '-word_size', '6',
                             '-strand', 'plus'], stdout=ouf)
 
 

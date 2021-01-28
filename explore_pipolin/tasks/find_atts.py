@@ -121,11 +121,25 @@ class AttDenovoFinder:
         return False
 
     def _extend_att_features(self, atts_denovo: List[MultiLocation]):
+        atts_dict = self.genome.features.get_features(FeatureType.ATT).get_atts_dict_by_att_id()
         for att in atts_denovo:
-            att_id = self.genome.features.get_features(FeatureType.ATT).get_next_att_id()
+            new_att_id = None
             for r in att.ranges:
-                new_att = AttFeature(r, Strand.FORWARD, att.contig_id, self.genome, att_id)
-                self.genome.features.add_features(new_att, feature_type=FeatureType.ATT)
+                for att_id, atts in atts_dict.items():
+                    if r.is_overlapping_any(atts):
+                        new_att_id = att_id
+
+            if new_att_id is None:
+                new_att_id = self.genome.features.get_features(FeatureType.ATT).get_next_att_id()
+
+            for r in att.ranges:
+                if new_att_id in atts_dict:
+                    if not r.is_overlapping_any(atts_dict[new_att_id]):
+                        new_att = AttFeature(r, Strand.FORWARD, att.contig_id, self.genome, new_att_id)
+                        self.genome.features.add_features(new_att, feature_type=FeatureType.ATT)
+                else:
+                    new_att = AttFeature(r, Strand.FORWARD, att.contig_id, self.genome, new_att_id)
+                    self.genome.features.add_features(new_att, feature_type=FeatureType.ATT)
 
     def _extend_target_trna_features(self):
         target_trnas_dict = self.genome.features.target_trnas_dict()

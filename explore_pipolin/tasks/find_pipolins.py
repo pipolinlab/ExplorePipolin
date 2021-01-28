@@ -38,7 +38,6 @@ class PipolinFinder:
         candidates = [PipolinCandidate(i, y) for i, y in zip(pipolin_candidates, scores)]
 
         best_pipolins = self._find_best_non_overlapping(candidates)
-
         return best_pipolins
 
     def _find_best_non_overlapping(self, candidates) -> Sequence[Pipolin]:
