@@ -1,9 +1,7 @@
 import unittest
-from typing import List
 
-from explore_pipolin.common import Contig, Genome, Feature, Range, Strand, FeatureType, PairedLocation, AttFeature, \
+from explore_pipolin.common import Contig, Genome, Feature, Range, Strand, FeatureType, AttFeature, \
     ContigID, MultiLocation
-from explore_pipolin.tasks.misc import get_ranges_around_pipolbs
 from explore_pipolin.tasks.find_atts import AttDenovoFinder
 
 
@@ -13,22 +11,13 @@ class TestAttsDenovoSearch(unittest.TestCase):
         self.contig2_id = ContigID('CONTIG_2')
         contig1 = Contig(self.contig1_id, 1000000)
         contig2 = Contig(self.contig2_id, 10000)
-        self.genome = Genome('GENOME_ID', 'genome.fa', 'output/genome', contigs=[contig1, contig2])
+        self.genome = Genome('GENOME_ID', 'genome.fa', contigs=[contig1, contig2])
 
         pipolb1 = Feature(Range(100, 1100), Strand.FORWARD, self.contig1_id, self.genome)
         pipolb2 = Feature(Range(3000, 4000), Strand.FORWARD, self.contig1_id, self.genome)
         pipolb3 = Feature(Range(500, 1500), Strand.REVERSE, self.contig2_id, self.genome)
 
         self.genome.features.add_features(pipolb1, pipolb2, pipolb3, feature_type=FeatureType.PIPOLB)
-
-    def test_get_ranges_around_pipolbs(self):
-        range_pair1 = PairedLocation(Range(0, 100), Range(1100, 1100 + 100000), self.contig1_id)
-        range_pair2 = PairedLocation(Range(0, 3000), Range(4000, 4000 + 100000), self.contig1_id)
-        range_pair3 = PairedLocation(Range(0, 100), Range(4000, 4000 + 100000), self.contig1_id)
-        range_pair4 = PairedLocation(Range(0, 500), Range(1500, 10000), self.contig2_id)
-
-        obt: List[PairedLocation] = get_ranges_around_pipolbs(self.genome)
-        self.assertCountEqual([range_pair1, range_pair2, range_pair3, range_pair4], obt)
 
     def test_is_att_denovo(self):
         att1 = AttFeature(Range(30, 70), Strand.REVERSE, self.contig1_id, self.genome, 0)

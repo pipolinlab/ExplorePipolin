@@ -12,8 +12,8 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin]):
-    pipolins_dir = os.path.join(genome.work_dir, 'pipolins')
+def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin], out_dir):
+    pipolins_dir = os.path.join(out_dir, 'pipolins')
     os.makedirs(pipolins_dir, exist_ok=True)
 
     genome_dict = create_seqio_records_dict(file=genome.file, file_format='fasta')
@@ -33,7 +33,7 @@ def create_fragment_record(fragment: PipolinFragment, genome_dict):
 @task()
 @genome_specific_logging
 def annotate_pipolins(genome: Genome, pipolins_dir):
-    prokka_results_dir = os.path.join(genome.work_dir, 'prokka')
+    prokka_results_dir = os.path.join(os.path.dirname(pipolins_dir), 'prokka')
     os.makedirs(prokka_results_dir, exist_ok=True)
 
     for fasta_file in os.listdir(pipolins_dir):

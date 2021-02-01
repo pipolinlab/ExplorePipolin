@@ -8,7 +8,6 @@ from prefect import task, context
 
 from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, Strand, AttFeature, ContigID, \
     MultiLocation
-from explore_pipolin.tasks.misc import get_ranges_around_pipolbs
 from explore_pipolin.utilities.external_tools import blastn_against_ref_att, blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml, create_seqio_records_dict
 from explore_pipolin.utilities.logging import genome_specific_logging
@@ -16,8 +15,8 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def find_atts(genome: Genome) -> Genome:
-    atts_dir = os.path.join(genome.work_dir, 'atts')
+def find_atts(genome: Genome, out_dir) -> Genome:
+    atts_dir = os.path.join(out_dir, 'atts')
     os.makedirs(atts_dir, exist_ok=True)
 
     finder = AttFinder(genome=genome, output_dir=atts_dir)
@@ -70,8 +69,8 @@ class AttFinder:
 
 @task()
 @genome_specific_logging
-def find_atts_denovo(genome: Genome) -> Genome:
-    atts_denovo_dir = os.path.join(genome.work_dir, 'atts_denovo')
+def find_atts_denovo(genome: Genome, out_dir) -> Genome:
+    atts_denovo_dir = os.path.join(out_dir, 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
     finder = AttDenovoFinder(genome=genome, output_dir=atts_denovo_dir)
@@ -96,7 +95,7 @@ class AttDenovoFinder:
         self._extend_target_trna_features()
 
     def _find_repeats(self) -> List[MultiLocation]:
-        ranges_around_pipolbs = get_ranges_around_pipolbs(self.genome)
+        ranges_around_pipolbs = self._get_ranges_around_pipolbs()
         self._save_seqs_around_pipolbs(ranges_around_pipolbs)
         blast_for_repeats(ranges_around_pipolbs, genome_id=self.genome.id, repeats_dir=self.output_dir)
         paired_repeats: List[PairedLocation] = self._extract_repeats(ranges_around_pipolbs)
@@ -198,6 +197,19 @@ class AttDenovoFinder:
                 result[repeat.contig_id].append(MultiLocation(
                     ranges=[repeat.right_range, repeat.left_range], contig_id=repeat.contig_id))
         return list(chain(*result.values()))
+
+    def _get_ranges_around_pipolbs(self) -> List[PairedLocation]:
+        pipolbs_dict_by_contig = self.genome.features.pipolbs_dict()
+
+        range_pairs = []
+        for contig_id, pipolbs in pipolbs_dict_by_contig.items():
+            contig_length = self.genome.get_contig_by_id(contig_id=contig_id).length
+
+            for pipolb in pipolbs:
+                search_range = pipolb.location.inflate(100000, _max=contig_length)
+                range_pairs.append(PairedLocation(Range(search_range.start, pipolb.start),
+                                                  Range(pipolb.end, search_range.end), ContigID(contig_id)))
+        return range_pairs
 
 
 @task()

@@ -1,19 +1,9 @@
-from typing import MutableMapping, MutableSequence
+from typing import MutableMapping
 
 from BCBio import GFF
 from Bio import SeqIO, SearchIO
 
-from explore_pipolin.common import Contig, ContigID
-
 SeqIORecords = MutableMapping[str, SeqIO.SeqRecord]
-
-
-def read_genome_contigs_from_file(genome_file: str) -> MutableSequence[Contig]:
-    genome_dict = create_seqio_records_dict(file=genome_file, file_format='fasta')
-    contigs = []
-    for key, value in genome_dict.items():
-        contigs.append(Contig(contig_id=ContigID(key), contig_length=len(value.seq)))
-    return contigs
 
 
 def create_seqio_records_dict(file, file_format) -> SeqIORecords:
@@ -22,6 +12,8 @@ def create_seqio_records_dict(file, file_format) -> SeqIORecords:
         raise AssertionError(f'Unknown file format: {file_format}! Only genbank or fasta formats are acceptable.')
 
     records = SeqIO.to_dict(SeqIO.parse(file, format=file_format))
+    if len(records) == 0:
+        raise AssertionError(f'Empty file {file}!')
     return records
 
 

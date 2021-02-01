@@ -30,7 +30,7 @@ def _create_genome_with_contigs(contigs_schemes: Sequence[str]) -> Genome:
     contigs = []
     for i in range(len(contigs_schemes)):
         contigs.append(Contig(ContigID(f'CONTIG_{i}'), len(contigs_schemes[i]) // 3 * 100))
-    genome = Genome(_GENOME_ID, _GENOME_FILE, 'output/' + _GENOME_ID, contigs)
+    genome = Genome(_GENOME_ID, _GENOME_FILE, contigs)
     return genome
 
 

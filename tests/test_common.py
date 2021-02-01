@@ -2,7 +2,6 @@ import unittest
 
 from explore_pipolin.common import Strand, Contig, Genome, Feature, PipolinFragment, Range, \
     FeaturesContainer, FeatureType, ContigID
-from explore_pipolin.common import define_genome_id
 
 
 class TestOrientation(unittest.TestCase):
@@ -29,10 +28,10 @@ class SetUpGenome(unittest.TestCase):
         self.long_contig_id = ContigID('boo')
         self.long_contig = Contig(contig_id=self.long_contig_id, contig_length=500)
 
-        self.single_contig_genome = Genome(genome_id='bar', genome_file='dir/bar.fa', work_dir='output/bar',
+        self.single_contig_genome = Genome(genome_id='bar', genome_file='dir/bar.fa',
                                            contigs=[self.short_contig])
 
-        self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa', work_dir='output/car',
+        self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa',
                                           contigs=[self.short_contig, self.long_contig])
 
         self.long_contig_feature1 = Feature(Range(123, 231), strand=Strand.REVERSE,
@@ -136,15 +135,6 @@ class TestFeatureClasses(SetUpGenome):
 
         self.features.add_features(self.short_contig_feature, feature_type=FeatureType.PIPOLB)
         self.assertFalse(self.features.is_on_the_same_contig(FeatureType.TRNA, FeatureType.PIPOLB))
-
-
-class TestOthers(SetUpGenome):
-    def test_define_genome_id(self):
-        self.assertEqual(define_genome_id('my_genome.fa'), 'my_genome')
-
-    def test_too_long_genome_id(self):
-        with self.assertRaises(AssertionError):
-            define_genome_id('thisisverylongfilebasename.fa')
 
 
 if __name__ == '__main__':

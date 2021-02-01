@@ -1,4 +1,3 @@
-import os
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -37,10 +36,9 @@ class Contig:
 
 
 class Genome:
-    def __init__(self, genome_id: str, genome_file: str, work_dir: str, contigs: MutableSequence[Contig]):
+    def __init__(self, genome_id: str, genome_file: str, contigs: MutableSequence[Contig]):
         self.id = genome_id
         self.file = genome_file
-        self.work_dir = work_dir
         self.contigs = contigs
         self.features: FeaturesContainer = FeaturesContainer()
 
@@ -267,17 +265,3 @@ class Pipolin:
         if len(contigs) != len(fragments):
             raise AssertionError('Two fragments from the same contig!')
         return Pipolin(fragments)
-
-
-def define_genome_id(genome_path: str) -> str:
-    genome_id = os.path.splitext(os.path.basename(genome_path))[0]
-    _check_genome_id_length(genome_id)
-    return genome_id
-
-
-def _check_genome_id_length(genome_id: str) -> None:
-    max_length_allowed = 16
-    if len(genome_id) > max_length_allowed:
-        raise AssertionError('Genome file basename is going to be used as a genome identifier. '
-                             f'Due to Biopython restrictions, it cannot be longer than {max_length_allowed} '
-                             f'characters. Please, rename the file, so that its basename does not exceed the limit!')

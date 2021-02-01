@@ -11,8 +11,8 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def find_trnas(genome: Genome) -> Genome:
-    aragorn_results_dir = os.path.join(genome.work_dir, 'trnas')
+def find_trnas(genome: Genome, out_dir) -> Genome:
+    aragorn_results_dir = os.path.join(out_dir, 'trnas')
     os.makedirs(aragorn_results_dir, exist_ok=True)
 
     output_file = os.path.join(aragorn_results_dir, genome.id + '.batch')
