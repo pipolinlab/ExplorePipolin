@@ -38,8 +38,7 @@ def annotate_pipolins(genome: Genome, pipolins_dir):
 
     for fasta_file in os.listdir(pipolins_dir):
         if fasta_file.startswith(genome.id):
-            prefix = os.path.splitext(fasta_file)[0]
             input_file = os.path.join(pipolins_dir, fasta_file)
-            run_prokka(prefix=prefix, input_file=input_file, prokka_results_dir=prokka_results_dir)
+            run_prokka(input_file=input_file, prokka_results_dir=prokka_results_dir)
 
     return prokka_results_dir

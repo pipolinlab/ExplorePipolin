@@ -97,7 +97,7 @@ class AttDenovoFinder:
     def _find_repeats(self) -> List[MultiLocation]:
         ranges_around_pipolbs = self._get_ranges_around_pipolbs()
         self._save_seqs_around_pipolbs(ranges_around_pipolbs)
-        blast_for_repeats(ranges_around_pipolbs, genome_id=self.genome.id, repeats_dir=self.output_dir)
+        blast_for_repeats(genome_id=self.genome.id, repeats_dir=self.output_dir)
         paired_repeats: List[PairedLocation] = self._extract_repeats(ranges_around_pipolbs)
         return self._regroup_paired_repeats(paired_repeats)
 
