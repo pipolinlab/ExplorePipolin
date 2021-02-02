@@ -66,11 +66,10 @@ class Range:
     def shift(self, size: int):
         return Range(self.start + size, self.end + size)
 
-    def inflate(self, size: int, _min: int = 0, _max: int = None):
-        return Range(max(_min, self.start - size), self.end + size if _max is None else min(_max, self.end + size))
-
-    def clamp(self, min_coord: int, max_coord: int):
-        return Range(start=max(min_coord, self.start), end=min(max_coord, self.end))
+    def inflate_within_contig(self, size: int, _min: int = 0, _contig_length: int = None):
+        start = max(_min, self.start - size)
+        end = (self.end + size) if _contig_length is None else min(_contig_length, self.end + size)
+        return Range(start, end)
 
     def is_overlapping(self, other) -> bool:
         max_start = max(self.start, other.start)

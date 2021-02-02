@@ -1,10 +1,10 @@
 import os
 from collections import defaultdict
-from typing import MutableMapping, MutableSequence
+from typing import MutableMapping, MutableSequence, Tuple
 
 from prefect import task
 
-from explore_pipolin.common import Genome, Feature, Range, FeatureType, Strand
+from explore_pipolin.common import Genome, Feature, Range, FeatureType, Strand, ContigID
 from explore_pipolin.utilities.external_tools import run_aragorn
 from explore_pipolin.utilities.logging import genome_specific_logging
 
@@ -24,26 +24,19 @@ def find_trnas(genome: Genome, out_dir) -> Genome:
     return genome
 
 
-def add_trna_features(entries, genome: Genome):
-    for contig_id, hits in entries.items():
-        for hit in hits:
-            # "correct strange coordinates in -l mode" as in Prokka
-            start = max(hit[0], 1)
-            end = min(hit[1], genome.get_contig_by_id(contig_id=contig_id).length)
-            trna_feature = Feature(location=Range(start=start, end=end),
-                                   strand=hit[2], contig_id=contig_id, genome=genome)
-            genome.features.add_features(trna_feature, feature_type=FeatureType.TRNA)
-
-
-def read_aragorn_batch(aragorn_batch) -> MutableMapping[str, MutableSequence]:
+def read_aragorn_batch(aragorn_batch) -> MutableMapping[ContigID, MutableSequence[Tuple[int, int, Strand]]]:
     entries = defaultdict(list)
     with open(aragorn_batch) as inf:
         for line in inf:
             if line[0] == '>':
-                entry = line.strip().split(sep=' ')[0][1:]
+                # >FHEK01000001.1 Staphylococcus aureus strain st2898 ...
+                entry = ContigID(line.strip().split(sep=' ')[0][1:])
             else:
                 hit = line.split(sep='\t')
                 if len(hit) > 1:
+                    #                                           \t    \t
+                    # 1   tRNA-Arg              c[175742,175814]	34  	(ccg)
+                    # 2   tmRNA                  [193736,194094]	94,129	GKSNNNFAVAA*
                     coordinates = hit[0].split(sep=' ')[-1]
                     if coordinates[0] == 'c':
                         start, end = (int(i) for i in coordinates[2:-1].split(sep=','))
@@ -53,3 +46,16 @@ def read_aragorn_batch(aragorn_batch) -> MutableMapping[str, MutableSequence]:
                         entries[entry].append((start, end, Strand.FORWARD))
 
     return entries
+
+
+def add_trna_features(entries: MutableMapping[ContigID, MutableSequence[Tuple[int, int, Strand]]], genome: Genome):
+    for contig_id, hits in entries.items():
+        for hit in hits:
+
+            # "correct strange coordinates in -l mode" as it's done in Prokka
+            start = max(hit[0], 1)
+            end = min(hit[1], genome.get_contig_by_id(contig_id=contig_id).length)
+
+            trna_feature = Feature(location=Range(start=start, end=end),
+                                   strand=hit[2], contig_id=contig_id, genome=genome)
+            genome.features.add_features(trna_feature, feature_type=FeatureType.TRNA)

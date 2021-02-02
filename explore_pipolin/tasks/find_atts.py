@@ -11,6 +11,7 @@ from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, S
 from explore_pipolin.utilities.external_tools import blastn_against_ref_att, blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml, create_seqio_records_dict
 from explore_pipolin.utilities.logging import genome_specific_logging
+from explore_pipolin.tasks.scaffold_pipolins import _NO_BORDER_INFLATE
 
 
 @task()
@@ -32,19 +33,12 @@ class AttFinder:
 
     def find_atts(self):
         output_file = os.path.join(self.output_dir, self.genome.id + '.fmt5')
-        self._blast_for_atts(output_file)
-        entries = self._read_blast_entries(output_file)
+        blastn_against_ref_att(genome_file=self.genome.file, output_file=output_file)
+        entries = read_blastxml(blast_xml=output_file)
 
         self._add_att_features(entries)
 
         self._add_target_trnas_features()
-
-    def _blast_for_atts(self, output_file):
-        blastn_against_ref_att(genome_file=self.genome.file, output_file=output_file)
-
-    @staticmethod
-    def _read_blast_entries(output_file):
-        return read_blastxml(blast_xml=output_file)
 
     def _add_att_features(self, entries):
         att_id = self.genome.features.get_features(FeatureType.ATT).get_next_att_id()
@@ -53,12 +47,12 @@ class AttFinder:
             self.genome.features.add_features(*att_features, feature_type=FeatureType.ATT)
 
     def _create_att_features(self, entry, att_id) -> Sequence[AttFeature]:
-        new_att_features = []
+        att_features = []
         for hit in entry:
-            new_att_features.append(AttFeature(location=Range(start=hit.hit_start, end=hit.hit_end),
-                                               strand=Strand.from_pm_one_encoding(hit.hit_strand),
-                                               contig_id=entry.id, genome=self.genome, att_id=att_id))
-        return new_att_features
+            att_features.append(AttFeature(location=Range(start=hit.hit_start, end=hit.hit_end),
+                                           strand=Strand.from_pm_one_encoding(hit.hit_strand),
+                                           contig_id=entry.id, genome=self.genome, att_id=att_id))
+        return att_features
 
     def _add_target_trnas_features(self):
         for att in self.genome.features.get_features(FeatureType.ATT):
@@ -119,6 +113,12 @@ class AttDenovoFinder:
                 return True
         return False
 
+    def _write_atts_denovo(self, atts_denovo: List[MultiLocation]):
+        with open(os.path.join(self.output_dir, self.genome.id + '.atts_denovo'), 'w') as ouf:
+            for att in atts_denovo:
+                ranges = [f'({i.start},{i.end})' for i in att.ranges]
+                print(att.contig_id, ' '.join(ranges), sep='\t', file=ouf)
+
     def _extend_att_features(self, atts_denovo: List[MultiLocation]):
         atts_dict = self.genome.features.get_features(FeatureType.ATT).get_atts_dict_by_att_id()
         for att in atts_denovo:
@@ -148,11 +148,20 @@ class AttDenovoFinder:
                 if target_trna not in target_trnas_dict[target_trna.contig_id]:
                     self.genome.features.add_features(target_trna, feature_type=FeatureType.TARGET_TRNA)
 
-    def _write_atts_denovo(self, atts_denovo: List[MultiLocation]):
-        with open(os.path.join(self.output_dir, self.genome.id + '.atts_denovo'), 'w') as ouf:
-            for att in atts_denovo:
-                ranges = [f'({i.start},{i.end}' for i in att.ranges]
-                print(att.contig_id, ' '.join(ranges), sep='\t', file=ouf)
+    def _get_ranges_around_pipolbs(self) -> List[PairedLocation]:
+        pipolbs_dict_by_contig = self.genome.features.pipolbs_dict()
+
+        range_pairs = []
+        for contig_id, pipolbs in pipolbs_dict_by_contig.items():
+            contig_length = self.genome.get_contig_by_id(contig_id=contig_id).length
+
+            for pipolb in pipolbs:
+                search_range = pipolb.location.inflate_within_contig(
+                    _NO_BORDER_INFLATE, _contig_length=contig_length
+                )
+                range_pairs.append(PairedLocation(Range(search_range.start, pipolb.start),
+                                                  Range(pipolb.end, search_range.end), ContigID(contig_id)))
+        return range_pairs
 
     def _save_seqs_around_pipolbs(self, ranges_around_pipolbs: List[PairedLocation]):
         genome_dict = create_seqio_records_dict(file=self.genome.file, file_format='fasta')
@@ -165,8 +174,8 @@ class AttDenovoFinder:
             SeqIO.write(sequences=right_seq, format='fasta',
                         handle=os.path.join(self.output_dir, self.genome.id + f'_{i}.right'))
 
-    def _extract_repeats(self, ranges_around_pipolbs: List[PairedLocation]) -> List[PairedLocation]:
-        repeats = []
+    def _extract_repeats(self, ranges_around_pipolbs: List[PairedLocation]):
+        repeats: List[PairedLocation] = []
         for i, range_pair in enumerate(ranges_around_pipolbs):
             repeats_xml = read_blastxml(os.path.join(self.output_dir, self.genome.id + f'_{i}.fmt5'))
             for entry in repeats_xml:
@@ -197,19 +206,6 @@ class AttDenovoFinder:
                 result[repeat.contig_id].append(MultiLocation(
                     ranges=[repeat.right_range, repeat.left_range], contig_id=repeat.contig_id))
         return list(chain(*result.values()))
-
-    def _get_ranges_around_pipolbs(self) -> List[PairedLocation]:
-        pipolbs_dict_by_contig = self.genome.features.pipolbs_dict()
-
-        range_pairs = []
-        for contig_id, pipolbs in pipolbs_dict_by_contig.items():
-            contig_length = self.genome.get_contig_by_id(contig_id=contig_id).length
-
-            for pipolb in pipolbs:
-                search_range = pipolb.location.inflate(100000, _max=contig_length)
-                range_pairs.append(PairedLocation(Range(search_range.start, pipolb.start),
-                                                  Range(pipolb.end, search_range.end), ContigID(contig_id)))
-        return range_pairs
 
 
 @task()

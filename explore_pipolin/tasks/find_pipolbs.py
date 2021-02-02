@@ -19,13 +19,9 @@ def find_pipolbs(genome: Genome, out_dir) -> Genome:
     run_prodigal(genome_file=genome.file, output_file=prodigal_output_file)
     hmm_output_file = os.path.join(results_dir, genome.id + '.tbl')
     run_hmmsearch(prodigal_output_file, hmm_output_file)
-    entries_pipolb = create_pipolb_entries(hmmsearch_table=hmm_output_file)
+    entries = create_pipolb_entries(hmmsearch_table=hmm_output_file)
 
-    for entry in entries_pipolb:
-        feature = Feature(location=Range(start=entry[1], end=entry[2]),
-                          strand=Strand.from_pm_one_encoding(entry[3]),
-                          contig_id=ContigID(entry[0]), genome=genome)
-        genome.features.add_features(feature, feature_type=FeatureType.PIPOLB)
+    add_pipolb_features(entries, genome)
 
     return genome
 
@@ -44,6 +40,14 @@ def create_pipolb_entries(hmmsearch_table: str) -> Sequence[Tuple[str, int, int,
             entries.append((name, int(description[1]), int(description[3]), int(description[5])))
 
     return entries
+
+
+def add_pipolb_features(entries, genome):
+    for entry in entries:
+        feature = Feature(location=Range(start=entry[1], end=entry[2]),
+                          strand=Strand.from_pm_one_encoding(entry[3]),
+                          contig_id=ContigID(entry[0]), genome=genome)
+        genome.features.add_features(feature, feature_type=FeatureType.PIPOLB)
 
 
 @task()
