@@ -112,8 +112,6 @@ def run_prokka(input_file, prokka_results_dir):
     subprocess.check_call(['prokka', '--outdir', prokka_results_dir, '--prefix', prefix,
                           # TODO: number of CPUs is hardcoded. To pass it as an argument?
                            '--rawproduct', '--cdsrnaolap', '--cpus', '4',
-                           # '--locustag', prefix,
-                           # as we have separate fragments now, let's keep original contig names
                            '--rfam', '--proteins', _PROTEINS, '--force', input_file],
                           stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 

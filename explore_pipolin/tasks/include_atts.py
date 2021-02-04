@@ -1,5 +1,4 @@
 import os
-from random import randrange
 from typing import MutableSequence, Tuple, Sequence
 
 from Bio.SeqFeature import SeqFeature, FeatureLocation
@@ -30,6 +29,10 @@ def include_atts(genome: Genome, prokka_dir, pipolins: Sequence[Pipolin]):
 
                 include_atts_into_gb(gb_records=gb_records, pipolin=cur_pipolin)
 
+                single_record = create_single_gb_record(gb_records=gb_records, pipolin=cur_pipolin)
+                output_file_single_record = os.path.join(results_dir, prokka_file + '.single_record')
+                write_genbank_records(gb_records=single_record, output_file=output_file_single_record)
+
                 output_file = os.path.join(results_dir, prokka_file)
                 write_genbank_records(gb_records=gb_records, output_file=output_file)
 
@@ -41,6 +44,35 @@ def include_atts(genome: Genome, prokka_dir, pipolins: Sequence[Pipolin]):
                 write_gff_records(gff_records=gff_records, output_file=output_file)
 
     return results_dir
+
+
+def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin) -> SeqIORecords:
+    record = revcompl_if_reverse(gb_records[pipolin.fragments[0].contig_id],
+                                 pipolin.fragments[0].orientation)
+    if len(pipolin.fragments) > 1:
+        for fragment in pipolin.fragments[1:]:
+            record += SeqRecord(seq='N' * 100)
+            del gb_records[fragment.contig_id].features[0]   # source feature
+            record += revcompl_if_reverse(gb_records[fragment.contig_id], fragment.orientation)
+
+    genome_id = pipolin.fragments[0].genome.id
+    record.id, record.name, record.description = genome_id, genome_id, genome_id
+
+    old_source = record.features[0]
+    new_source = SeqFeature(FeatureLocation(0, len(record), 1), type=old_source.type,
+                            location_operator=old_source.location_operator, strand=old_source.strand,
+                            id=old_source.id, qualifiers=old_source.qualifiers,
+                            ref=old_source.ref, ref_db=old_source.ref_db)
+    del record.features[0]
+    record.features.insert(0, new_source)
+
+    return {genome_id: record}
+
+
+def revcompl_if_reverse(gb_record: SeqRecord, orientation: Strand) -> SeqRecord:
+    if orientation == Strand.REVERSE:
+        return gb_record.reverse_complement()
+    return gb_record
 
 
 def include_atts_into_gb(gb_records: SeqIORecords, pipolin: Pipolin):
@@ -78,8 +110,7 @@ def _generate_att_seq_features(record_format: str, pipolin: Pipolin):
 
 
 def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str) -> SeqFeature:
-    random_number = randrange(10000, 99999)
-    gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{contig_id}_{random_number}'],
+    gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{contig_id}_00000'],
                      'rpt_family': ['Att'], 'rpt_type': ['direct']}
     att_seq_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=strand.to_pm_one_encoding()),
@@ -88,10 +119,9 @@ def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, contig_id: 
 
 
 def _create_gff_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str) -> SeqFeature:
-    random_number = randrange(10000, 99999)
     gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
-                      'ID': [f'{contig_id}_{random_number}'], 'inference': ['HMM:custom'],
-                      'locus_tag': [f'{contig_id}_{random_number}'],
+                      'ID': [f'{contig_id}_00000'], 'inference': ['HMM:custom'],
+                      'locus_tag': [f'{contig_id}_00000'],
                       'rpt_family': ['Att'], 'rpt_type': ['direct']}
     att_seq_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=strand.to_pm_one_encoding()),
