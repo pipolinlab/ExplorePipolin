@@ -11,14 +11,14 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 @task()
 @genome_specific_logging
 def easyfig_add_colours(genome: Genome, in_dir):
-    for gbk_file in os.listdir(in_dir):
-        if gbk_file.startswith(genome.id):
-            gb_records = create_seqio_records_dict(file=os.path.join(in_dir, gbk_file),
+    for file in os.listdir(in_dir):
+        if file.startswith(genome.id) and (file.endswith('.gbk') or file.endswith('.gbk.single_record')):
+            gb_records = create_seqio_records_dict(file=os.path.join(in_dir, file),
                                                    file_format='genbank')
             for record in gb_records.values():
                 add_colours(record)
 
-            write_genbank_records(gb_records=gb_records, output_file=os.path.join(in_dir, gbk_file))
+            write_genbank_records(gb_records=gb_records, output_file=os.path.join(in_dir, file))
 
 
 class EasyfigColour(Enum):
