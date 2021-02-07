@@ -27,9 +27,11 @@ phyla and mitochondria.
 # Requirements
 
  * pip
+ * [HMMER](http://hmmer.org/)
  * [BLAST+](https://www.ncbi.nlm.nih.gov/books/NBK279690/)
- * [ARAGORN](https://github.com/TheSEED/aragorn)
  * [Prokka](https://github.com/tseemann/prokka)
+ * [ARAGORN](https://github.com/TheSEED/aragorn)
+ * [Prodigal](https://github.com/hyattpd/Prodigal)
 
 # Installation
 ### Install from source
@@ -104,13 +106,13 @@ The output directory will contain several folders:
  
  | Folder | Content description |
  |--------|---------------------|
- | `pipolbs_search` | BLAST search results for piPolB genes |
- | `atts_search` | BLAST search results for the known *att* sites |
- | `atts_denovo_search` | Results of *de novo* search for *att* sites |
- | `trnas_search` | ARAGORN search results for tRNAs/tmRNAs |
- | `pipolin_sequences` | extracted pipolin sequences in FASTA format |
- | `prokka_results` | Prokka annotation results (check files description [here](https://github.com/tseemann/prokka/blob/master/README.md#output-files))|
- | `results` | GenBank and GFF annotation results with the *att*s included, log files |
+ | `pipolbs` | BLAST search results for piPolB genes |
+ | `atts` | BLAST search results for the known *att* sites |
+ | `atts_denovo` | Results of *de novo* search for *att* sites |
+ | `trnas` | ARAGORN search results for tRNAs/tmRNAs |
+ | `pipolins` | extracted pipolin sequences in FASTA format, GenBank and GFF annotation results with the *att*s included |
+ | `prokka` | Prokka annotation results (check files description [here](https://github.com/tseemann/prokka/blob/master/README.md#output-files))|
+ | `logs` | log files |
 
 
 # Running with Docker
