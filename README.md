@@ -8,7 +8,7 @@ phyla and mitochondria.
 >
 >[**Flament-Simon, S.C., de Toro, M., Chuprikova, L., *et al.*** High diversity 
 >and variability of pipolins among a wide range of pathogenic *Escherichia 
->coli* strains. *bioRxiv*, 2020](https://www.biorxiv.org/content/10.1101/2020.04.24.059261v1)
+>coli* strains. *Scientific Reports*, 2020](https://www.nature.com/articles/s41598-020-69356-6#Sec18)
 
  **ExplorePipolin** is a search tool that identifies and analyses
  pipolins within bacterial genome.
