@@ -106,7 +106,7 @@ The output directory will contain several folders:
  
  | Folder | Content description |
  |--------|---------------------|
- | `pipolbs` | BLAST search results for piPolB genes |
+ | `pipolbs` | HMMER search results for piPolB genes |
  | `atts` | BLAST search results for the known *att* sites |
  | `atts_denovo` | Results of *de novo* search for *att* sites |
  | `trnas` | ARAGORN search results for tRNAs/tmRNAs |
