@@ -34,17 +34,22 @@ def check_hmmsearch():
 
 
 def _try_command_except_fatal(command_args: List[str], exec_name: str):
-    try:
-        subprocess.run(command_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except FileNotFoundError:
-        logging.fatal(f'Cannot call {exec_name} executable! Is it installed and added to your PATH?')
+    p = subprocess.Popen(command_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    std_out, std_err = p.communicate()
+    if p.returncode != 0:
+        print(std_err.decode()) if std_err != b'' else print(std_out.decode())
+        logging.fatal(f'Cannot check {exec_name} executable!')
         exit(1)
 
 
 def run_prodigal(genome_file: str, output_file: str):
     mode = 'single' if _is_long_enough(genome_file) else 'meta'
-    subprocess.check_call(['prodigal', '-c', '-m', '-q', '-p', mode, '-a', output_file, '-i', genome_file],
-                          stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    command = ['prodigal', '-c', '-m', '-q', '-p', mode, '-a', output_file, '-i', genome_file]
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    std_out, std_err = p.communicate()
+    if p.returncode != 0:
+        print(std_err.decode()) if std_err != b'' else print(std_out.decode())
+        raise subprocess.CalledProcessError(p.returncode, ' '.join(command))
 
 
 def _is_long_enough(genome_file) -> bool:
@@ -59,8 +64,12 @@ _PIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/p
 
 
 def run_hmmsearch(proteins_file: str, output_file: str):
-    subprocess.check_call(['hmmsearch', '--tblout', output_file, '-E', '1e-50', _PIPOLB_HMM_PROFILE, proteins_file],
-                          stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    command = ['hmmsearch', '--tblout', output_file, '-E', '1e-50', _PIPOLB_HMM_PROFILE, proteins_file]
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    std_out, std_err = p.communicate()
+    if p.returncode != 0:
+        print(std_err.decode()) if std_err != b'' else print(std_out.decode())
+        raise subprocess.CalledProcessError(p.returncode, ' '.join(command))
 
 
 _REF_ATT = pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa')
@@ -68,8 +77,13 @@ _REF_ATT = pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa')
 
 def blastn_against_ref_att(genome_file, output_file):
     with open(output_file, 'w') as ouf:
-        subprocess.check_call(['blastn', '-query', _REF_ATT, '-subject', genome_file, '-evalue', '0.1', '-outfmt', '5'],
-                              stdout=ouf, stderr=subprocess.PIPE)
+        command = ['blastn', '-query', _REF_ATT, '-subject', genome_file, '-evalue', '0.1', '-outfmt', '5']
+        p = subprocess.Popen(command, stdout=ouf, stderr=subprocess.PIPE)
+        _, std_err = p.communicate()
+        if p.returncode != 0:
+            if std_err != b'':
+                print(std_err.decode())
+            raise subprocess.CalledProcessError(p.returncode, ' '.join(command))
 
 
 def blast_for_repeats(genome_id: str, repeats_dir: str):
@@ -86,10 +100,15 @@ def blast_for_repeats(genome_id: str, repeats_dir: str):
             raise AssertionError(f'Wrong pair for file {lr}: {rr}')
 
         with open(os.path.join(repeats_dir, genome_id + f'_{l_rep_index}.fmt5'), 'w') as ouf:
-            subprocess.check_call(['blastn', '-query', os.path.join(repeats_dir, lr),
-                                   '-subject', os.path.join(repeats_dir, rr),
-                                   '-outfmt', '5', '-perc_identity', '85', '-word_size', '6',
-                                   '-strand', 'plus'], stdout=ouf, stderr=subprocess.PIPE)
+            command = ['blastn', '-query', os.path.join(repeats_dir, lr),
+                       '-subject', os.path.join(repeats_dir, rr),
+                       '-outfmt', '5', '-perc_identity', '85', '-word_size', '6', '-strand', 'plus']
+            p = subprocess.Popen(command, stdout=ouf, stderr=subprocess.PIPE)
+            _, std_err = p.communicate()
+            if p.returncode != 0:
+                if std_err != b'':
+                    print(std_err)
+                raise subprocess.CalledProcessError(p.returncode, ' '.join(command))
 
 
 def _extract_index_from_filename(filename: str) -> int:
@@ -109,11 +128,15 @@ _PROTEINS = pkg_resources.resource_filename('explore_pipolin', '/data/HHpred_pro
 
 def run_prokka(input_file, prokka_results_dir):
     prefix = os.path.splitext(os.path.basename(input_file))[0]
-    subprocess.check_call(['prokka', '--outdir', prokka_results_dir, '--prefix', prefix,
-                          # TODO: number of CPUs is hardcoded. To pass it as an argument?
-                           '--rawproduct', '--cdsrnaolap', '--cpus', '4',
-                           '--rfam', '--proteins', _PROTEINS, '--force', input_file],
-                          stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    command = ['prokka', '--outdir', prokka_results_dir, '--prefix', prefix,
+               # TODO: number of CPUs is hardcoded. To pass it as an argument?
+               '--rawproduct', '--cdsrnaolap', '--cpus', '4',
+               '--rfam', '--proteins', _PROTEINS, '--force', input_file]
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    std_out, std_err = p.communicate()
+    if p.returncode != 0:
+        print(std_err.decode()) if std_err != b'' else print(std_out.decode())
+        raise subprocess.CalledProcessError(p.returncode, ' '.join(command))
 
 
 class EmptyResult(Exception):
