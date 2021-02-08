@@ -32,13 +32,14 @@ def create_fragment_record(fragment: PipolinFragment, genome_dict):
 
 @task()
 @genome_specific_logging
-def annotate_pipolins(genome: Genome, pipolins_dir):
+def annotate_pipolins(genome: Genome, pipolins_dir, proteins, cpus):
     prokka_results_dir = os.path.join(os.path.dirname(pipolins_dir), 'prokka')
     os.makedirs(prokka_results_dir, exist_ok=True)
 
     for fasta_file in os.listdir(pipolins_dir):
-        if fasta_file.startswith(genome.id):
+        if fasta_file.startswith(genome.id) and fasta_file.endswith('.fa'):
             input_file = os.path.join(pipolins_dir, fasta_file)
-            run_prokka(input_file=input_file, prokka_results_dir=prokka_results_dir)
+            run_prokka(input_file=input_file, prokka_results_dir=prokka_results_dir,
+                       proteins=proteins, cpus=cpus)
 
     return prokka_results_dir

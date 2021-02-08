@@ -16,24 +16,25 @@ from explore_pipolin.tasks.scaffold_pipolins import _NO_BORDER_INFLATE
 
 @task()
 @genome_specific_logging
-def find_atts(genome: Genome, out_dir) -> Genome:
+def find_atts(genome: Genome, out_dir, ref_att) -> Genome:
     atts_dir = os.path.join(out_dir, 'atts')
     os.makedirs(atts_dir, exist_ok=True)
 
-    finder = AttFinder(genome=genome, output_dir=atts_dir)
+    finder = AttFinder(genome=genome, output_dir=atts_dir, ref_att=ref_att)
     finder.find_atts()
 
     return genome
 
 
 class AttFinder:
-    def __init__(self, genome: Genome, output_dir: str):
+    def __init__(self, genome: Genome, output_dir: str, ref_att):
         self.genome = genome
         self.output_dir = output_dir
+        self.ref_att = ref_att
 
     def find_atts(self):
         output_file = os.path.join(self.output_dir, self.genome.id + '.fmt5')
-        blastn_against_ref_att(genome_file=self.genome.file, output_file=output_file)
+        blastn_against_ref_att(genome_file=self.genome.file, output_file=output_file, ref_att=self.ref_att)
         entries = read_blastxml(blast_xml=output_file)
 
         self._add_att_features(entries)
@@ -63,20 +64,21 @@ class AttFinder:
 
 @task()
 @genome_specific_logging
-def find_atts_denovo(genome: Genome, out_dir) -> Genome:
+def find_atts_denovo(genome: Genome, out_dir, perc_identity) -> Genome:
     atts_denovo_dir = os.path.join(out_dir, 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
-    finder = AttDenovoFinder(genome=genome, output_dir=atts_denovo_dir)
+    finder = AttDenovoFinder(genome=genome, output_dir=atts_denovo_dir, perc_identity=perc_identity)
     finder.find_atts_denovo()
 
     return genome
 
 
 class AttDenovoFinder:
-    def __init__(self, genome: Genome, output_dir: str):
+    def __init__(self, genome: Genome, output_dir: str, perc_identity):
         self.genome = genome
         self.output_dir = output_dir
+        self.perc_identity = perc_identity
 
     def find_atts_denovo(self):
         repeats: List[MultiLocation] = self._find_repeats()
@@ -91,7 +93,7 @@ class AttDenovoFinder:
     def _find_repeats(self) -> List[MultiLocation]:
         ranges_around_pipolbs = self._get_ranges_around_pipolbs()
         self._save_seqs_around_pipolbs(ranges_around_pipolbs)
-        blast_for_repeats(genome_id=self.genome.id, repeats_dir=self.output_dir)
+        blast_for_repeats(genome_id=self.genome.id, repeats_dir=self.output_dir, perc_identity=self.perc_identity)
         paired_repeats: List[PairedLocation] = self._extract_repeats(ranges_around_pipolbs)
         return self._regroup_paired_repeats(paired_repeats)
 
