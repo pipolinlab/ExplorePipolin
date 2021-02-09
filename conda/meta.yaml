@@ -1,6 +1,6 @@
 package:
   name: explore-pipolin
-  version: 0.0.a1
+  version: 0.0.1
 source:
   path: ..
 
@@ -26,7 +26,7 @@ requirements:
     - prefect >=0.11.5
     - blast
     - aragorn
-    - prokka
+    - prokka >=1.14.5
     - dataclasses
 
 test:

@@ -52,7 +52,7 @@ def get_flow():
             genome=genome, pipolins=scaffolded_pipolins, out_dir=unmapped(out_dir)
         )
         prokka_dir = annotate_pipolins.map(
-            genome=genome, pipolins_dir=pipolin_seqs_dir, proteins=proteins, cpus=unmapped(cpus)
+            genome=genome, pipolins_dir=pipolin_seqs_dir, proteins=unmapped(proteins), cpus=unmapped(cpus)
         )
         results_dir = include_atts.map(
             genome=genome, prokka_dir=prokka_dir, pipolins=scaffolded_pipolins
