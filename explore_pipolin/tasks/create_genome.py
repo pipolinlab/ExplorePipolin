@@ -16,10 +16,22 @@ def create_genome(genome_file) -> Genome:
 
 def create_contigs_for_genome(genome_file: str) -> MutableSequence[Contig]:
     genome_dict = create_seqio_records_dict(file=genome_file, file_format='fasta')
+    _check_contig_ids_length(genome_dict)
     contigs = []
     for key, value in genome_dict.items():
         contigs.append(Contig(contig_id=ContigID(key), contig_length=len(value.seq)))
     return contigs
+
+
+_max_length_allowed = 16
+
+
+def _check_contig_ids_length(genome_dict):
+    for key in genome_dict:
+        if len(key) > _max_length_allowed:
+            raise AssertionError(f'Due to Biopython restrictions, fasta identifiers cannot be longer than '
+                                 f'{_max_length_allowed} characters. They should also be unique. '
+                                 f'Please, rename identifiers to obey the restrictions!')
 
 
 def define_genome_id(genome_path: str) -> str:
@@ -29,8 +41,7 @@ def define_genome_id(genome_path: str) -> str:
 
 
 def _check_genome_id_length(genome_id: str) -> None:
-    max_length_allowed = 16
-    if len(genome_id) > max_length_allowed:
-        raise AssertionError('Genome file basename is going to be used as a genome identifier. '
-                             f'Due to Biopython restrictions, it cannot be longer than {max_length_allowed} '
+    if len(genome_id) > _max_length_allowed:
+        raise AssertionError('Genome file basename is going to be used as an identifier. '
+                             f'Due to Biopython restrictions, it cannot be longer than {_max_length_allowed} '
                              f'characters. Please, rename the file, so that its basename does not exceed the limit!')

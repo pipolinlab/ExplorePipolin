@@ -22,7 +22,7 @@ def get_flow():
         add_colours = Parameter('add_colours')
         pipolb_hmm_profile = Parameter('pipolb_hmm_profile')
         ref_att = Parameter('ref_att')
-        perc_identity = Parameter('perc_identity')
+        percent_identity = Parameter('percent_identity')
         proteins = Parameter('proteins')
         cpus = Parameter('cpus')
 
@@ -41,7 +41,7 @@ def get_flow():
 
         genome = find_atts.map(genome=genome, out_dir=unmapped(out_dir), ref_att=unmapped(ref_att))
         genome = find_atts_denovo.map(
-            genome=genome, out_dir=unmapped(out_dir), perc_identity=unmapped(perc_identity)
+            genome=genome, out_dir=unmapped(out_dir), perc_identity=unmapped(percent_identity)
         )
         genome = are_atts_present.map(genome=genome)
 

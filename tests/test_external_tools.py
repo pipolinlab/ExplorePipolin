@@ -9,7 +9,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from explore_pipolin.utilities.external_tools import run_prodigal, run_hmmsearch, \
-    blastn_against_ref_att, blast_for_repeats, run_aragorn, run_prokka
+    blastn_against_ref_att, blast_for_repeats, run_aragorn, run_prokka, REF_ATT, PIPOLB_HMM_PROFILE, PROTEINS
 from explore_pipolin.utilities.external_tools import subprocess_with_retries
 
 
@@ -30,20 +30,24 @@ class TestExternalRuns(unittest.TestCase):
     def test_hmmsearch_nofile(self):
         with TemporaryDirectory() as tmp_dir:
             with self.assertRaises(CalledProcessError):
-                run_hmmsearch(os.path.join(tmp_dir, 'genome.faa'), os.path.join(tmp_dir, 'genome.tbl'))
+                run_hmmsearch(os.path.join(tmp_dir, 'genome.faa'),
+                              PIPOLB_HMM_PROFILE,
+                              os.path.join(tmp_dir, 'genome.tbl'))
 
     def test_hmmsearch(self):
         with temp_fasta_file('protein', self.aa_seq) as proteins_file:
-            run_hmmsearch(proteins_file.name, NamedTemporaryFile().name)
+            run_hmmsearch(proteins_file.name, PIPOLB_HMM_PROFILE, NamedTemporaryFile().name)
 
     def test_blastn_nofile(self):
         with TemporaryDirectory() as tmp_dir:
             with self.assertRaises(CalledProcessError):
-                blastn_against_ref_att(os.path.join(tmp_dir, 'genome.fa'), os.path.join(tmp_dir, 'genome.fmt5'))
+                blastn_against_ref_att(os.path.join(tmp_dir, 'genome.fa'),
+                                       os.path.join(tmp_dir, 'genome.fmt5'),
+                                       REF_ATT)
 
     def test_blastn(self):
         with temp_fasta_file('genome', self.nucl_seq) as genome_file:
-            blastn_against_ref_att(genome_file.name, NamedTemporaryFile().name)
+            blastn_against_ref_att(genome_file.name, NamedTemporaryFile().name, REF_ATT)
 
     def test_blast_for_repeats(self):
         with TemporaryDirectory() as tmp_dir:
@@ -51,7 +55,7 @@ class TestExternalRuns(unittest.TestCase):
                     NamedTemporaryFile(suffix='_0.right', prefix='genome', dir=tmp_dir) as right:
                 SeqIO.write(SeqRecord(self.nucl_seq, id='genome'), left.name, format='fasta')
                 SeqIO.write(SeqRecord(self.nucl_seq, id='genome'), right.name, format='fasta')
-                blast_for_repeats('genome', tmp_dir)
+                blast_for_repeats('genome', tmp_dir, percent_identity=85)
             self.assertTrue('genome_0.fmt5' in os.listdir(tmp_dir))
 
     def test_blast_for_repeats_no_right(self):
@@ -59,7 +63,7 @@ class TestExternalRuns(unittest.TestCase):
             with NamedTemporaryFile(suffix='_0.left', prefix='genome', dir=tmp_dir) as left:
                 SeqIO.write(SeqRecord(self.nucl_seq, id='genome'), left.name, format='fasta')
                 with self.assertRaises(AssertionError) as context:
-                    blast_for_repeats('genome', tmp_dir)
+                    blast_for_repeats('genome', tmp_dir, percent_identity=85)
                 self.assertTrue('Number of .left files is not equal' in str(context.exception))
 
     def test_blast_for_repeats_wrong_pair(self):
@@ -69,7 +73,7 @@ class TestExternalRuns(unittest.TestCase):
                 SeqIO.write(SeqRecord(self.nucl_seq, id='genome'), left.name, format='fasta')
                 SeqIO.write(SeqRecord(self.nucl_seq, id='genome'), right.name, format='fasta')
                 with self.assertRaises(AssertionError) as context:
-                    blast_for_repeats('genome', tmp_dir)
+                    blast_for_repeats('genome', tmp_dir, percent_identity=85)
                 self.assertTrue(f'Wrong pair for file ' in str(context.exception))
 
     def test_aragorn_nofile(self):
@@ -85,12 +89,12 @@ class TestExternalRuns(unittest.TestCase):
         with TemporaryDirectory() as tmp_dir:
             input_file = os.path.join(tmp_dir, 'genome.fa')
             with self.assertRaises(CalledProcessError):
-                run_prokka(input_file, tmp_dir)
+                run_prokka(input_file, tmp_dir, PROTEINS, cpus=0)
 
     def test_run_prokka(self):
         with TemporaryDirectory() as tmp_dir:
             with temp_fasta_file('genome', self.nucl_seq) as pipolin_file:
-                run_prokka(pipolin_file.name, tmp_dir)
+                run_prokka(pipolin_file.name, tmp_dir, PROTEINS, cpus=0)
 
 
 @contextmanager

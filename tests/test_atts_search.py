@@ -28,7 +28,7 @@ class TestAttsDenovoSearch(unittest.TestCase):
         self.genome.features.add_features(att1, att2, feature_type=FeatureType.ATT)
         self.genome.features.add_features(trna1, trna2, trna3, feature_type=FeatureType.TRNA)
 
-        finder = AttDenovoFinder(self.genome, 'output_dir')
+        finder = AttDenovoFinder(self.genome, 'output_dir', percent_identity=85)
         self.assertFalse(finder._is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig1_id)))
         self.assertTrue(finder._is_att_denovo(MultiLocation([Range(2800, 2850), Range(5000, 5050)], self.contig1_id)))
         self.assertTrue(finder._is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig2_id)))

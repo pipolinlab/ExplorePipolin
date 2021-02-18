@@ -28,7 +28,7 @@ def check_genome_file_names(genome):
 @click.option('--ref-att', type=click.Path(exists=True),
               help='Att sequence in FASTA file to use as 1st priority. '
                    'If not provided, the default file will be used instead.')
-@click.option('--perc-identity', type=int, default=85, show_default=True,
+@click.option('--percent-identity', type=int, default=85, show_default=True,
               help='Minimum percent identity in direct repeats search')
 @click.option('--proteins', type=click.Path(exists=True),
               help='Prokka param: FASTA or GBK file to use as 1st priority. '
@@ -41,7 +41,7 @@ def explore_pipolin(
         add_colours,
         pipolb_hmm_profile,
         ref_att,
-        perc_identity,
+        percent_identity,
         proteins,
         cpus,
 ):
@@ -63,7 +63,7 @@ def explore_pipolin(
         add_colours=add_colours,
         pipolb_hmm_profile=pipolb_hmm_profile,
         ref_att=ref_att,
-        perc_identity=perc_identity,
+        percent_identity=percent_identity,
         proteins=proteins,
         cpus=cpus,
     )
