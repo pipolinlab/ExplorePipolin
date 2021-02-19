@@ -41,7 +41,7 @@ def get_flow():
 
         genome = find_atts.map(genome=genome, out_dir=unmapped(out_dir), ref_att=unmapped(ref_att))
         genome = find_atts_denovo.map(
-            genome=genome, out_dir=unmapped(out_dir), perc_identity=unmapped(percent_identity)
+            genome=genome, out_dir=unmapped(out_dir), percent_identity=unmapped(percent_identity)
         )
         genome = are_atts_present.map(genome=genome)
 
