@@ -13,17 +13,26 @@ from explore_pipolin.common import CONTEXT_SETTINGS
 from explore_pipolin.utilities.io import create_seqio_records_dict
 
 
-def yield_acc_and_url(ena_xml_file):
+def yield_acc_and_url(ena_xml_file, genus, out_dir):
     for event, elem in ElementTree.iterparse(ena_xml_file, events=('start',)):
-        asmbl_acc, asmbl_url = None, None
+        asmbl_acc, asmbl_url, sci_name = None, None, None
         if event == 'start' and elem.tag == 'ASSEMBLY':
             asmbl_acc = elem.attrib['accession']
 
             for link in elem.findall('ASSEMBLY_LINKS/ASSEMBLY_LINK/URL_LINK[LABEL="WGS_SET_FASTA"]/URL'):
                 asmbl_url = link.text
 
-        if asmbl_acc is not None and asmbl_url is not None:
-            yield asmbl_acc, asmbl_url
+            sci_name_node = elem.find('TAXON/SCIENTIFIC_NAME')
+            if sci_name_node is not None:
+                sci_name = sci_name_node.text
+
+        if sci_name is not None:
+            if genus in sci_name:
+                if (asmbl_acc is not None) and (asmbl_url is not None):
+                    yield asmbl_acc, asmbl_url
+            else:
+                with open(os.path.join(out_dir, 'wrong_sci_names.txt'), 'a') as ouf:
+                    print(asmbl_acc, sci_name, sep='\t', file=ouf)
 
 
 def retrieve_fasta_file(fasta_url, file_path):
@@ -38,19 +47,11 @@ def unzip_fasta_file(file_path):
     return new_file
 
 
-class SkipAssemblyError(Exception):
-    pass
-
-
 def change_fasta_identifiers(genome_file):
     """This is valid only for identifiers of assemblies from the ENA database"""
     genome_dict = create_seqio_records_dict(genome_file, 'fasta')
     new_dict = {}
     for key, value in genome_dict.items():
-        # TODO: here we need to exclude metagenome assemblies somehow. CHANGE THIS!
-        if 'Enterobacter' not in value.description:
-            raise SkipAssemblyError()
-
         new_id = key.split(sep='|')[-1]
         if len(new_id) > 14:
             new_id = new_id[-14:]
@@ -92,14 +93,9 @@ def _download_and_analyse(output_dir, acc, url) -> None:
 
     file_to_analyse = unzip_fasta_file(file_path)
 
-    try:
-        change_fasta_identifiers(file_to_analyse)
-    except SkipAssemblyError:
-        os.remove(file_to_analyse)
-        update_if_not_analysed(acc, output_dir)
-        return
+    change_fasta_identifiers(file_to_analyse)
 
-    os.system(f'explore_pipolin --out-dir {output_dir} --add-colours {file_to_analyse}')
+    os.system(f'explore_pipolin --out-dir {output_dir} --no-annotation {file_to_analyse}')
     os.remove(file_to_analyse)
     update_if_not_analysed(acc, output_dir)
 
@@ -123,17 +119,19 @@ def clean_if_not_found(acc, output_dir):
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('ena-xml-file', type=click.Path(exists=True))
 @click.argument('output-dir', type=click.Path())
+@click.argument('genus', type=str)
 @click.option('--force', is_flag=True,
               help='If the output directory already exists, erase its content before starting the analysis.')
-def download_and_analyse(ena_xml_file, output_dir, force):
+def download_and_analyse(ena_xml_file, output_dir, genus, force):
     if force:
         os.remove(output_dir)
     os.makedirs(output_dir, exist_ok=True)
 
-    for acc, url in yield_acc_and_url(ena_xml_file):
+    for acc, url in yield_acc_and_url(ena_xml_file, genus, output_dir):
         print(acc, url)
 
-        _download_and_analyse(output_dir, acc, url)
+        if not _is_analysed(acc, output_dir):
+            _download_and_analyse(output_dir, acc, url)
         clean_if_not_found(acc, output_dir)
 
 
