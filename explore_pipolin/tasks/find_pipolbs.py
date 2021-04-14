@@ -63,7 +63,7 @@ def are_pipolbs_present(genome: Genome):
 
 
 @task()
-def return_result_if_true_else_none(result_to_filter: Any, filter_by: bool) -> Optional[Any]:
+def continue_if_true_else_finished(result_to_filter: Any, filter_by: bool) -> Optional[Any]:
     if filter_by:
         return result_to_filter
 
