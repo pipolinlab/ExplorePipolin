@@ -8,6 +8,30 @@ from explore_pipolin.common import Genome, Pipolin, FeatureType, PipolinFragment
 from explore_pipolin.utilities.logging import genome_specific_logging
 
 
+def draw_pipolin_structure(pipolin: Pipolin) -> Sequence[str]:
+    return [_get_fragment_string(fragment) for fragment in pipolin.fragments]
+
+
+def _get_fragment_string(fragment: PipolinFragment) -> str:
+    features = fragment.get_fragment_features_sorted()
+    fragment_string = f'{fragment.contig_id}: {_get_feature_string(features[0])}'
+    for f1, f2 in zip(features, features[1:]):
+        if f1[0].location.is_overlapping(f2[0].location):
+            fragment_string += _get_feature_string(f2)
+        else:
+            fragment_string += '---' + _get_feature_string(f2)
+    return fragment_string
+
+
+def _get_feature_string(feature) -> str:
+    if feature[1] == FeatureType.PIPOLB:
+        return 'pol'
+    elif feature[1] == FeatureType.ATT:
+        return 'att' + str(feature[0].att_id)
+    elif feature[1] == FeatureType.TARGET_TRNA:
+        return '(t)'
+
+
 @task()
 @genome_specific_logging
 def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
@@ -21,13 +45,16 @@ def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
     for pipolin in pipolins:
         if len(pipolin.fragments) == 1:
             logger.warning('>>> Scaffolding is not required!')
+            logger.warning(f'{draw_pipolin_structure(pipolin)[0]}')
             single_fragment_pipolins.append(pipolin)
         else:
             logger.warning('>>> Trying to scaffold...')
+            logger.warning(''.join(f'\n{i}' for i in draw_pipolin_structure(pipolin)))
             scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
             try:
                 result.append(scaffolder.scaffold_pipolin())
                 logger.warning('>>> Scaffolding is done!')
+                logger.warning('...'.join([i.split(sep=': ')[1] for i in draw_pipolin_structure(result[-1])]))
             except CannotScaffoldError as e:
                 logger.warning(f'>>> Cannot scaffold! {e}')
                 other_pipolins.append(pipolin)
