@@ -13,7 +13,7 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def include_atts(genome: Genome, prokka_dir, pipolins: Sequence[Pipolin]):
+def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[Pipolin]):
     results_dir = os.path.join(os.path.dirname(prokka_dir), 'pipolins')
     os.makedirs(results_dir, exist_ok=True)
 

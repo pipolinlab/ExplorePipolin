@@ -6,7 +6,7 @@ from prefect import task
 
 from explore_pipolin.common import Genome, Pipolin, PipolinFragment
 from explore_pipolin.utilities.external_tools import run_prokka
-from explore_pipolin.utilities.io import create_seqio_records_dict
+from explore_pipolin.utilities.io import create_seqio_records_dict, SeqIORecords
 from explore_pipolin.utilities.logging import genome_specific_logging
 
 
@@ -26,8 +26,13 @@ def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin], out_dir)
     return pipolins_dir
 
 
-def create_fragment_record(fragment: PipolinFragment, genome_dict):
-    return genome_dict[fragment.contig_id][fragment.start:fragment.end]
+def create_fragment_record(
+        fragment: PipolinFragment,
+        genome_dict: SeqIORecords
+) -> SeqIO.SeqRecord:
+    record = genome_dict[fragment.contig_id][fragment.start:fragment.end]
+    record.description = f'{fragment.start}:{fragment.end}'
+    return record
 
 
 @task()

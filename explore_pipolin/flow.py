@@ -9,7 +9,7 @@ from explore_pipolin.tasks.find_atts import find_atts, find_atts_denovo, are_att
 from explore_pipolin.tasks.find_pipolins import find_pipolins
 from explore_pipolin.tasks.scaffold_pipolins import scaffold_pipolins
 from explore_pipolin.tasks.annotate_pipolins import save_pipolin_sequences, annotate_pipolins
-from explore_pipolin.tasks.include_atts import include_atts
+from explore_pipolin.tasks.generate_results import generate_results
 from explore_pipolin.tasks.easyfig_coloring import easyfig_add_colours
 
 _DEFAULT_FILTER = FilterTask()
@@ -55,9 +55,12 @@ def get_flow():
 
         with case(no_annotation, False):
             prokka_dir = annotate_pipolins.map(
-                genome=genome, pipolins_dir=pipolin_seqs_dir, proteins=unmapped(proteins), cpus=unmapped(cpus)
+                genome=genome,
+                pipolins_dir=pipolin_seqs_dir,
+                proteins=unmapped(proteins),
+                cpus=unmapped(cpus)
             )
-            results_dir = include_atts.map(
+            results_dir = generate_results.map(
                 genome=genome, prokka_dir=prokka_dir, pipolins=scaffolded_pipolins
             )
 
