@@ -26,11 +26,15 @@ def get_flow():
         proteins = Parameter('proteins')
         add_colours = Parameter('add_colours')
         cpus = Parameter('cpus')
+        do_not_reuse = Parameter('do_not_reuse')
 
         genome = create_genome.map(genome_file=genome_file)
 
         genome = find_pipolbs.map(
-            genome=genome, out_dir=unmapped(out_dir), pipolb_hmm_profile=unmapped(pipolb_hmm_profile)
+            genome=genome,
+            out_dir=unmapped(out_dir),
+            pipolb_hmm_profile=unmapped(pipolb_hmm_profile),
+            do_not_reuse=unmapped(do_not_reuse),
         )
 
         t_check_pipolbs = are_pipolbs_present.map(genome=genome)
@@ -38,11 +42,21 @@ def get_flow():
             result_to_filter=genome, filter_by=t_check_pipolbs)
         )
 
-        genome = find_trnas.map(genome=genome, out_dir=unmapped(out_dir))
+        genome = find_trnas.map(
+            genome=genome, out_dir=unmapped(out_dir), do_not_reuse=unmapped(do_not_reuse)
+        )
 
-        genome = find_atts.map(genome=genome, out_dir=unmapped(out_dir), ref_att=unmapped(ref_att))
+        genome = find_atts.map(
+            genome=genome,
+            out_dir=unmapped(out_dir),
+            ref_att=unmapped(ref_att),
+            do_not_reuse=unmapped(do_not_reuse),
+        )
         genome = find_atts_denovo.map(
-            genome=genome, out_dir=unmapped(out_dir), percent_identity=unmapped(percent_identity)
+            genome=genome,
+            out_dir=unmapped(out_dir),
+            percent_identity=unmapped(percent_identity),
+            do_not_reuse=unmapped(do_not_reuse),
         )
         genome = are_atts_present.map(genome=genome)
 

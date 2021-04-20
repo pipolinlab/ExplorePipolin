@@ -36,6 +36,9 @@ def check_genome_file_names(genome):
                    'The genomic structure can be visualized further using Easyfig.')
 @click.option('--cpus', default=8, type=int, show_default=True,
               help='Prokka param: Number of CPUs to use [0=all]')
+@click.option('--do-not-reuse', is_flag=True,
+              help='Do not reuse information about piPolBs, ATTs and tRNAs found in a previous run for '
+                   'the same genome. I.e. it will run all the analysis from scratch for the given genome.')
 def explore_pipolin(
         genome,
         out_dir,
@@ -46,6 +49,7 @@ def explore_pipolin(
         proteins,
         add_colours,
         cpus,
+        do_not_reuse,
 ):
     """
     ExplorePipolin is a search tool for prediction and analysis of pipolins, bacterial mobile genetic elements.
@@ -77,6 +81,7 @@ def explore_pipolin(
         proteins=proteins,
         add_colours=add_colours,
         cpus=cpus,
+        do_not_reuse=do_not_reuse,
     )
     assert state.is_successful()
 
