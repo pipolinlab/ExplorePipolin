@@ -14,12 +14,16 @@ def draw_pipolin_structure(pipolin: Pipolin) -> Sequence[str]:
 
 def _get_fragment_string(fragment: PipolinFragment) -> str:
     features = fragment.get_fragment_features_sorted()
+    if fragment.orientation == Strand.REVERSE:
+        features = features[::-1]
+
     fragment_string = f'{fragment.contig_id}: {_get_feature_string(features[0])}'
     for f1, f2 in zip(features, features[1:]):
         if f1[0].location.is_overlapping(f2[0].location):
             fragment_string += _get_feature_string(f2)
         else:
             fragment_string += '---' + _get_feature_string(f2)
+
     return fragment_string
 
 
@@ -45,6 +49,11 @@ def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
     for pipolin in pipolins:
         if len(pipolin.fragments) == 1:
             logger.warning('>>> Scaffolding is not required!')
+
+            features = pipolin.fragments[0].get_fragment_features_sorted()
+            if features[0][1] == FeatureType.TARGET_TRNA:
+                pipolin.fragments[0].change_orientation()
+
             logger.warning(f'{draw_pipolin_structure(pipolin)[0]}')
             single_fragment_pipolins.append(pipolin)
         else:
@@ -144,12 +153,23 @@ class Scaffolder:
         else:
             raise AssertionError
 
+        try:
+            left_fragment, right_fragment, ttrna = self._define_left_right_fragments_and_ttrna(
+                left_fragment, right_fragment
+            )
+            right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(
+                ttrna, right_fragment, left_fragment
+            )
+        except CannotScaffoldError:
+            pass
         return self._create_pipolin(left=left_fragment, right=right_fragment)
 
     def _att_pipolb_plus_two_atts(self) -> Pipolin:
         # 2) ---att---...---pol---att---...---att(t)---   tRNA is required
         middle_fragment = self.att_pipolb_fragments[0]
-        left_fragment, right_fragment, ttrna = self._define_left_right_fragments_and_ttrna()
+        left_fragment, right_fragment, ttrna = self._define_left_right_fragments_and_ttrna(
+            self.att_only_fragments[0], self.att_only_fragments[1]
+        )
         right_fragment, (left_fragment, middle_fragment) = \
             self._orient_fragments_according_ttrna(ttrna, right_fragment, left_fragment, middle_fragment)
 
@@ -188,7 +208,9 @@ class Scaffolder:
     def _pipolb_plus_two_atts(self):
         # 2) ---att---...---pol---...---att(t)---        tRNA is required
         middle_fragment = self._orient_pipolb_only_fragment()
-        left_fragment, right_fragment, ttrna = self._define_left_right_fragments_and_ttrna()
+        left_fragment, right_fragment, ttrna = self._define_left_right_fragments_and_ttrna(
+            self.att_only_fragments[0], self.att_only_fragments[1]
+        )
         right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(ttrna, right_fragment, left_fragment)
 
         return self._create_pipolin(left=left_fragment, middle=middle_fragment, right=right_fragment)
@@ -237,22 +259,22 @@ class Scaffolder:
         pipolb_only_fragment = self.pipolb_only_fragments[0]
         if pipolb_only_fragment.features[0][1] == FeatureType.PIPOLB:
             if pipolb_only_fragment.features[0][0].strand == Strand.REVERSE:
-                pipolb_only_fragment = self._make_fragment_reverse(pipolb_only_fragment)
+                pipolb_only_fragment.change_orientation()
         else:
             raise AssertionError(f'The first feature of the pipolb_only_fragment is '
                                  f'{pipolb_only_fragment.features[0][1]} != FeatureType.PIPOLB')
         return pipolb_only_fragment
 
     def _define_left_right_fragments_and_ttrna(
-            self) -> Tuple[PipolinFragment, PipolinFragment, Feature]:
+            self, fragment1, fragment2) -> Tuple[PipolinFragment, PipolinFragment, Feature]:
         try:
-            ttrna = self._get_ttrna_of_fragment(self.att_only_fragments[0])
-            right_fragment = self.att_only_fragments[0]
-            left_fragment = self.att_only_fragments[1]
+            ttrna = self._get_ttrna_of_fragment(fragment1)
+            right_fragment = fragment1
+            left_fragment = fragment2
         except CannotScaffoldError:
-            ttrna = self._get_ttrna_of_fragment(self.att_only_fragments[1])
-            right_fragment = self.att_only_fragments[1]
-            left_fragment = self.att_only_fragments[0]
+            ttrna = self._get_ttrna_of_fragment(fragment2)
+            right_fragment = fragment2
+            left_fragment = fragment1
         return left_fragment, right_fragment, ttrna
 
     def _orient_fragment_according_main(
@@ -266,7 +288,7 @@ class Scaffolder:
         dependent_fragment_strand = self._get_fragment_atts_strand(dependent_fragment, att_id)
 
         if main_fragment_strand != dependent_fragment_strand:
-            dependent_fragment = self._make_fragment_reverse(dependent_fragment)
+            dependent_fragment.change_orientation()
         return dependent_fragment
 
     def _orient_fragments_according_ttrna(self, ttrna: Feature, ttrna_containing_fragment: PipolinFragment,
@@ -278,17 +300,19 @@ class Scaffolder:
         other_fragment_strands = [self._get_fragment_atts_strand(f, att.att_id) for f in other_fragment]
 
         if ttrna.strand == Strand.FORWARD and ttrna.start < att.start:  # 3'-overlap
-            ttrna_containing_fragment = self._make_fragment_reverse(ttrna_containing_fragment)
+            ttrna_containing_fragment.change_orientation()
             for f, s in zip(other_fragment, other_fragment_strands):
                 if att.strand == s:
-                    new_other_fragments.append(self._make_fragment_reverse(f))
+                    f.change_orientation()
+                    new_other_fragments.append(f)
                 else:
                     new_other_fragments.append(f)
 
         elif ttrna.strand == Strand.REVERSE and ttrna.end > att.end:  # 3'-overlap
             for f, s in zip(other_fragment, other_fragment_strands):
                 if att.strand != s:
-                    new_other_fragments.append(self._make_fragment_reverse(f))
+                    f.change_orientation()
+                    new_other_fragments.append(f)
                 else:
                     new_other_fragments.append(f)
 
@@ -317,11 +341,6 @@ class Scaffolder:
             raise AssertionError
         return atts.pop()
 
-    @staticmethod
-    def _make_fragment_reverse(fragment: PipolinFragment):
-        return PipolinFragment(fragment.location, fragment.contig_id, fragment.genome, fragment.features,
-                               orientation=Strand.REVERSE)
-
     def _classify_fragments(self, fragments: Sequence[PipolinFragment]):
         for fragment in fragments:
             fragment_atts_and_pipolbs = self._get_fragment_atts_and_pipolbs(fragment)
@@ -339,7 +358,8 @@ class Scaffolder:
 
     @staticmethod
     def _get_fragment_atts_and_pipolbs(fragment: PipolinFragment):
-        return [f for f in fragment.features if f[1] != FeatureType.TARGET_TRNA]
+        features = fragment.get_fragment_features_sorted()
+        return [f for f in features if f[1] != FeatureType.TARGET_TRNA]
 
 
 def _filter_overlapping(pipolins_to_filter: Sequence[Pipolin]) -> Sequence[Pipolin]:

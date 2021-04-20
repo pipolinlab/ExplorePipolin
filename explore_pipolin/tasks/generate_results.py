@@ -52,7 +52,7 @@ def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin) -> SeqIO
     if len(pipolin.fragments) > 1:
         for fragment in pipolin.fragments[1:]:
             record += SeqRecord(seq='N' * 100)
-            del gb_records[fragment.contig_id].features[0]   # source feature
+            del gb_records[fragment.contig_id].features[0]   # delete source feature
             record += revcompl_if_reverse(gb_records[fragment.contig_id], fragment.orientation)
 
     genome_id = pipolin.fragments[0].genome.id

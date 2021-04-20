@@ -222,6 +222,9 @@ class PipolinFragment:
 
     orientation: Strand = Strand.FORWARD
 
+    def change_orientation(self):
+        object.__setattr__(self, 'orientation', -self.orientation)
+
     @property
     def start(self):
         return self.location.start
