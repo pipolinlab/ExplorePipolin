@@ -394,3 +394,20 @@ class TestPipolinFinder(unittest.TestCase):
         p3f1 = PipolinFragment(Range(1500, 2000), ContigID('CONTIG_0'), genome)
         p4f1 = PipolinFragment(Range(2100, 2200), ContigID('CONTIG_0'), genome)
         found = self.check_found_pipolins(genome, scheme, [p1f1], [p2f1], [p3f1], [p4f1])
+
+    def test_two_contigs_with_ttrnas(self):
+        scheme = '---at2(t)---...---pol---at2(t)'
+        genome = create_genome_from_scheme(scheme)
+        f1 = PipolinFragment(Range(100, 240), ContigID('CONTIG_0'), genome)
+        f2 = PipolinFragment(Range(100, 440), ContigID('CONTIG_1'), genome)
+        found = self.check_found_pipolins(genome, scheme, [f1, f2])
+
+        with self.assertRaises(CannotScaffoldError):
+            self.check_scaffolded_pipolin(genome, scheme, [f1, f2], found[0])
+
+    def test_contig_with_two_ttrnas(self):
+        scheme = '---at2---at1---...---pol---at2(t)---at1(t)---'   # ???
+        genome = create_genome_from_scheme(scheme)
+        f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
+        f2 = PipolinFragment(Range(100, 440), ContigID('CONTIG_1'), genome)
+        found = self.check_found_pipolins(genome, scheme, [f1, f2])
