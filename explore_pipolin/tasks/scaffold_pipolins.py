@@ -119,19 +119,22 @@ class Scaffolder:
         left_fragment = self.att_pipolb_att_fragments[0]
         potential_right_fragment = self.att_only_fragments[0]
 
-        try:
-            if len(self.att_only_fragments) != 1:
-                raise CannotScaffoldError
-            # we can scaffold the case: ---att---pol---att---...---att(t)---   tRNA is required
-            ttrna = self._get_ttrna_of_fragment(potential_right_fragment)
-            potential_right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(
-                ttrna, potential_right_fragment, left_fragment
-            )
-            return self._create_pipolin(left=left_fragment, right=potential_right_fragment)
+        if len(self.att_only_fragments) != 1:
+            raise CannotScaffoldError
 
-        except CannotScaffoldError:   # let's leave it as ---att---pol---att---
-            print(self.REQUIRES_CHECK_WARNING)
-            return Pipolin.from_fragments(self._inflate_fragment(left_fragment, _BORDER_INFLATE, _BORDER_INFLATE))
+        # we can scaffold the case: ---att---pol---att---...---att(t)---   tRNA is required
+        try:
+            ttrnas = self._get_ttrnas_of_fragment(potential_right_fragment)
+            for ttrna in ttrnas:
+                potential_right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(
+                    ttrna, potential_right_fragment, left_fragment
+                )
+            return self._create_pipolin(left=left_fragment, right=potential_right_fragment)
+        except CannotScaffoldError:
+            # it might be the case: ---att1---...---att2---pol---att1(t)---att2(t)---
+            ttrnas = self._get_ttrnas_of_fragment(left_fragment)
+            # TODO: cannot handle two tRNAs. We need to fix it!
+            raise AssertionError
 
     def _att_pipolb_plus_atts(self) -> Pipolin:
         # we can scaffold the cases:
@@ -158,11 +161,12 @@ class Scaffolder:
             raise AssertionError
 
         try:
-            left_fragment, right_fragment, ttrna = self._define_left_right_fragments_and_ttrna(
+            left_fragment, right_fragment, ttrnas = self._define_left_right_fragments_and_ttrnas(
                 left_fragment, right_fragment
             )
-            right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(
-                ttrna, right_fragment, left_fragment
+            for ttrna in ttrnas:
+                right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(
+                    ttrna, right_fragment, left_fragment
             )
         except CannotScaffoldError:
             print(self.REQUIRES_CHECK_WARNING)
@@ -171,11 +175,12 @@ class Scaffolder:
     def _att_pipolb_plus_two_atts(self) -> Pipolin:
         # 2) ---att---...---pol---att---...---att(t)---   tRNA is required
         middle_fragment = self.att_pipolb_fragments[0]
-        left_fragment, right_fragment, ttrna = self._define_left_right_fragments_and_ttrna(
+        left_fragment, right_fragment, ttrnas = self._define_left_right_fragments_and_ttrnas(
             self.att_only_fragments[0], self.att_only_fragments[1]
         )
-        right_fragment, (left_fragment, middle_fragment) = \
-            self._orient_fragments_according_ttrna(ttrna, right_fragment, left_fragment, middle_fragment)
+        for ttrna in ttrnas:
+            right_fragment, (left_fragment, middle_fragment) = \
+                self._orient_fragments_according_ttrna(ttrna, right_fragment, left_fragment, middle_fragment)
 
         if middle_fragment.orientation == Strand.FORWARD:
             _is_pipolb_left = middle_fragment.features[0][1] == FeatureType.PIPOLB
@@ -207,18 +212,22 @@ class Scaffolder:
         # 1) ---pol---...---att(t)---                    tRNA is required
         self._orient_pipolb_only_fragment()
         right_fragment = self.att_only_fragments[0]
-        ttrna = self._get_ttrna_of_fragment(right_fragment)
-        right_fragment, _ = self._orient_fragments_according_ttrna(ttrna, right_fragment)
+        ttrnas = self._get_ttrnas_of_fragment(right_fragment)
+        for ttrna in ttrnas:
+            right_fragment, _ = self._orient_fragments_according_ttrna(ttrna, right_fragment)
 
         return self._create_pipolin(middle=self.pipolb_only_fragments[0], right=right_fragment)
 
     def _pipolb_plus_two_atts(self) -> Pipolin:
         # 2) ---att---...---pol---...---att(t)---        tRNA is required
         self._orient_pipolb_only_fragment()
-        left_fragment, right_fragment, ttrna = self._define_left_right_fragments_and_ttrna(
+        left_fragment, right_fragment, ttrnas = self._define_left_right_fragments_and_ttrnas(
             self.att_only_fragments[0], self.att_only_fragments[1]
         )
-        right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(ttrna, right_fragment, left_fragment)
+        for ttrna in ttrnas:
+            right_fragment, (left_fragment,) = self._orient_fragments_according_ttrna(
+                ttrna, right_fragment, left_fragment
+            )
 
         return self._create_pipolin(left=left_fragment,
                                     middle=self.pipolb_only_fragments[0],
@@ -273,17 +282,17 @@ class Scaffolder:
             raise AssertionError(f'The first feature of the pipolb_only_fragment is '
                                  f'{pipolb_only_fragment.features[0][1]} != {FeatureType.PIPOLB}')
 
-    def _define_left_right_fragments_and_ttrna(
-            self, fragment1, fragment2) -> Tuple[PipolinFragment, PipolinFragment, Feature]:
+    def _define_left_right_fragments_and_ttrnas(
+            self, fragment1, fragment2) -> Tuple[PipolinFragment, PipolinFragment, Sequence[Feature]]:
         try:
-            ttrna = self._get_ttrna_of_fragment(fragment1)
+            ttrnas = self._get_ttrnas_of_fragment(fragment1)
             right_fragment = fragment1
             left_fragment = fragment2
         except CannotScaffoldError:
-            ttrna = self._get_ttrna_of_fragment(fragment2)
+            ttrnas = self._get_ttrnas_of_fragment(fragment2)
             right_fragment = fragment2
             left_fragment = fragment1
-        return left_fragment, right_fragment, ttrna
+        return left_fragment, right_fragment, ttrnas
 
     def _orient_fragment_according_main(
             self, main_fragment: PipolinFragment, dependent_fragment: PipolinFragment) -> PipolinFragment:
@@ -330,11 +339,11 @@ class Scaffolder:
         return ttrna_containing_fragment, new_other_fragments
 
     @staticmethod
-    def _get_ttrna_of_fragment(ttrna_containing_fragment: PipolinFragment) -> Feature:
+    def _get_ttrnas_of_fragment(ttrna_containing_fragment: PipolinFragment) -> Sequence[Feature]:
         ttrnas = [f[0] for f in ttrna_containing_fragment.features if f[1] == FeatureType.TARGET_TRNA]
-        if len(ttrnas) != 1:
+        if len(ttrnas) == 0:
             raise CannotScaffoldError
-        return ttrnas[0]
+        return ttrnas
 
     def _get_att_overlapping_ttrna(self, ttrna):
         att = self.genome.features.get_features(FeatureType.ATT).get_overlapping(ttrna)
