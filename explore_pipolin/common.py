@@ -1,3 +1,4 @@
+from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -93,10 +94,18 @@ class MultiLocation:
     contig_id: ContigID
 
 
+class FeatureType(Enum):
+    PIPOLB = auto()
+    ATT = auto()
+    TRNA = auto()
+    TARGET_TRNA = auto()
+
+
 @dataclass(frozen=True)
 class Feature:
     location: Range
     strand: Strand
+    ftype: FeatureType
     contig_id: ContigID
     genome: Genome
 
@@ -104,6 +113,10 @@ class Feature:
         if self.location.end > self.contig.length:
             raise AssertionError(f'Feature end cannot be greater than contig length! '
                                  f'{self.location.end} > {self.contig.length}')
+
+        if self.ftype is FeatureType.ATT:
+            if not isinstance(self, AttFeature):
+                raise AssertionError('ATT should be instance of AttFeature class!')
 
     @property
     def start(self) -> int:
@@ -123,13 +136,6 @@ class Feature:
     # TODO: do I really need it?
     def contig(self) -> Contig:
         return self.genome.get_contig_by_id(self.contig_id)
-
-
-class FeatureType(Enum):
-    PIPOLB = auto()
-    ATT = auto()
-    TRNA = auto()
-    TARGET_TRNA = auto()
 
 
 @dataclass(frozen=True)
@@ -181,14 +187,9 @@ class FeaturesContainer:
     def __init__(self):
         self._features: Mapping[FeatureType, FeatureSet] = defaultdict(FeatureSet)
 
-    def add_features(self, *features: Feature, feature_type: FeatureType):
-        if feature_type is FeatureType.ATT:
-            for feature in features:
-                if not isinstance(feature, AttFeature):
-                    raise AssertionError('ATT should be instance of AttFeature class!')
-
+    def add_features(self, *features: Feature):
         for feature in features:
-            self._features[feature_type].add(feature)
+            self._features[feature.ftype].add(feature)
 
     def get_features(self, feature_type: FeatureType) -> FeatureSet:
         return self._features[feature_type]
@@ -218,7 +219,7 @@ class PipolinFragment:
     contig_id: ContigID
     genome: Genome
 
-    features: Sequence[Tuple[Feature, FeatureType]] = ()
+    features: Tuple[Feature, ...] = ()
 
     orientation: Strand = Strand.FORWARD
 
@@ -237,17 +238,13 @@ class PipolinFragment:
         if self.contig_id == other.contig_id:
             return self.location.is_overlapping(other.location)
 
-    def get_fragment_features_sorted(self) -> Sequence[Tuple[Feature, FeatureType]]:
+    def get_fragment_features_sorted(self) -> Sequence[Feature]:
+        features = []
+        features.extend(self._get_fragment_features_of_type(FeatureType.PIPOLB))
+        features.extend(self._get_fragment_features_of_type(FeatureType.ATT))
+        features.extend(self._get_fragment_features_of_type(FeatureType.TARGET_TRNA))
 
-        fragment_pipolbs = self._get_fragment_features_of_type(FeatureType.PIPOLB)
-        fragment_atts = self._get_fragment_features_of_type(FeatureType.ATT)
-        fragment_ttrnas = self._get_fragment_features_of_type(FeatureType.TARGET_TRNA)
-
-        fragment_features = [(i, FeatureType.PIPOLB) for i in fragment_pipolbs]
-        fragment_features.extend([(i, FeatureType.ATT) for i in fragment_atts])
-        fragment_features.extend([(i, FeatureType.TARGET_TRNA) for i in fragment_ttrnas])
-
-        return tuple(sorted(fragment_features, key=lambda x: x[0].start))
+        return sorted(features, key=lambda x: x.start)
 
     def _get_fragment_features_of_type(
             self, feature_type: FeatureType) -> Sequence[Feature]:
@@ -259,7 +256,7 @@ class PipolinFragment:
 
 @dataclass(frozen=True)
 class Pipolin:
-    fragments: Sequence[PipolinFragment]
+    fragments: Tuple[PipolinFragment, ...]
 
     @staticmethod
     def from_fragments(*fragments: PipolinFragment):

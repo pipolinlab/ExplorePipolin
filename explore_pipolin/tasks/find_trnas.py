@@ -57,6 +57,6 @@ def add_trna_features(entries: MutableMapping[ContigID, MutableSequence[Tuple[in
             start = max(hit[0], 1)
             end = min(hit[1], genome.get_contig_by_id(contig_id=contig_id).length)
 
-            trna_feature = Feature(location=Range(start=start, end=end),
-                                   strand=hit[2], contig_id=contig_id, genome=genome)
-            genome.features.add_features(trna_feature, feature_type=FeatureType.TRNA)
+            trna_feature = Feature(location=Range(start=start, end=end), strand=hit[2],
+                                   ftype=FeatureType.TRNA, contig_id=contig_id, genome=genome)
+            genome.features.add_features(trna_feature)

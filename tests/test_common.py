@@ -34,13 +34,19 @@ class SetUpGenome(unittest.TestCase):
         self.multi_contig_genome = Genome(genome_id='car', genome_file='dir/car.fa',
                                           contigs=[self.short_contig, self.long_contig])
 
-        self.long_contig_feature1 = Feature(Range(123, 231), strand=Strand.REVERSE,
-                                            contig_id=self.long_contig_id, genome=self.multi_contig_genome)
-        self.long_contig_feature2 = Feature(Range(213, 234), strand=Strand.REVERSE,
-                                            contig_id=self.long_contig_id, genome=self.multi_contig_genome)
-        self.long_contig_feature3 = Feature(Range(321, 432), strand=Strand.FORWARD,
-                                            contig_id=self.long_contig_id, genome=self.multi_contig_genome)
-        self.short_contig_feature = Feature(Range(10, 60), strand=Strand.FORWARD,
+        self.long_contig_feature1_pipolb = Feature(Range(123, 231), Strand.REVERSE, FeatureType.PIPOLB,
+                                                   contig_id=self.long_contig_id, genome=self.multi_contig_genome)
+        self.long_contig_feature1_trna = Feature(Range(123, 231), Strand.REVERSE, FeatureType.TRNA,
+                                                 contig_id=self.long_contig_id, genome=self.multi_contig_genome)
+        self.long_contig_feature2_pipolb = Feature(Range(213, 234), Strand.REVERSE, FeatureType.PIPOLB,
+                                                   contig_id=self.long_contig_id, genome=self.multi_contig_genome)
+        self.long_contig_feature2_trna = Feature(Range(213, 234), Strand.REVERSE, FeatureType.TRNA,
+                                                 contig_id=self.long_contig_id, genome=self.multi_contig_genome)
+        self.long_contig_feature3_pipolb = Feature(Range(321, 432), Strand.FORWARD, FeatureType.PIPOLB,
+                                                   contig_id=self.long_contig_id, genome=self.multi_contig_genome)
+        self.long_contig_feature3_trna = Feature(Range(321, 432), Strand.FORWARD, FeatureType.TRNA,
+                                                 contig_id=self.long_contig_id, genome=self.multi_contig_genome)
+        self.short_contig_feature = Feature(Range(10, 60), Strand.FORWARD, FeatureType.PIPOLB,
                                             contig_id=self.short_contig_id, genome=self.multi_contig_genome)
         self.features = FeaturesContainer()
 
@@ -93,44 +99,45 @@ class TestRange(SetUpGenome):
 
 class TestFeatureClasses(SetUpGenome):
     def test_feature_contig_property(self):
-        self.assertEqual(self.long_contig_feature1.contig, self.long_contig)
+        self.assertEqual(self.long_contig_feature1_pipolb.contig, self.long_contig)
 
     def test_feature_end_not_greater_contig_length(self):
         with self.assertRaises(AssertionError):
-            Feature(Range(start=123, end=321), strand=Strand.FORWARD,
+            Feature(Range(start=123, end=321), Strand.FORWARD, FeatureType.PIPOLB,
                     contig_id=self.short_contig.id, genome=self.multi_contig_genome)
 
     def test_add_get_feature(self):
-        feature_type = FeatureType.PIPOLB
-        self.features.add_features(self.long_contig_feature1, feature_type=feature_type)
-        self.assertEqual(self.features.get_features(feature_type).first, self.long_contig_feature1)
+        self.features.add_features(self.long_contig_feature1_pipolb)
+        self.assertEqual(self.features.get_features(FeatureType.PIPOLB).first, self.long_contig_feature1_pipolb)
 
     def test_get_features_by_contig_sorted(self):
         feature_type = FeatureType.TRNA
-        self.features.add_features(self.long_contig_feature2, feature_type=feature_type)
-        self.features.add_features(self.long_contig_feature3, feature_type=feature_type)
-        self.features.add_features(self.long_contig_feature1, feature_type=feature_type)
+        self.features.add_features(self.long_contig_feature2_trna)
+        self.features.add_features(self.long_contig_feature3_trna)
+        self.features.add_features(self.long_contig_feature1_trna)
 
         features_dict = self.features.get_features(feature_type).get_dict_by_contig_sorted()
         features_list = self.features.get_features(feature_type).get_list_of_contig_sorted(self.long_contig_id)
         self.assertEqual(features_dict[self.long_contig_id], features_list)
 
     def test_get_overlapping_with_feature(self):
-        self.features.add_features(self.long_contig_feature1, feature_type=FeatureType.TRNA)
-        self.features.add_features(self.long_contig_feature3, feature_type=FeatureType.PIPOLB)
+        self.features.add_features(self.long_contig_feature1_trna)
+        self.features.add_features(self.long_contig_feature3_pipolb)
 
-        ofeature_present = self.features.get_features(FeatureType.TRNA).get_overlapping(self.long_contig_feature2)
-        self.assertEqual(ofeature_present, self.long_contig_feature1)
+        ofeature_present = self.features.get_features(FeatureType.TRNA).get_overlapping(self.long_contig_feature2_trna)
+        self.assertEqual(ofeature_present, self.long_contig_feature1_trna)
 
-        ofeature_absent = self.features.get_features(FeatureType.PIPOLB).get_overlapping(self.long_contig_feature2)
+        ofeature_absent = self.features.get_features(FeatureType.PIPOLB).get_overlapping(
+            self.long_contig_feature2_pipolb
+        )
         self.assertIsNone(ofeature_absent)
 
     def test_is_on_the_same_contig(self):
-        self.features.add_features(self.long_contig_feature1, feature_type=FeatureType.TRNA)
-        self.features.add_features(self.long_contig_feature2, feature_type=FeatureType.PIPOLB)
+        self.features.add_features(self.long_contig_feature1_trna)
+        self.features.add_features(self.long_contig_feature2_pipolb)
         self.assertTrue(self.features.is_on_the_same_contig(FeatureType.TRNA, FeatureType.PIPOLB))
 
-        self.features.add_features(self.short_contig_feature, feature_type=FeatureType.PIPOLB)
+        self.features.add_features(self.short_contig_feature)
         self.assertFalse(self.features.is_on_the_same_contig(FeatureType.TRNA, FeatureType.PIPOLB))
 
 

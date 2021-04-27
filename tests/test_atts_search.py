@@ -13,20 +13,19 @@ class TestAttsDenovoSearch(unittest.TestCase):
         contig2 = Contig(self.contig2_id, 10000)
         self.genome = Genome('GENOME_ID', 'genome.fa', contigs=[contig1, contig2])
 
-        pipolb1 = Feature(Range(100, 1100), Strand.FORWARD, self.contig1_id, self.genome)
-        pipolb2 = Feature(Range(3000, 4000), Strand.FORWARD, self.contig1_id, self.genome)
-        pipolb3 = Feature(Range(500, 1500), Strand.REVERSE, self.contig2_id, self.genome)
+        pipolb1 = Feature(Range(100, 1100), Strand.FORWARD, FeatureType.PIPOLB, self.contig1_id, self.genome)
+        pipolb2 = Feature(Range(3000, 4000), Strand.FORWARD, FeatureType.PIPOLB, self.contig1_id, self.genome)
+        pipolb3 = Feature(Range(500, 1500), Strand.REVERSE, FeatureType.PIPOLB, self.contig2_id, self.genome)
 
-        self.genome.features.add_features(pipolb1, pipolb2, pipolb3, feature_type=FeatureType.PIPOLB)
+        self.genome.features.add_features(pipolb1, pipolb2, pipolb3)
 
     def test_is_att_denovo(self):
-        att1 = AttFeature(Range(30, 70), Strand.REVERSE, self.contig1_id, self.genome, 0)
-        att2 = AttFeature(Range(2000, 2040), Strand.REVERSE, self.contig1_id, self.genome, att1.att_id)
-        trna1 = Feature(Range(2030, 2060), Strand.FORWARD, self.contig1_id, self.genome)
-        trna2 = Feature(Range(5030, 5060), Strand.FORWARD, self.contig1_id, self.genome)
-        trna3 = Feature(Range(2000, 2040), Strand.REVERSE, self.contig2_id, self.genome)
-        self.genome.features.add_features(att1, att2, feature_type=FeatureType.ATT)
-        self.genome.features.add_features(trna1, trna2, trna3, feature_type=FeatureType.TRNA)
+        att1 = AttFeature(Range(30, 70), Strand.REVERSE, FeatureType.ATT, self.contig1_id, self.genome, 0)
+        att2 = AttFeature(Range(2000, 2040), Strand.REVERSE, FeatureType.ATT, self.contig1_id, self.genome, att1.att_id)
+        trna1 = Feature(Range(2030, 2060), Strand.FORWARD, FeatureType.TRNA, self.contig1_id, self.genome)
+        trna2 = Feature(Range(5030, 5060), Strand.FORWARD, FeatureType.TRNA, self.contig1_id, self.genome)
+        trna3 = Feature(Range(2000, 2040), Strand.REVERSE, FeatureType.TRNA, self.contig2_id, self.genome)
+        self.genome.features.add_features(att1, att2, trna1, trna2, trna3)
 
         finder = AttDenovoFinder(self.genome, 'output_dir', percent_identity=85)
         self.assertFalse(finder._is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig1_id)))

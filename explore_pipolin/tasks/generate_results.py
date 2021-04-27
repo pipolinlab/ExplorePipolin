@@ -93,7 +93,7 @@ def _generate_att_seq_features(record_format: str, pipolin: Pipolin):
     for fragment in pipolin.fragments:
         fragment_shift = fragment.start
 
-        for att in [f[0] for f in fragment.features if f[1] == FeatureType.ATT]:
+        for att in [f for f in fragment.features if f.ftype == FeatureType.ATT]:
             att_start, att_end = (att.start - fragment_shift), (att.end - fragment_shift)
             if record_format == 'gb':
                 att_feature = _create_gb_att_seq_feature(start=att_start, end=att_end,

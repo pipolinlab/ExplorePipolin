@@ -7,7 +7,7 @@ from Bio import SeqIO
 from prefect import task, context
 
 from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, Strand, AttFeature, ContigID, \
-    MultiLocation
+    MultiLocation, Feature
 from explore_pipolin.utilities.external_tools import blastn_against_ref_att, blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml, create_seqio_records_dict
 from explore_pipolin.utilities.logging import genome_specific_logging
@@ -48,21 +48,25 @@ class AttFinder:
         att_id = self.genome.features.get_features(FeatureType.ATT).get_next_att_id()
         for entry in entries:
             att_features = self._create_att_features(entry, att_id)
-            self.genome.features.add_features(*att_features, feature_type=FeatureType.ATT)
+            self.genome.features.add_features(*att_features)
 
     def _create_att_features(self, entry, att_id) -> Sequence[AttFeature]:
         att_features = []
         for hit in entry:
             att_features.append(AttFeature(location=Range(start=hit.hit_start, end=hit.hit_end),
                                            strand=Strand.from_pm_one_encoding(hit.hit_strand),
-                                           contig_id=entry.id, genome=self.genome, att_id=att_id))
+                                           ftype=FeatureType.ATT, contig_id=entry.id,
+                                           genome=self.genome, att_id=att_id))
         return att_features
 
     def _add_target_trnas_features(self):
         for att in self.genome.features.get_features(FeatureType.ATT):
-            target_trna = self.genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
-            if target_trna is not None:
-                self.genome.features.add_features(target_trna, feature_type=FeatureType.TARGET_TRNA)
+            trna = self.genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
+            if trna is not None:
+                target_trna = Feature(location=trna.location, strand=trna.strand,
+                                      ftype=FeatureType.TARGET_TRNA,
+                                      contig_id=trna.contig_id, genome=trna.genome)
+                self.genome.features.add_features(target_trna)
 
 
 @task()
@@ -143,19 +147,22 @@ class AttDenovoFinder:
             for r in att.ranges:
                 if new_att_id in atts_dict:
                     if not r.is_overlapping_any(atts_dict[new_att_id]):
-                        new_att = AttFeature(r, Strand.FORWARD, att.contig_id, self.genome, new_att_id)
-                        self.genome.features.add_features(new_att, feature_type=FeatureType.ATT)
+                        new_att = AttFeature(r, Strand.FORWARD, FeatureType.ATT, att.contig_id, self.genome, new_att_id)
+                        self.genome.features.add_features(new_att)
                 else:
-                    new_att = AttFeature(r, Strand.FORWARD, att.contig_id, self.genome, new_att_id)
-                    self.genome.features.add_features(new_att, feature_type=FeatureType.ATT)
+                    new_att = AttFeature(r, Strand.FORWARD, FeatureType.ATT, att.contig_id, self.genome, new_att_id)
+                    self.genome.features.add_features(new_att)
 
     def _extend_target_trna_features(self):
         target_trnas_dict = self.genome.features.target_trnas_dict()
         for att in self.genome.features.get_features(FeatureType.ATT):
-            target_trna = self.genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
-            if target_trna is not None:
-                if target_trna not in target_trnas_dict[target_trna.contig_id]:
-                    self.genome.features.add_features(target_trna, feature_type=FeatureType.TARGET_TRNA)
+            trna = self.genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
+            if trna is not None:
+                if trna not in target_trnas_dict[trna.contig_id]:
+                    target_trna = Feature(location=trna.location, strand=trna.strand,
+                                          ftype=FeatureType.TARGET_TRNA,
+                                          contig_id=trna.contig_id, genome=trna.genome)
+                    self.genome.features.add_features(target_trna)
 
     def _get_ranges_around_pipolbs(self) -> List[PairedLocation]:
         pipolbs_dict_by_contig = self.genome.features.pipolbs_dict()

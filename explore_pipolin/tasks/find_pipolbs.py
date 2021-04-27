@@ -45,10 +45,11 @@ def create_pipolb_entries(hmmsearch_table: str) -> Sequence[Tuple[str, int, int,
 
 def add_pipolb_features(entries, genome):
     for entry in entries:
-        feature = Feature(location=Range(start=entry[1], end=entry[2]),
-                          strand=Strand.from_pm_one_encoding(entry[3]),
-                          contig_id=ContigID(entry[0]), genome=genome)
-        genome.features.add_features(feature, feature_type=FeatureType.PIPOLB)
+        pipolb_feature = Feature(location=Range(start=entry[1], end=entry[2]),
+                                 strand=Strand.from_pm_one_encoding(entry[3]),
+                                 ftype=FeatureType.PIPOLB,
+                                 contig_id=ContigID(entry[0]), genome=genome)
+        genome.features.add_features(pipolb_feature)
 
 
 @task()

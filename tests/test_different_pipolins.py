@@ -1,5 +1,5 @@
 import unittest
-from typing import Sequence, Tuple, List
+from typing import Sequence, List
 
 from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, \
     Pipolin, PipolinFragment, AttFeature, ContigID
@@ -21,7 +21,7 @@ def create_genome_from_scheme(scheme: str) -> Genome:
     genome = _create_genome_with_contigs(contigs_schemes)
 
     features = _create_features_for_genome(genome, contigs_schemes)
-    _add_features_to_genome(features, genome)
+    genome.features.add_features(*features)
 
     return genome
 
@@ -35,7 +35,7 @@ def _create_genome_with_contigs(contigs_schemes: Sequence[str]) -> Genome:
 
 
 def _create_features_for_genome(
-        genome: Genome, contigs_schemes: List[str]) -> Sequence[Tuple[Feature, FeatureType]]:
+        genome: Genome, contigs_schemes: List[str]) -> Sequence[Feature]:
 
     features = []
     for i, sch in enumerate(contigs_schemes):
@@ -43,49 +43,43 @@ def _create_features_for_genome(
             triplet = sch[triplet_start: triplet_start + 3]
             feature_start = (triplet_start // 3 * 100 - 60) if triplet == _TRNA else (triplet_start // 3 * 100)
             if triplet[:2] == _ATT:
-                feature = AttFeature(Range(feature_start, feature_start + 100), Strand.FORWARD,
+                feature = AttFeature(Range(feature_start, feature_start + 100), Strand.FORWARD, FeatureType.ATT,
                                      ContigID(f'CONTIG_{i}'), genome, att_id=int(triplet[2]))
-                features.append((feature, FeatureType.ATT))
+                features.append(feature)
             else:
                 if triplet == _PIPOLB:
-                    feature = Feature(Range(feature_start, feature_start + 100),
-                                      Strand.FORWARD, ContigID(f'CONTIG_{i}'), genome)
-                    features.append((feature, FeatureType.PIPOLB))
+                    feature = Feature(Range(feature_start, feature_start + 100), Strand.FORWARD,
+                                      FeatureType.PIPOLB, ContigID(f'CONTIG_{i}'), genome)
+                    features.append(feature)
                 if triplet == _TRNA:
-                    feature = Feature(Range(feature_start, feature_start + 100),
-                                      Strand.REVERSE, ContigID(f'CONTIG_{i}'), genome)
-                    features.append((feature, FeatureType.TARGET_TRNA))
+                    feature = Feature(Range(feature_start, feature_start + 100), Strand.REVERSE,
+                                      FeatureType.TARGET_TRNA, ContigID(f'CONTIG_{i}'), genome)
+                    features.append(feature)
 
-    return features
-
-
-def _add_features_to_genome(
-        features: Sequence[Tuple[Feature, FeatureType]], genome: Genome) -> None:
-    for feature in features:
-        genome.features.add_features(feature[0], feature_type=feature[1])
+    return tuple(features)
 
 
 def create_pipolin(scheme: str, *fragments: PipolinFragment) -> Pipolin:
     new_fragments = []
     for fragment in fragments:
         features = _create_features_for_pipolin_fragment(scheme, fragment)
-        new_fragments.append(PipolinFragment(fragment.location, fragment.contig_id, fragment.genome, features))
+        new_fragments.append(PipolinFragment(fragment.location, fragment.contig_id, fragment.genome, tuple(features)))
     return Pipolin.from_fragments(*new_fragments)
 
 
 def _create_features_for_pipolin_fragment(
-        scheme: str, fragment: PipolinFragment) -> Sequence[Tuple[Feature, FeatureType]]:
+        scheme: str, fragment: PipolinFragment) -> Sequence[Feature]:
 
     contigs_schemes = scheme.split(_GAP)
     features = _create_features_for_genome(fragment.genome, contigs_schemes)
 
     fragment_features = []
     for feature in features:
-        if feature[0].contig_id == fragment.contig_id:
-            if feature[0].start >= fragment.start and feature[0].end <= fragment.end:
+        if feature.contig_id == fragment.contig_id:
+            if feature.start >= fragment.start and feature.end <= fragment.end:
                 fragment_features.append(feature)
 
-    return tuple(fragment_features)
+    return fragment_features
 
 
 class TestPipolinFinder(unittest.TestCase):

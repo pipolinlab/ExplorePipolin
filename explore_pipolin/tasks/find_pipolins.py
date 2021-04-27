@@ -74,11 +74,11 @@ class PipolinFinder:
 
     @staticmethod
     def _calc_pipolin_fragment_score(fragment: PipolinFragment) -> int:
-        atts_and_pipolbs = [f for f in fragment.features if f[1] != FeatureType.TARGET_TRNA]
-        first_feature_type = atts_and_pipolbs[0][1]
-        last_feature_type = atts_and_pipolbs[-1][1]
+        atts_and_pipolbs = [f for f in fragment.features if f.ftype != FeatureType.TARGET_TRNA]
+        first_feature_type = atts_and_pipolbs[0].ftype
+        last_feature_type = atts_and_pipolbs[-1].ftype
 
-        if any(f[1] == FeatureType.PIPOLB for f in fragment.features):
+        if any(f.ftype == FeatureType.PIPOLB for f in fragment.features):
             if first_feature_type == FeatureType.ATT and last_feature_type == FeatureType.ATT:
                 return 100000 * len(atts_and_pipolbs)
             elif first_feature_type == FeatureType.ATT or last_feature_type == FeatureType.ATT:
@@ -151,7 +151,7 @@ class PipolinFinder:
 
     def _find_remaining_fragments(self, fragment: PipolinFragment) -> Sequence[Sequence[PipolinFragment]]:
         # [*sorted_by_att_id[*sorted_by_contig_id]]
-        fragment_atts = set(f for f, ft in fragment.features if ft == FeatureType.ATT)
+        fragment_atts = set(f for f in fragment.features if f.ftype == FeatureType.ATT)
 
         if not fragment_atts:
             all_atts = []
@@ -178,7 +178,7 @@ class PipolinFinder:
 
                 atts = sorted(atts_by_contig, key=lambda x: x.start)
                 new_fragment = self._create_pipolin_fragment(atts[0], atts[-1])
-                if all(f[1] != FeatureType.PIPOLB for f in new_fragment.features):
+                if all(f.ftype != FeatureType.PIPOLB for f in new_fragment.features):
                     fragments_same_att_id.append(new_fragment)
 
             other_fragments.append(fragments_same_att_id)
@@ -200,7 +200,7 @@ class PipolinFinder:
         loc = Range(max(0, start_feature.start), min(end_feature.end, contig_length))
         fragment = PipolinFragment(location=loc, contig_id=start_feature.contig_id, genome=self.genome)
         fragment_features = fragment.get_fragment_features_sorted()
-        return PipolinFragment(fragment.location, fragment.contig_id, fragment.genome, fragment_features)
+        return PipolinFragment(fragment.location, fragment.contig_id, fragment.genome, tuple(fragment_features))
 
     def _include_ttrnas_if_there_are(self, start_feature, end_feature):
         target_trnas = self.genome.features.get_features(FeatureType.TARGET_TRNA)
