@@ -32,7 +32,7 @@ def _extract_metadata(acc, ena_xml) -> Tuple[str, str, str, str, str]:
             for link in elem.findall('ASSEMBLY_LINKS/ASSEMBLY_LINK/URL_LINK[LABEL="WGS_SET_FASTA"]/URL'):
                 asmbl_url = link.text
 
-    return asmbl_level, g_repr, tax_id, sci_name, asmbl_url
+            return asmbl_level, g_repr, tax_id, sci_name, asmbl_url
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -47,7 +47,8 @@ def extract_metadata(accessions, ena_xml, output_file):
             acc = line.strip()
             print(i + 1, acc, sep='\t')
             asmbl_level, g_repr, tax_id, sci_name, asmbl_url = _extract_metadata(acc, ena_xml)
-            print(acc, asmbl_level, g_repr, tax_id, sci_name, asmbl_url, sep='\t', file=ouf)
+            print(acc, asmbl_level, g_repr, tax_id, sci_name, asmbl_url,
+                  sep='\t', file=ouf, flush=True)
 
 
 if __name__ == '__main__':
