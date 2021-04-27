@@ -57,13 +57,14 @@ def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
             logger.warning(f'{draw_pipolin_structure(pipolin)[0]}')
             single_fragment_pipolins.append(pipolin)
         else:
-            logger.warning('>>> Trying to scaffold...')
-            logger.warning(''.join(f'\n{i}' for i in draw_pipolin_structure(pipolin)))
+            logger.warning('>>> Trying to scaffold from fragments:')
+            logger.warning(''.join(f'\n\t{i}' for i in draw_pipolin_structure(pipolin)))
             try:
                 scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
                 result.append(scaffolder.scaffold_pipolin())
-                logger.warning('>>> Scaffolding is done!')
+                logger.warning('>>> Scaffolding is done! The scaffolded pipolin is:')
                 logger.warning('...'.join([i.split(sep=': ')[1] for i in draw_pipolin_structure(result[-1])]))
+                logger.warning('PLEASE, DOUBLE CHECK THE FINAL STRUCTURE MANUALLY!')
             except CannotScaffoldError as e:
                 logger.warning(f'>>> Cannot scaffold! {e}')
                 other_pipolins.append(pipolin)
@@ -105,8 +106,6 @@ class Scaffolder:
 
         # If >=2 contigs with tRNAs or a contig with >=2 tRNAs on different strands -> raise CannotScaffoldError
         self._check_ttrnas(pipolin.fragments)
-
-        self.REQUIRES_CHECK_WARNING = 'WARNING - PLEASE, DOUBLE CHECK THE FINAL STRUCTURE MANUALLY!'
 
     def scaffold_pipolin(self) -> Pipolin:
         if self.att_pipolb_att_fragments:
@@ -170,7 +169,7 @@ class Scaffolder:
             self._orient_fragments_according_ttrnas(right_fragment, left_fragment)
 
         except CannotScaffoldError:
-            print(self.REQUIRES_CHECK_WARNING)   # REQUIRES_CHECK_DIRECTION ?
+            pass
 
         return self._create_pipolin(left=left_fragment, right=right_fragment)
 
@@ -197,11 +196,9 @@ class Scaffolder:
         # 1) ---pol---...---att(t)---                    tRNA is required
         # 2) ---att---...---pol---...---att(t)---        tRNA is required
         if len(self.att_only_fragments) == 1:
-            print(self.REQUIRES_CHECK_WARNING)
             return self._pipolb_plus_one_att()
 
         elif len(self.att_only_fragments) == 2:
-            print(self.REQUIRES_CHECK_WARNING)
             return self._pipolb_plus_two_atts()
 
         else:
