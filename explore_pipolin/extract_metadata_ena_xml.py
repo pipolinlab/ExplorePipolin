@@ -38,9 +38,13 @@ def _extract_metadata(acc, ena_xml) -> Tuple[str, str, str, str, str]:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('accessions', type=click.Path(exists=True))
 @click.argument('ena-xml', type=click.Path(exists=True))
-@click.argument('output-file', type=click.Path())
-def extract_metadata(accessions, ena_xml, output_file):
-    with open(accessions) as inf, open(output_file, 'w') as ouf:
+@click.option('--output', type=click.Path(), required=True)
+def extract_metadata(accessions, ena_xml, output):
+    """
+    ACCESSIONS is a file with accession ids (e.g., found_pipolins.txt) for which
+    the metadata will be extracted from the ENA_XML file.
+    """
+    with open(accessions) as inf, open(output, 'w') as ouf:
         print('assembly_accession', 'assembly_level', 'genome_representation', 'taxon_id',
               'scientific_name', 'assembly_url', sep='\t', file=ouf)
         for i, line in enumerate(inf):

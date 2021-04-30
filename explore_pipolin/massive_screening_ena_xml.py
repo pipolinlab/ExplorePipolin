@@ -13,26 +13,17 @@ from explore_pipolin.common import CONTEXT_SETTINGS
 from explore_pipolin.utilities.io import create_seqio_records_dict
 
 
-def yield_acc_and_url(ena_xml_file, genus, out_dir):
-    for event, elem in ElementTree.iterparse(ena_xml_file, events=('start',)):
-        asmbl_acc, asmbl_url, sci_name = None, None, None
+def yield_acc_and_url(ena_xml):
+    for event, elem in ElementTree.iterparse(ena_xml, events=('start',)):
+        asmbl_acc, asmbl_url = None, None
         if event == 'start' and elem.tag == 'ASSEMBLY':
             asmbl_acc = elem.attrib['accession']
 
             for link in elem.findall('ASSEMBLY_LINKS/ASSEMBLY_LINK/URL_LINK[LABEL="WGS_SET_FASTA"]/URL'):
                 asmbl_url = link.text
 
-            sci_name_node = elem.find('TAXON/SCIENTIFIC_NAME')
-            if sci_name_node is not None:
-                sci_name = sci_name_node.text
-
-        if sci_name is not None:
-            if genus in sci_name:
-                if (asmbl_acc is not None) and (asmbl_url is not None):
-                    yield asmbl_acc, asmbl_url
-            else:
-                with open(os.path.join(out_dir, 'wrong_sci_names.txt'), 'a') as ouf:
-                    print(asmbl_acc, sci_name, sep='\t', file=ouf)
+            if (asmbl_acc is not None) and (asmbl_url is not None):
+                yield asmbl_acc, asmbl_url
 
 
 def retrieve_fasta_file(fasta_url, file_path):
@@ -112,22 +103,26 @@ def clean_if_not_found(acc, output_dir):
                     os.remove(os.path.join(output_dir, 'pipolbs', acc + '.tbl'))
                 except OSError:
                     pass
+            else:
+                with open(os.path.join(output_dir, 'found_pipolins.txt'), 'a') as ouf:
+                    print(acc, file=ouf)
         if not_found:
             os.remove(os.path.join(output_dir, 'logs', acc + '.log'))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('ena-xml-file', type=click.Path(exists=True))
+@click.argument('ena-xml', type=click.Path(exists=True))
 @click.argument('output-dir', type=click.Path())
-@click.argument('genus', type=str)
-@click.option('--force', is_flag=True,
-              help='If the output directory already exists, erase its content before starting the analysis.')
-def download_and_analyse(ena_xml_file, output_dir, genus, force):
-    if force:
-        os.remove(output_dir)
+def download_and_analyse(ena_xml, output_dir):
+    """
+    ENA_XML is a file downloaded from ENA database after a search of genome assemblies
+    for an organism of interest.
+    An accession of each analysed genome assembly will be written to the analysed.txt file.
+    When the process is interrupted and rerun again, these accessions will be skipped.
+    """
     os.makedirs(output_dir, exist_ok=True)
 
-    for acc, url in yield_acc_and_url(ena_xml_file, genus, output_dir):
+    for acc, url in yield_acc_and_url(ena_xml):
         print(acc, url)
 
         if not _is_analysed(acc, output_dir):

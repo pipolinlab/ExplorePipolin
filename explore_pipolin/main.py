@@ -27,13 +27,12 @@ def check_genome_file_names(genome):
                    'If not provided, the default file will be used instead.')
 @click.option('--percent-identity', type=int, default=85, show_default=True,
               help='Minimum percent identity in direct repeats search')
-@click.option('--no-annotation', is_flag=True)
+@click.option('--no-annotation', is_flag=True, help='Do not run the annotation step (i.e. Prokka).')
 @click.option('--proteins', type=click.Path(exists=True),
               help='Prokka param: FASTA or GBK file to use as 1st priority. '
                    'If not provided, the default file will be used instead.')
-@click.option('--add-colours', is_flag=True,
-              help='Add colours to the final Genbank file features. '
-                   'The genomic structure can be visualized further using Easyfig.')
+@click.option('--skip-colours', is_flag=True,
+              help='Do not add an Easyfig-compatible colouring scheme to the final Genbank file features.')
 @click.option('--cpus', default=8, type=int, show_default=True,
               help='Prokka param: Number of CPUs to use [0=all]')
 @click.option('--do-not-reuse', is_flag=True,
@@ -47,7 +46,7 @@ def explore_pipolin(
         percent_identity,
         no_annotation,
         proteins,
-        add_colours,
+        skip_colours,
         cpus,
         do_not_reuse,
 ):
@@ -79,7 +78,7 @@ def explore_pipolin(
         percent_identity=percent_identity,
         no_annotation=no_annotation,
         proteins=proteins,
-        add_colours=add_colours,
+        skip_colours=skip_colours,
         cpus=cpus,
         do_not_reuse=do_not_reuse,
     )

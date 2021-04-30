@@ -24,7 +24,7 @@ def get_flow():
         percent_identity = Parameter('percent_identity')
         no_annotation = Parameter('no_annotation')
         proteins = Parameter('proteins')
-        add_colours = Parameter('add_colours')
+        skip_colours = Parameter('skip_colours')
         cpus = Parameter('cpus')
         do_not_reuse = Parameter('do_not_reuse')
 
@@ -78,7 +78,7 @@ def get_flow():
                 genome=genome, prokka_dir=prokka_dir, pipolins=scaffolded_pipolins
             )
 
-            with case(add_colours, True):
+            with case(skip_colours, False):
                 easyfig_add_colours.map(genome=genome, in_dir=results_dir)
 
     flow.set_reference_tasks([results_dir])
