@@ -1,4 +1,3 @@
-from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -160,7 +159,7 @@ class FeatureSet(Set[Feature]):
         return next(iter(self))
 
     def get_next_att_id(self) -> int:
-        att_ids = [i.att_id for i in self]
+        att_ids = [i.att_id for i in self if isinstance(i, AttFeature)]
         return max(att_ids, default=0) + 1
 
     def get_atts_dict_by_att_id(self: Set[AttFeature]) -> Mapping[int, MutableSequence[AttFeature]]:

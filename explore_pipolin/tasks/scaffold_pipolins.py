@@ -4,7 +4,7 @@ from typing import Sequence, MutableSequence, List, Tuple, Optional
 from prefect import task
 from prefect import context
 
-from explore_pipolin.common import Genome, Pipolin, FeatureType, PipolinFragment, Strand, Feature, Range
+from explore_pipolin.common import Genome, Pipolin, FeatureType, PipolinFragment, Strand, Feature, Range, AttFeature
 from explore_pipolin.utilities.logging import genome_specific_logging
 
 
@@ -31,7 +31,7 @@ def _get_feature_string(feature) -> str:
     if feature.ftype == FeatureType.PIPOLB:
         return 'pol'
     elif feature.ftype == FeatureType.ATT:
-        return 'att' + str(feature[0].att_id)
+        return 'att' + str(feature.att_id)
     elif feature.ftype == FeatureType.TARGET_TRNA:
         return '(t)'
 
@@ -282,7 +282,7 @@ class Scaffolder:
 
     def _orient_fragment_according_main(
             self, main_fragment: PipolinFragment, dependent_fragment: PipolinFragment) -> PipolinFragment:
-        att_ids = set(f.att_id for f in main_fragment.features if f.ftype == FeatureType.ATT)
+        att_ids = set(f.att_id for f in main_fragment.features if isinstance(f, AttFeature))
         if len(att_ids) != 1:
             raise CannotScaffoldError
         att_id = att_ids.pop()
@@ -338,7 +338,7 @@ class Scaffolder:
 
     @staticmethod
     def _get_fragment_atts_strand(fragment: PipolinFragment, att_id) -> Optional[Strand]:
-        atts = set(f.strand for f in fragment.features if f.ftype == FeatureType.ATT and f.att_id == att_id)
+        atts = set(f.strand for f in fragment.features if isinstance(f, AttFeature) and f.att_id == att_id)
         if len(atts) == 1:
             return atts.pop()
 
