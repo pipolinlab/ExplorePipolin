@@ -1,8 +1,11 @@
 import gzip
 import os
 import shutil
+import subprocess
+import asyncio
 
 import urllib.request
+from typing import Tuple, Iterator
 from urllib.error import URLError
 import xml.etree.ElementTree as ElementTree
 
@@ -13,7 +16,7 @@ from explore_pipolin.common import CONTEXT_SETTINGS
 from explore_pipolin.utilities.io import create_seqio_records_dict
 
 
-def yield_acc_and_url(ena_xml):
+def yield_acc_and_url(ena_xml) -> Iterator[Tuple[str, str]]:
     for event, elem in ElementTree.iterparse(ena_xml, events=('start',)):
         asmbl_acc, asmbl_url = None, None
         if event == 'start' and elem.tag == 'ASSEMBLY':
@@ -39,7 +42,7 @@ def unzip_fasta_file(file_path):
 
 
 def change_fasta_identifiers(genome_file):
-    """This is valid only for identifiers of assemblies from the ENA database"""
+    """Make ids shorter if too long"""
     genome_dict = create_seqio_records_dict(genome_file, 'fasta')
     new_dict = {}
     for key, value in genome_dict.items():
@@ -73,7 +76,7 @@ def update_if_not_analysed(acc, output_dir):
         _update_analysed(acc, output_dir)
 
 
-def _download_and_analyse(output_dir, acc, url) -> None:
+async def _download_and_analyse(output_dir, acc, url) -> None:
     file_path = os.path.join(output_dir, acc + '.fasta.gz')
 
     try:
@@ -86,7 +89,10 @@ def _download_and_analyse(output_dir, acc, url) -> None:
 
     change_fasta_identifiers(file_to_analyse)
 
-    os.system(f'explore_pipolin --out-dir {output_dir} --no-annotation {file_to_analyse}')
+    proc = await asyncio.subprocess.create_subprocess_shell(
+        f'explore_pipolin --out-dir {output_dir} --no-annotation {file_to_analyse}',
+        stdout=subprocess.DEVNULL)
+    await proc.wait()
     os.remove(file_to_analyse)
     update_if_not_analysed(acc, output_dir)
 
@@ -110,25 +116,40 @@ def clean_if_not_found(acc, output_dir):
             os.remove(os.path.join(output_dir, 'logs', acc + '.log'))
 
 
+async def download_and_analyse(acc: str, url: str, out_dir, sem: asyncio.BoundedSemaphore):
+    print(acc, url)
+    if not _is_analysed(acc, out_dir):
+        await _download_and_analyse(out_dir, acc, url)
+        clean_if_not_found(acc, out_dir)
+    sem.release()
+
+
+async def download_and_analyse_all(ena_xml, out_dir: str, p: int):
+    sem = asyncio.BoundedSemaphore(p)
+    tasks = []
+    for acc, url in yield_acc_and_url(ena_xml):
+        await sem.acquire()
+        tasks.append(asyncio.create_task(download_and_analyse(acc, url, out_dir, sem)))
+        tasks = [task for task in tasks if not task.done()]
+    await asyncio.gather(*tasks)
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('ena-xml', type=click.Path(exists=True))
-@click.argument('output-dir', type=click.Path())
-def download_and_analyse(ena_xml, output_dir):
+@click.argument('out-dir', type=click.Path())
+@click.option('-p', type=int, default=1, show_default=True, help='Number of processes to run.')
+def massive_screening(ena_xml, out_dir, p):
     """
     ENA_XML is a file downloaded from ENA database after a search of genome assemblies
     for an organism of interest.
     An accession of each analysed genome assembly will be written to the analysed.txt file.
     When the process is interrupted and rerun again, these accessions will be skipped.
+    Accessions of pipolin-harboring genomes will be written to the found_pipolins.txt file.
     """
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
 
-    for acc, url in yield_acc_and_url(ena_xml):
-        print(acc, url)
-
-        if not _is_analysed(acc, output_dir):
-            _download_and_analyse(output_dir, acc, url)
-        clean_if_not_found(acc, output_dir)
+    asyncio.run(download_and_analyse_all(ena_xml, out_dir, p))
 
 
 if __name__ == '__main__':
-    download_and_analyse()
+    massive_screening()

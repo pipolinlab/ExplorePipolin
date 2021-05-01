@@ -12,7 +12,7 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': ['explore_pipolin=explore_pipolin.main:explore_pipolin',
-                            'massive_screening_ena_xml=explore_pipolin.massive_screening_ena_xml:download_and_analyse',
+                            'massive_screening_ena_xml=explore_pipolin.massive_screening_ena_xml:massive_screening',
                             'extract_metadata_ena_xml=explore_pipolin.extract_metadata_ena_xml:extract_metadata']
     },
     test_suite='tests',
