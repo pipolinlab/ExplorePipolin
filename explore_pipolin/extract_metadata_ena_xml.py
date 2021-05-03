@@ -1,57 +1,73 @@
+import sys
 from typing import Tuple
 import xml.etree.ElementTree as ElementTree
 
 
 import click
-
+import requests
 
 from explore_pipolin.common import CONTEXT_SETTINGS
 
 
-def _extract_metadata(acc, ena_xml) -> Tuple[str, str, str, str, str]:
-    asmbl_level, g_repr, tax_id, sci_name, asmbl_url = '-', '-', '-', '-', '-'
-    for event, elem in ElementTree.iterparse(ena_xml, events=('start',)):
-        if event == 'start' and elem.tag == 'ASSEMBLY' and elem.attrib['accession'] == acc:
+def _retrieve_ena_xml(acc) -> str:
+    server = "https://www.ebi.ac.uk/ena/browser/api/xml/" + acc
+    r = requests.get(server)
 
-            asmbl_level_node = elem.find('ASSEMBLY_LEVEL')
-            if asmbl_level_node is not None:
-                asmbl_level = asmbl_level_node.text
+    if not r.ok:
+        r.raise_for_status()
+        sys.exit()
 
-            g_repr_node = elem.find('GENOME_REPRESENTATION')
-            if g_repr_node is not None:
-                g_repr = g_repr_node.text
+    return r.text
 
-            tax_id_node = elem.find('TAXON/TAXON_ID')
-            if tax_id_node is not None:
-                tax_id = tax_id_node.text
 
-            sci_name_node = elem.find('TAXON/SCIENTIFIC_NAME')
-            if sci_name_node is not None:
-                sci_name = sci_name_node.text
+def _extract_metadata(ena_xml: str) -> Tuple[str, str, str, str, str, str]:
+    asmbl_level, g_repr, tax_id, sci_name, strain, asmbl_url = '-', '-', '-', '-', '-', '-'
+    root = ElementTree.fromstring(ena_xml)
 
-            for link in elem.findall('ASSEMBLY_LINKS/ASSEMBLY_LINK/URL_LINK[LABEL="WGS_SET_FASTA"]/URL'):
-                asmbl_url = link.text
+    asmbl_level_node = root.find('ASSEMBLY/ASSEMBLY_LEVEL')
+    if asmbl_level_node is not None:
+        asmbl_level = asmbl_level_node.text
 
-            return asmbl_level, g_repr, tax_id, sci_name, asmbl_url
+    g_repr_node = root.find('ASSEMBLY/GENOME_REPRESENTATION')
+    if g_repr_node is not None:
+        g_repr = g_repr_node.text
+
+    tax_id_node = root.find('ASSEMBLY/TAXON/TAXON_ID')
+    if tax_id_node is not None:
+        tax_id = tax_id_node.text
+
+    sci_name_node = root.find('ASSEMBLY/TAXON/SCIENTIFIC_NAME')
+    if sci_name_node is not None:
+        sci_name = sci_name_node.text
+
+    strain_node = root.find('ASSEMBLY/TAXON/STRAIN')
+    if strain_node is not None:
+        strain = strain_node.text
+
+    for link in root.findall('ASSEMBLY/ASSEMBLY_LINKS/ASSEMBLY_LINK/URL_LINK[LABEL="WGS_SET_FASTA"]/URL'):
+        asmbl_url = link.text
+
+    return asmbl_level, g_repr, tax_id, sci_name, strain, asmbl_url
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('accessions', type=click.Path(exists=True))
-@click.argument('ena-xml', type=click.Path(exists=True))
-@click.option('--output', type=click.Path(), required=True)
-def extract_metadata(accessions, ena_xml, output):
+@click.option('--out-file', type=click.Path(), required=True)
+def extract_metadata(accessions, out_file):
     """
     ACCESSIONS is a file with accession ids (e.g., found_pipolins.txt) for which
-    the metadata will be extracted from the ENA_XML file.
+    the metadata will be downloaded and extracted from the ENA database.
     """
-    with open(accessions) as inf, open(output, 'w') as ouf:
+    with open(accessions) as inf, open(out_file, 'w') as ouf:
         print('assembly_accession', 'assembly_level', 'genome_representation', 'taxon_id',
-              'scientific_name', 'assembly_url', sep='\t', file=ouf)
+              'scientific_name', 'strain', 'assembly_url', sep='\t', file=ouf)
         for i, line in enumerate(inf):
             acc = line.strip()
             print(i + 1, acc, sep='\t')
-            asmbl_level, g_repr, tax_id, sci_name, asmbl_url = _extract_metadata(acc, ena_xml)
-            print(acc, asmbl_level, g_repr, tax_id, sci_name, asmbl_url,
+
+            ena_xml = _retrieve_ena_xml(acc)
+            asmbl_level, g_repr, tax_id, sci_name, strain, asmbl_url = _extract_metadata(ena_xml)
+            print(acc, asmbl_level, g_repr, tax_id, sci_name, strain, asmbl_url,
                   sep='\t', file=ouf, flush=True)
 
 
