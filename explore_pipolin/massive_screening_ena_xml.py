@@ -55,31 +55,12 @@ def _update_analysed(acc, output_dir):
         print(acc, file=ouf)
 
 
-def update_if_not_analysed(acc, output_dir):
+def _update_if_not_analysed(acc, output_dir):
     if not _is_analysed(acc, output_dir):
         _update_analysed(acc, output_dir)
 
 
-async def _download_and_analyse(output_dir, acc, url) -> None:
-    file_path = os.path.join(output_dir, acc + '.fasta.gz')
-
-    try:
-        retrieve_fasta_file(url, file_path)
-    except URLError:
-        update_if_not_analysed(acc, output_dir)
-        return
-
-    file_to_analyse = unzip_fasta_file(file_path)
-
-    proc = await asyncio.subprocess.create_subprocess_shell(
-        f'explore_pipolin --out-dir {output_dir} --no-annotation {file_to_analyse}',
-        stdout=subprocess.DEVNULL)
-    await proc.wait()
-    os.remove(file_to_analyse)
-    update_if_not_analysed(acc, output_dir)
-
-
-def clean_if_not_found(acc, output_dir):
+def _clean_if_not_found(acc, output_dir):
     log_path = os.path.join(output_dir, 'logs', acc + '.log')
     if os.path.exists(log_path):
         with open(log_path) as inf:
@@ -98,11 +79,30 @@ def clean_if_not_found(acc, output_dir):
             os.remove(os.path.join(output_dir, 'logs', acc + '.log'))
 
 
+async def _download_and_analyse(output_dir, acc, url) -> None:
+    file_path = os.path.join(output_dir, acc + '.fasta.gz')
+
+    try:
+        retrieve_fasta_file(url, file_path)
+    except URLError:
+        _update_if_not_analysed(acc, output_dir)
+        return
+
+    file_to_analyse = unzip_fasta_file(file_path)
+
+    proc = await asyncio.subprocess.create_subprocess_shell(
+        f'explore_pipolin --out-dir {output_dir} --no-annotation {file_to_analyse}',
+        stdout=subprocess.DEVNULL)
+    await proc.wait()
+    os.remove(file_to_analyse)
+    _update_if_not_analysed(acc, output_dir)
+
+
 async def download_and_analyse(acc: str, url: str, out_dir, sem: asyncio.BoundedSemaphore):
     print(acc, url)
     if not _is_analysed(acc, out_dir):
         await _download_and_analyse(out_dir, acc, url)
-        clean_if_not_found(acc, out_dir)
+        _clean_if_not_found(acc, out_dir)
     sem.release()
 
 

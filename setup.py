@@ -11,10 +11,12 @@ setuptools.setup(
         'explore_pipolin': ['data/*']
     },
     entry_points={
-        'console_scripts': ['explore_pipolin=explore_pipolin.main:explore_pipolin',
-                            'massive_screening_ena_xml=explore_pipolin.massive_screening_ena_xml:massive_screening',
-                            'extract_metadata_ena_xml=explore_pipolin.extract_metadata_ena_xml:extract_metadata',
-                            'download_found_pipolins=explore_pipolin.download_found_pipolins:download_found_pipolins']
+        'console_scripts': [
+            'explore_pipolin=explore_pipolin.main:explore_pipolin',
+            'massive_screening_ena_xml=explore_pipolin.massive_screening_ena_xml:massive_screening',
+            'extract_metadata_ena_xml=explore_pipolin.extract_metadata_ena_xml:extract_metadata_all',
+            'download_pipolin_genomes=explore_pipolin.download_pipolin_genomes:download_pipolin_genomes'
+        ]
     },
     test_suite='tests',
     url='https://github.com/liubovch/ExplorePipolin',

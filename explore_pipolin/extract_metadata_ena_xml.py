@@ -9,7 +9,7 @@ import requests
 from explore_pipolin.common import CONTEXT_SETTINGS
 
 
-def _retrieve_ena_xml(acc) -> str:
+def retrieve_ena_xml(acc) -> str:
     server = "https://www.ebi.ac.uk/ena/browser/api/xml/" + acc
     r = requests.get(server)
 
@@ -20,7 +20,7 @@ def _retrieve_ena_xml(acc) -> str:
     return r.text
 
 
-def _extract_metadata(ena_xml: str) -> Tuple[str, str, str, str, str, str]:
+def extract_metadata(ena_xml: str) -> Tuple[str, str, str, str, str, str]:
     asmbl_level, g_repr, tax_id, sci_name, strain, asmbl_url = '-', '-', '-', '-', '-', '-'
     root = ElementTree.fromstring(ena_xml)
 
@@ -53,7 +53,7 @@ def _extract_metadata(ena_xml: str) -> Tuple[str, str, str, str, str, str]:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('accessions', type=click.Path(exists=True))
 @click.option('--out-file', type=click.Path(), required=True)
-def extract_metadata(accessions, out_file):
+def extract_metadata_all(accessions, out_file):
     """
     ACCESSIONS is a file with accession ids (e.g., found_pipolins.txt) for which
     the metadata will be downloaded and extracted from the ENA database.
@@ -65,11 +65,11 @@ def extract_metadata(accessions, out_file):
             acc = line.strip()
             print(i + 1, acc, sep='\t')
 
-            ena_xml = _retrieve_ena_xml(acc)
-            asmbl_level, g_repr, tax_id, sci_name, strain, asmbl_url = _extract_metadata(ena_xml)
+            ena_xml = retrieve_ena_xml(acc)
+            asmbl_level, g_repr, tax_id, sci_name, strain, asmbl_url = extract_metadata(ena_xml)
             print(acc, asmbl_level, g_repr, tax_id, sci_name, strain, asmbl_url,
                   sep='\t', file=ouf, flush=True)
 
 
 if __name__ == '__main__':
-    extract_metadata()
+    extract_metadata_all()

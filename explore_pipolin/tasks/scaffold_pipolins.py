@@ -84,7 +84,7 @@ class CannotScaffoldError(Exception):
 
 
 _BORDER_INFLATE = 0
-_NO_BORDER_INFLATE = 100000
+_NO_BORDER_INFLATE = 100_000
 
 
 class Scaffolder:
