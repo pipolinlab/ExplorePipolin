@@ -13,7 +13,8 @@ setuptools.setup(
     entry_points={
         'console_scripts': ['explore_pipolin=explore_pipolin.main:explore_pipolin',
                             'massive_screening_ena_xml=explore_pipolin.massive_screening_ena_xml:massive_screening',
-                            'extract_metadata_ena_xml=explore_pipolin.extract_metadata_ena_xml:extract_metadata']
+                            'extract_metadata_ena_xml=explore_pipolin.extract_metadata_ena_xml:extract_metadata',
+                            'download_found_pipolins=explore_pipolin.download_found_pipolins:download_found_pipolins']
     },
     test_suite='tests',
     url='https://github.com/liubovch/ExplorePipolin',
