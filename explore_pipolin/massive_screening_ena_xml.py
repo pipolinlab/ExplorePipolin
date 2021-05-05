@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import asyncio
+import tempfile
 
 import urllib.request
 from typing import Tuple, Iterator
@@ -14,7 +15,7 @@ import click
 from explore_pipolin.common import CONTEXT_SETTINGS
 
 
-def yield_acc_and_url(ena_xml) -> Iterator[Tuple[str, str]]:
+def yield_acc_and_url(ena_xml: str) -> Iterator[Tuple[str, str]]:
     for event, elem in ElementTree.iterparse(ena_xml, events=('start',)):
         asmbl_acc, asmbl_url = None, None
         if event == 'start' and elem.tag == 'ASSEMBLY':
@@ -27,21 +28,14 @@ def yield_acc_and_url(ena_xml) -> Iterator[Tuple[str, str]]:
                 yield asmbl_acc, asmbl_url
 
 
-def retrieve_fasta_file(fasta_url, file_path):
-    urllib.request.urlretrieve(fasta_url, file_path)
-
-
-def unzip_fasta_file(file_path):
-    new_file = os.path.splitext(file_path)[0]
-    with gzip.open(file_path, 'rb') as inf, open(new_file, 'wb') as ouf:
+def unzip_genome(genome_zip: str, new_genome: str) -> None:
+    with gzip.open(genome_zip, 'rb') as inf, open(new_genome, 'wb') as ouf:
         shutil.copyfileobj(inf, ouf)
-    os.remove(file_path)
-    return new_file
 
 
-def _is_analysed(acc, output_dir):
+def _is_analysed(acc: str, out_dir) -> bool:
     try:
-        with open(os.path.join(output_dir, 'analysed.txt')) as inf:
+        with open(os.path.join(out_dir, 'analysed.txt')) as inf:
             for line in inf:
                 if line.strip() == acc:
                     return True
@@ -50,69 +44,85 @@ def _is_analysed(acc, output_dir):
         return False
 
 
-def _update_analysed(acc, output_dir):
-    with open(os.path.join(output_dir, 'analysed.txt'), 'a') as ouf:
+def _update_checked(acc: str, out_dir: str) -> None:
+    with open(os.path.join(out_dir, 'checked.txt'), 'a') as ouf:
         print(acc, file=ouf)
 
 
-def _update_if_not_analysed(acc, output_dir):
-    if not _is_analysed(acc, output_dir):
-        _update_analysed(acc, output_dir)
+def _is_found(acc: str, out_dir: str) -> bool:
+    log_path = os.path.join(out_dir, 'logs', acc + '.log')
+    if not os.path.exists(log_path):
+        raise AssertionError('Log should exist!')
+    with open(log_path) as inf:
+        return 'No piPolBs were found!' not in inf.read()
 
 
-def _clean_if_not_found(acc, output_dir):
-    log_path = os.path.join(output_dir, 'logs', acc + '.log')
-    if os.path.exists(log_path):
-        with open(log_path) as inf:
-            not_found = False
-            if 'No piPolBs were found!' in inf.read():
-                not_found = True
-                try:
-                    os.remove(os.path.join(output_dir, 'pipolbs', acc + '.faa'))
-                    os.remove(os.path.join(output_dir, 'pipolbs', acc + '.tbl'))
-                except OSError:
-                    pass
-            else:
-                with open(os.path.join(output_dir, 'found_pipolins.txt'), 'a') as ouf:
-                    print(acc, file=ouf)
-        if not_found:
-            os.remove(os.path.join(output_dir, 'logs', acc + '.log'))
+def _update_found_pipolins(acc: str, out_dir:str) -> None:
+    with open(os.path.join(out_dir, 'found_pipolins.txt'), 'a') as ouf:
+        print(acc, file=ouf)
 
 
-async def _download_and_analyse(output_dir, acc, url) -> None:
-    file_path = os.path.join(output_dir, acc + '.fasta.gz')
+def _clean_all(acc: str, out_dir: str) -> None:
+    os.remove(os.path.join(out_dir, 'pipolbs', acc + '.faa'))
+    os.remove(os.path.join(out_dir, 'pipolbs', acc + '.tbl'))
+    os.remove(os.path.join(out_dir, 'logs', acc + '.log'))
 
-    try:
-        retrieve_fasta_file(url, file_path)
-    except URLError:
-        _update_if_not_analysed(acc, output_dir)
-        return
 
-    file_to_analyse = unzip_fasta_file(file_path)
-
+async def analyse_genome(genome: str, out_dir: str) -> None:
     proc = await asyncio.subprocess.create_subprocess_shell(
-        f'explore_pipolin --out-dir {output_dir} --no-annotation {file_to_analyse}',
+        f'explore_pipolin --out-dir {out_dir} --no-annotation {genome}',
         stdout=subprocess.DEVNULL)
     await proc.wait()
-    os.remove(file_to_analyse)
-    _update_if_not_analysed(acc, output_dir)
 
 
-async def download_and_analyse(acc: str, url: str, out_dir, sem: asyncio.BoundedSemaphore):
-    print(acc, url)
-    if not _is_analysed(acc, out_dir):
-        await _download_and_analyse(out_dir, acc, url)
-        _clean_if_not_found(acc, out_dir)
-    sem.release()
+async def download_and_analyse(acc: str, url: str, out_dir: str, sem: asyncio.BoundedSemaphore) -> None:
+    try:
+        if _is_analysed(acc, out_dir):
+            return
+        await do_download_and_analyse(acc, url, out_dir)
+    except URLError:
+        print(f'Broken URL for {acc}. Skip.')
+        _update_checked(acc, out_dir)
+    finally:
+        sem.release()
 
 
-async def download_and_analyse_all(ena_xml, out_dir: str, p: int):
+async def do_download_and_analyse(acc: str, url: str, out_dir: str) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        genome = os.path.join(tmp, acc + '.fasta')
+        download_genome(url, genome)
+        await analyse_genome(genome, out_dir)
+        print(f'Finished analysis for {acc}')
+
+    if _is_found(acc, out_dir):
+        _update_found_pipolins(acc, out_dir)
+    else:
+        _clean_all(acc, out_dir)
+
+    _update_checked(acc, out_dir)
+
+
+def download_genome(url: str, genome: str) -> None:
+    with tempfile.NamedTemporaryFile() as genome_zip:
+        download_genome_to_path(url, genome_zip.name)
+        unzip_genome(genome_zip.name, genome)
+
+
+def download_genome_to_path(url: str, genome_path: str) -> None:
+    urllib.request.urlretrieve(url, genome_path)
+
+
+async def download_and_analyse_all(ena_xml: str, out_dir: str, p: int) -> None:
     sem = asyncio.BoundedSemaphore(p)
     tasks = []
     for acc, url in yield_acc_and_url(ena_xml):
+
         await sem.acquire()
+
+        print(acc, url)
         tasks.append(asyncio.create_task(download_and_analyse(acc, url, out_dir, sem)))
         tasks = [task for task in tasks if not task.done()]
+
     await asyncio.gather(*tasks)
 
 

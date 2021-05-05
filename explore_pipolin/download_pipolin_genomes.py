@@ -4,7 +4,7 @@ import click
 
 from explore_pipolin.common import CONTEXT_SETTINGS
 from explore_pipolin.extract_metadata_ena_xml import retrieve_ena_xml, extract_metadata
-from explore_pipolin.massive_screening_ena_xml import retrieve_fasta_file, unzip_fasta_file
+from explore_pipolin.massive_screening_ena_xml import download_genome
 
 
 def yield_acc(found_pipolins_file):
@@ -25,9 +25,8 @@ def download_pipolin_genomes(found_pipolins_file, out_dir):
         ena_xml = retrieve_ena_xml(acc)
         _, _, _, _, _, url = extract_metadata(ena_xml)
 
-        file_path = os.path.join(out_dir, acc + '.fasta.gz')
-        retrieve_fasta_file(url, file_path)
-        unzip_fasta_file(file_path)
+        genome = os.path.join(out_dir, acc + '.fasta')
+        download_genome(url, genome)
 
 
 if __name__ == '__main__':
