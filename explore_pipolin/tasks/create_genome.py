@@ -16,11 +16,23 @@ def create_genome(genome_file) -> Genome:
 
 def create_contigs_for_genome(genome_file: str) -> MutableSequence[Contig]:
     genome_dict = create_seqio_records_dict(file=genome_file, file_format='fasta')
-    _check_contig_ids_length(genome_dict)
+    genome_dict = _make_contig_ids_shorter_if_long(genome_dict)
+    # _check_contig_ids_length(genome_dict)
     contigs = []
     for key, value in genome_dict.items():
         contigs.append(Contig(contig_id=ContigID(key), contig_length=len(value.seq)))
     return contigs
+
+
+def _make_contig_ids_shorter_if_long(genome_dict):
+    new_dict = {}
+    for key, value in genome_dict.items():
+        new_contig_id = key.split(sep='|')[-1]
+        if len(new_contig_id) > 14:
+            new_contig_id = new_contig_id[-14:]
+        value.id = new_contig_id
+        new_dict[key] = value
+    return new_dict
 
 
 _max_length_allowed = 16

@@ -10,10 +10,8 @@ from urllib.error import URLError
 import xml.etree.ElementTree as ElementTree
 
 import click
-from Bio import SeqIO
 
 from explore_pipolin.common import CONTEXT_SETTINGS
-from explore_pipolin.utilities.io import create_seqio_records_dict
 
 
 def yield_acc_and_url(ena_xml) -> Iterator[Tuple[str, str]]:
@@ -39,20 +37,6 @@ def unzip_fasta_file(file_path):
         shutil.copyfileobj(inf, ouf)
     os.remove(file_path)
     return new_file
-
-
-def change_fasta_identifiers(genome_file):
-    """Make ids shorter if too long"""
-    genome_dict = create_seqio_records_dict(genome_file, 'fasta')
-    new_dict = {}
-    for key, value in genome_dict.items():
-        new_id = key.split(sep='|')[-1]
-        if len(new_id) > 14:
-            new_id = new_id[-14:]
-        value.id = new_id
-        new_dict[key] = value
-    with open(genome_file, 'w') as ouf:
-        SeqIO.write(new_dict.values(), ouf, 'fasta')
 
 
 def _is_analysed(acc, output_dir):
@@ -86,8 +70,6 @@ async def _download_and_analyse(output_dir, acc, url) -> None:
         return
 
     file_to_analyse = unzip_fasta_file(file_path)
-
-    change_fasta_identifiers(file_to_analyse)
 
     proc = await asyncio.subprocess.create_subprocess_shell(
         f'explore_pipolin --out-dir {output_dir} --no-annotation {file_to_analyse}',
