@@ -12,11 +12,11 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 @task()
 @genome_specific_logging
 def find_pipolbs(genome: Genome, out_dir, pipolb_hmm_profile, do_not_reuse) -> Genome:
-    results_dir = os.path.join(out_dir, 'pipolbs')
-    os.makedirs(results_dir, exist_ok=True)
+    pipolbs_dir = os.path.join(out_dir, genome.id, 'pipolbs')
+    os.makedirs(pipolbs_dir, exist_ok=True)
 
-    genes = os.path.join(results_dir, genome.id + '.faa')
-    hmmsearch_output_file = os.path.join(results_dir, genome.id + '.tbl')
+    genes = os.path.join(pipolbs_dir, genome.id + '.faa')
+    hmmsearch_output_file = os.path.join(pipolbs_dir, genome.id + '.tbl')
     if do_not_reuse or (not os.path.exists(genes) or not os.path.exists(hmmsearch_output_file)):
         run_prodigal(genome_file=genome.file, output_file=genes)
         run_hmmsearch(genes, pipolb_hmm_profile, hmmsearch_output_file)

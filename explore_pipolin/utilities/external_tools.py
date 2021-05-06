@@ -68,7 +68,10 @@ def _is_long_enough(genome_file) -> bool:
     return length >= 100000
 
 
-PIPOLB_HMM_PROFILE = pkg_resources.resource_filename('explore_pipolin', 'data/pipolb_expanded_definitive.hmm')
+PIPOLB_HMM_PROFILE = pkg_resources.resource_filename(
+    'explore_pipolin',
+    'data/pipolb_expanded_definitive.hmm',
+)
 
 
 def run_hmmsearch(proteins_file: str, pipolb_hmm_profile, output_file: str):

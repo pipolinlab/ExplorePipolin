@@ -61,10 +61,10 @@ def get_flow():
         genome = are_atts_present.map(genome=genome)
 
         pipolins = find_pipolins.map(genome=genome)
-        resulting_pipolins = reconstruct_pipolins.map(genome=genome, pipolins=pipolins)
+        reconstructed_pipolins = reconstruct_pipolins.map(genome=genome, pipolins=pipolins)
 
         pipolin_seqs_dir = save_pipolin_sequences.map(
-            genome=genome, pipolins=resulting_pipolins, out_dir=unmapped(out_dir)
+            genome=genome, pipolins=reconstructed_pipolins, out_dir=unmapped(out_dir)
         )
 
         with case(no_annotation, False):
@@ -75,7 +75,7 @@ def get_flow():
                 cpus=unmapped(cpus)
             )
             results_dir = generate_results.map(
-                genome=genome, prokka_dir=prokka_dir, pipolins=resulting_pipolins
+                genome=genome, prokka_dir=prokka_dir, pipolins=reconstructed_pipolins
             )
 
             with case(skip_colours, False):

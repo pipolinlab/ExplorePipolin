@@ -13,7 +13,7 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 @task()
 @genome_specific_logging
 def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin], out_dir):
-    pipolins_dir = os.path.join(out_dir, 'pipolins')
+    pipolins_dir = os.path.join(out_dir, genome.id, 'pipolins')
     os.makedirs(pipolins_dir, exist_ok=True)
 
     genome_dict = create_seqio_records_dict(file=genome.file, file_format='fasta')
@@ -38,13 +38,13 @@ def create_fragment_record(
 @task()
 @genome_specific_logging
 def annotate_pipolins(genome: Genome, pipolins_dir, proteins, cpus):
-    prokka_results_dir = os.path.join(os.path.dirname(pipolins_dir), 'prokka')
-    os.makedirs(prokka_results_dir, exist_ok=True)
+    prokka_dir = os.path.join(os.path.dirname(pipolins_dir), 'prokka')
+    os.makedirs(prokka_dir, exist_ok=True)
 
     for fasta_file in os.listdir(pipolins_dir):
         if fasta_file.startswith(genome.id) and fasta_file.endswith('.fa'):
             input_file = os.path.join(pipolins_dir, fasta_file)
-            run_prokka(input_file=input_file, prokka_results_dir=prokka_results_dir,
+            run_prokka(input_file=input_file, prokka_results_dir=prokka_dir,
                        proteins=proteins, cpus=cpus)
 
-    return prokka_results_dir
+    return prokka_dir

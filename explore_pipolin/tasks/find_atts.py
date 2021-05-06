@@ -17,7 +17,7 @@ from explore_pipolin.tasks.reconstruct_pipolins import _NO_BORDER_INFLATE
 @task()
 @genome_specific_logging
 def find_atts(genome: Genome, out_dir, ref_att, do_not_reuse) -> Genome:
-    atts_dir = os.path.join(out_dir, 'atts')
+    atts_dir = os.path.join(out_dir, genome.id, 'atts')
     os.makedirs(atts_dir, exist_ok=True)
 
     finder = AttFinder(genome=genome, output_dir=atts_dir, ref_att=ref_att)
@@ -72,7 +72,7 @@ class AttFinder:
 @task()
 @genome_specific_logging
 def find_atts_denovo(genome: Genome, out_dir, percent_identity, do_not_reuse) -> Genome:
-    atts_denovo_dir = os.path.join(out_dir, 'atts_denovo')
+    atts_denovo_dir = os.path.join(out_dir, genome.id, 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
     finder = AttDenovoFinder(
