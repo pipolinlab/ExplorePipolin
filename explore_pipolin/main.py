@@ -66,9 +66,7 @@ def explore_pipolin(
 
     check_external_dependencies()
 
-    logging_dir = os.path.join(out_dir, 'logs')
-    os.makedirs(logging_dir, exist_ok=True)
-    set_logging_dir(logging_dir)
+    set_logging_dir(out_dir)
 
     state = get_flow().run(
         genome_file=genome,

@@ -1,8 +1,7 @@
 from itertools import combinations, chain
 from typing import Sequence, MutableSequence, List, Tuple, Optional
 
-from prefect import task
-from prefect import context
+from prefect import task, context
 
 from explore_pipolin.common import Genome, Pipolin, FeatureType, PipolinFragment, Strand, Feature, Range, AttFeature
 from explore_pipolin.utilities.logging import genome_specific_logging
@@ -36,7 +35,7 @@ def _get_feature_string(feature) -> str:
         return '(t)'
 
 
-@task(log_stdout=True)
+@task()
 @genome_specific_logging
 def reconstruct_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
     logger = context.get('logger')

@@ -21,7 +21,8 @@ def set_logging_dir(log_dir: str):
 
 def _ensure_handler_for(genome: Genome):
     if genome.id not in _HANDLERS:
-        _HANDLERS[genome.id] = _create_logging_handler(genome=genome, out_dir=_LOG_DIR)
+        _HANDLERS[genome.id] = _create_logging_handler(
+            genome=genome, out_dir=os.path.join(_LOG_DIR, genome.id))
         logging.getLogger().addHandler(_HANDLERS[genome.id])
 
 
@@ -32,7 +33,7 @@ def _create_logging_handler(genome: Genome, out_dir: str):
         return 1 if (hasattr(record, 'genome_id') and record.genome_id == genome.id) else 0
 
     handler.addFilter(my_filter)
-    handler.setFormatter(logging.Formatter('{asctime} {levelname}: {name} ( {genome_id} ) {message}', style='{'))
+    handler.setFormatter(logging.Formatter('{asctime} {levelname}: {name} - {genome_id} - {message}', style='{'))
     return handler
 
 
