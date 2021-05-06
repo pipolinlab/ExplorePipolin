@@ -38,7 +38,7 @@ def _get_feature_string(feature) -> str:
 
 @task(log_stdout=True)
 @genome_specific_logging
-def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
+def reconstruct_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
     logger = context.get('logger')
 
     single_fragment_pipolins: MutableSequence[Pipolin] = []
@@ -48,7 +48,7 @@ def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
 
     for pipolin in pipolins:
         if len(pipolin.fragments) == 1:
-            logger.warning('>>> Scaffolding is not required!')
+            logger.warning('>>> Reconstruction is not required!')
 
             features = pipolin.fragments[0].get_fragment_features_sorted()
             if features[0].ftype == FeatureType.TARGET_TRNA:
@@ -57,29 +57,29 @@ def scaffold_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
             logger.warning(f'{draw_pipolin_structure(pipolin)[0]}')
             single_fragment_pipolins.append(pipolin)
         else:
-            logger.warning('>>> Trying to scaffold from fragments:')
+            logger.warning('>>> Trying to reconstruct the structure from fragments:')
             logger.warning(''.join(f'\n\t{i}' for i in draw_pipolin_structure(pipolin)))
             try:
-                scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
-                result.append(scaffolder.scaffold_pipolin())
-                logger.warning('>>> Scaffolding is done! The scaffolded pipolin is:')
+                reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
+                result.append(reconstructor.reconstruct_pipolin())
+                logger.warning('>>> Reconstruction is done! The resulting pipolin is:')
                 logger.warning('...'.join([i.split(sep=': ')[1] for i in draw_pipolin_structure(result[-1])]))
                 logger.warning('PLEASE, DOUBLE CHECK THE FINAL STRUCTURE MANUALLY!')
-            except CannotScaffoldError as e:
-                logger.warning(f'>>> Cannot scaffold! {e}')
+            except CannotReconstructError as e:
+                logger.warning(f'>>> Cannot reconstruct the structure! {e}')
                 other_pipolins.append(pipolin)
 
     for pipolin in single_fragment_pipolins:
-        scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
-        result.append(scaffolder.inflate_single_fragment_pipolin())
+        reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
+        result.append(reconstructor.inflate_single_fragment_pipolin())
 
     for pipolin in other_pipolins:
-        scaffolder = Scaffolder(genome=genome, pipolin=pipolin)
-        result.append(scaffolder.inflate_unscaffolded_pipolin())
+        reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
+        result.append(reconstructor.inflate_unreconstructed_pipolin())
     return _filter_overlapping(result) if len(result) > 1 else result
 
 
-class CannotScaffoldError(Exception):
+class CannotReconstructError(Exception):
     pass
 
 
@@ -87,7 +87,7 @@ _BORDER_INFLATE = 0
 _NO_BORDER_INFLATE = 100_000
 
 
-class Scaffolder:
+class Reconstructor:
     def __init__(self, genome: Genome, pipolin: Pipolin):
         self.genome = genome
         self.pipolin = pipolin
@@ -102,12 +102,12 @@ class Scaffolder:
         if len(self.att_pipolb_att_fragments) > 1 or \
                 len(self.att_pipolb_fragments) > 1 or \
                 len(self.pipolb_only_fragments) > 1:
-            raise CannotScaffoldError
+            raise CannotReconstructError
 
-        # If >=2 contigs with tRNAs or a contig with >=2 tRNAs on different strands -> raise CannotScaffoldError
+        # If >=2 contigs with tRNAs or a contig with >=2 tRNAs on different strands -> raise CannotReconstructError
         self._check_ttrnas(pipolin.fragments)
 
-    def scaffold_pipolin(self) -> Pipolin:
+    def reconstruct_pipolin(self) -> Pipolin:
         if self.att_pipolb_att_fragments:
             return self._att_pipolb_att_plus_atts()
         elif self.att_pipolb_fragments:
@@ -119,9 +119,9 @@ class Scaffolder:
 
     def _att_pipolb_att_plus_atts(self) -> Pipolin:
         if len(self.att_only_fragments) != 1:
-            raise CannotScaffoldError
+            raise CannotReconstructError
 
-        # we can scaffold the case: ---att---pol---att---...---att(t)---   tRNA is required
+        # we can reconstruct the case: ---att---pol---att---...---att(t)---   tRNA is required
         try:
             self._orient_fragments_according_ttrnas(
                 self.att_only_fragments[0], self.att_pipolb_att_fragments[0]
@@ -130,7 +130,7 @@ class Scaffolder:
                 left=self.att_pipolb_att_fragments[0], right=self.att_only_fragments[0]
             )
 
-        except CannotScaffoldError:
+        except CannotReconstructError:
             self._orient_fragments_according_ttrnas(
                 self.att_pipolb_att_fragments[0], self.att_only_fragments[0]
             )
@@ -139,7 +139,7 @@ class Scaffolder:
             )
 
     def _att_pipolb_plus_atts(self) -> Pipolin:
-        # we can scaffold the cases:
+        # we can reconstruct the cases:
         # 1) ---att---pol---...---att---                  tRNA is not required
         # 2) ---att---...---pol---att---...---att(t)---   tRNA is required
         if len(self.att_only_fragments) == 1:
@@ -147,7 +147,7 @@ class Scaffolder:
         elif len(self.att_only_fragments) == 2:
             return self._att_pipolb_plus_two_atts()
         else:
-            raise CannotScaffoldError
+            raise CannotReconstructError
 
     def _att_pipolb_plus_one_att(self) -> Pipolin:
         # 1) ---att---pol---...---att---                  tRNA is not required (but helps with orientation)
@@ -168,7 +168,7 @@ class Scaffolder:
             )
             self._orient_fragments_according_ttrnas(right_fragment, left_fragment)
 
-        except CannotScaffoldError:
+        except CannotReconstructError:
             pass
 
         return self._create_pipolin(left=left_fragment, right=right_fragment)
@@ -189,10 +189,10 @@ class Scaffolder:
         if pipolb_is_left:
             return self._create_pipolin(left=left_fragment, middle=middle_fragment, right=right_fragment)
         else:
-            raise CannotScaffoldError('---att---...---att---pol---...---att(t)---')
+            raise CannotReconstructError('---att---...---att---pol---...---att(t)---')
 
     def _pipolb_plus_atts(self) -> Pipolin:
-        # we can try to scaffold the cases, assuming that pipolb is on the plus strand:
+        # we can try to reconstruct the cases, assuming that pipolb is on the plus strand:
         # 1) ---pol---...---att(t)---                    tRNA is required
         # 2) ---att---...---pol---...---att(t)---        tRNA is required
         if len(self.att_only_fragments) == 1:
@@ -202,7 +202,7 @@ class Scaffolder:
             return self._pipolb_plus_two_atts()
 
         else:
-            raise CannotScaffoldError
+            raise CannotReconstructError
 
     def _pipolb_plus_one_att(self) -> Pipolin:
         # 1) ---pol---...---att(t)---                    tRNA is required
@@ -233,7 +233,7 @@ class Scaffolder:
         fragment = self._inflate_fragment(self.pipolin.fragments[0], left, right)
         return Pipolin.from_fragments(fragment)
 
-    def inflate_unscaffolded_pipolin(self):
+    def inflate_unreconstructed_pipolin(self):
         inflated_fragments = []
         for fragment in self.pipolin.fragments:
             inflated_fragments.append(self._inflate_fragment(fragment, _NO_BORDER_INFLATE, _NO_BORDER_INFLATE))
@@ -274,7 +274,7 @@ class Scaffolder:
         try:
             ttrna = self._get_ttrna_of_fragment(fragment1)
             right_fragment, left_fragment = fragment1, fragment2
-        except CannotScaffoldError:
+        except CannotReconstructError:
             ttrna = self._get_ttrna_of_fragment(fragment2)
             right_fragment, left_fragment = fragment2, fragment1
 
@@ -284,7 +284,7 @@ class Scaffolder:
             self, main_fragment: PipolinFragment, dependent_fragment: PipolinFragment) -> PipolinFragment:
         att_ids = set(f.att_id for f in main_fragment.features if isinstance(f, AttFeature))
         if len(att_ids) != 1:
-            raise CannotScaffoldError
+            raise CannotReconstructError
         att_id = att_ids.pop()
 
         main_fragment_strand = self._get_fragment_atts_strand(main_fragment, att_id)
@@ -299,7 +299,7 @@ class Scaffolder:
     ) -> None:
         ttrnas = [f for f in ttrna_containing_fragment.features if f.ftype == FeatureType.TARGET_TRNA]
         if len(ttrnas) == 0:
-            raise CannotScaffoldError
+            raise CannotReconstructError
 
         att = self._get_att_overlapping_ttrna(ttrnas[0])
 
@@ -309,7 +309,7 @@ class Scaffolder:
         elif ttrnas[0].strand == Strand.REVERSE and ttrnas[0].end > att.end:  # 3'-overlap
             pass
         else:
-            raise CannotScaffoldError
+            raise CannotReconstructError
 
         for ttrna in ttrnas:
             att = self._get_att_overlapping_ttrna(ttrna)
@@ -326,7 +326,7 @@ class Scaffolder:
     def _get_ttrna_of_fragment(fragment: PipolinFragment) -> Feature:
         ttrnas = [f for f in fragment.features if f.ftype == FeatureType.TARGET_TRNA]
         if len(ttrnas) == 0:
-            raise CannotScaffoldError
+            raise CannotReconstructError
         # one tRNA is enough as all are of the same direction
         return ttrnas[0]
 
@@ -352,7 +352,7 @@ class Scaffolder:
                 the_fragment = fragment
 
         if num_fragments_with_ttrnas > 1:
-            raise CannotScaffoldError
+            raise CannotReconstructError
 
         if the_fragment is not None:
             self._check_ttrnas_directions(the_fragment)
@@ -362,7 +362,7 @@ class Scaffolder:
         ttrnas = [f for f in fragment.features if f.ftype == FeatureType.TARGET_TRNA]
         strands = set(ttrna.strand for ttrna in ttrnas)
         if len(strands) != 1:
-            raise CannotScaffoldError
+            raise CannotReconstructError
 
     def _classify_fragments(self, fragments: Sequence[PipolinFragment]):
         for fragment in fragments:

@@ -11,7 +11,7 @@ from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, S
 from explore_pipolin.utilities.external_tools import blastn_against_ref_att, blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml, create_seqio_records_dict
 from explore_pipolin.utilities.logging import genome_specific_logging
-from explore_pipolin.tasks.scaffold_pipolins import _NO_BORDER_INFLATE
+from explore_pipolin.tasks.reconstruct_pipolins import _NO_BORDER_INFLATE
 
 
 @task()

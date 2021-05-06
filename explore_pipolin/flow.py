@@ -7,7 +7,7 @@ from explore_pipolin.tasks.find_pipolbs import find_pipolbs, are_pipolbs_present
 from explore_pipolin.tasks.find_trnas import find_trnas
 from explore_pipolin.tasks.find_atts import find_atts, find_atts_denovo, are_atts_present
 from explore_pipolin.tasks.find_pipolins import find_pipolins
-from explore_pipolin.tasks.scaffold_pipolins import scaffold_pipolins
+from explore_pipolin.tasks.reconstruct_pipolins import reconstruct_pipolins
 from explore_pipolin.tasks.annotate_pipolins import save_pipolin_sequences, annotate_pipolins
 from explore_pipolin.tasks.generate_results import generate_results
 from explore_pipolin.tasks.easyfig_coloring import easyfig_add_colours
@@ -61,10 +61,10 @@ def get_flow():
         genome = are_atts_present.map(genome=genome)
 
         pipolins = find_pipolins.map(genome=genome)
-        scaffolded_pipolins = scaffold_pipolins.map(genome=genome, pipolins=pipolins)
+        resulting_pipolins = reconstruct_pipolins.map(genome=genome, pipolins=pipolins)
 
         pipolin_seqs_dir = save_pipolin_sequences.map(
-            genome=genome, pipolins=scaffolded_pipolins, out_dir=unmapped(out_dir)
+            genome=genome, pipolins=resulting_pipolins, out_dir=unmapped(out_dir)
         )
 
         with case(no_annotation, False):
@@ -75,7 +75,7 @@ def get_flow():
                 cpus=unmapped(cpus)
             )
             results_dir = generate_results.map(
-                genome=genome, prokka_dir=prokka_dir, pipolins=scaffolded_pipolins
+                genome=genome, prokka_dir=prokka_dir, pipolins=resulting_pipolins
             )
 
             with case(skip_colours, False):

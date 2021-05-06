@@ -57,7 +57,7 @@ def _is_found(acc: str, out_dir: str) -> bool:
         return 'No piPolBs were found!' not in inf.read()
 
 
-def _update_found_pipolins(acc: str, out_dir:str) -> None:
+def _update_found_pipolins(acc: str, out_dir: str) -> None:
     with open(os.path.join(out_dir, 'found_pipolins.txt'), 'a') as ouf:
         print(acc, file=ouf)
 
