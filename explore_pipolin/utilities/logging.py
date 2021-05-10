@@ -58,5 +58,10 @@ def genome_specific_logging(func):
         os.makedirs(os.path.join(_LOG_DIR, genome.id), exist_ok=True)
         _ensure_handler_for(genome=genome)
         with _add_genome_id_to_logger(genome=genome):
-            return func(genome, **kwargs)
+            try:
+                return func(genome, **kwargs)
+            except Exception as e:
+                logger: logging.Logger = context['logger']
+                logger.exception(str(e))
+                raise
     return wrapper
