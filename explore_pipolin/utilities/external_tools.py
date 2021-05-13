@@ -1,7 +1,6 @@
 import logging
 import os
 import subprocess
-from time import sleep
 from typing import List
 
 import pkg_resources
@@ -154,33 +153,3 @@ def run_prokka(input_file, prokka_results_dir, proteins, cpus):
     if p.returncode != 0:
         print(std_err.decode()) if std_err != b'' else print(std_out.decode())
         raise subprocess.CalledProcessError(p.returncode, ' '.join(command))
-
-
-class EmptyResult(Exception):
-    pass
-
-
-class NoAssembly(Exception):
-    pass
-
-
-def subprocess_with_retries(*args, **kwargs):
-    num_retries = 5
-    sleep_time = 0.5
-    for i in range(num_retries):
-        proc = subprocess.run(*args, **kwargs)
-
-        try:
-            proc.check_returncode()
-            return proc
-        except subprocess.CalledProcessError:
-            if proc.stdout is not None and b'Empty result - nothing to do' in proc.stdout:
-                raise EmptyResult
-            if proc.stdout is not None and b'Query failed on MegaLink server' in proc.stdout:
-                raise NoAssembly
-            print('FAILED to retrieve the data! Retrying ...')
-            sleep(sleep_time)
-            sleep_time = sleep_time * 2
-            continue
-
-    print('FAILED!!! Maximum number of retries is exceeded.')

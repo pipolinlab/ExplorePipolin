@@ -10,7 +10,6 @@ from Bio.SeqRecord import SeqRecord
 
 from explore_pipolin.utilities.external_tools import run_prodigal, run_hmmsearch, \
     blastn_against_ref_att, blast_for_repeats, run_aragorn, run_prokka, REF_ATT, PIPOLB_HMM_PROFILE, PROTEINS
-from explore_pipolin.utilities.external_tools import subprocess_with_retries
 
 
 class TestExternalRuns(unittest.TestCase):
@@ -102,14 +101,3 @@ def temp_fasta_file(seq_id: str, seq: Seq):
     with NamedTemporaryFile() as fasta_file:
         SeqIO.write([SeqRecord(seq, id=seq_id)], fasta_file.name, format='fasta')
         yield fasta_file
-
-
-@unittest.skip
-class ExternalToolsTestCase(unittest.TestCase):
-    def test_retries_success(self):
-        proc = subprocess_with_retries(['echo', 'HI', '>', '/dev/null'])
-        self.assertIsNone(proc.check_returncode())
-
-    def test_retries_fail(self):
-        proc = subprocess_with_retries(['cat', 'asdf.asdf'])
-        self.assertIsNone(proc)
