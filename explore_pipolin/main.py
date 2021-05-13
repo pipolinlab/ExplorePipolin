@@ -1,5 +1,7 @@
+import datetime
 import logging
 import os
+from typing import Optional
 
 import click
 
@@ -17,9 +19,31 @@ def check_genome_file_names(genome):
             exit(1)
 
 
+_DEFAULT_OUT_DIR_PREFIX = 'results'
+_SUFFIX = datetime.datetime.now().strftime('_%H%M%S')
+
+
+def get_out_dir_name(out_dir_prefix: Optional[str], out_dir: Optional[str]) -> str:
+    if out_dir_prefix and out_dir:
+        logging.fatal('Options --out-dir-prefix and --out-dir are mutually exclusive!')
+        exit(1)
+    elif out_dir_prefix:
+        return os.path.join(os.getcwd(), out_dir_prefix + _SUFFIX)
+    elif out_dir:
+        return out_dir
+    else:
+        return os.path.join(os.getcwd(), _DEFAULT_OUT_DIR_PREFIX + _SUFFIX)
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('genome', type=click.Path(exists=True), nargs=-1, required=True)
-@click.option('--out-dir', type=click.Path(), required=True, help='Output directory')
+@click.option('--out-dir-prefix', type=str,
+              help=f'Use this prefix for the output directory, '
+                   f'instead of the default "{_DEFAULT_OUT_DIR_PREFIX}" prefix.')
+@click.option('--out-dir', type=click.Path(exists=True),
+              help='Use the existing output directory. If the directory contains results of a previous run, '
+                   'such as found piPolBs, ATTs and tRNAs, the program will reuse them, unless '
+                   '--do-not-reuse option is specified.')
 @click.option('--pipolb-hmm-profile', type=click.Path(exists=True),
               help='If not provided, the default profile will be used instead.')
 @click.option('--ref-att', type=click.Path(exists=True),
@@ -40,6 +64,7 @@ def check_genome_file_names(genome):
                    'the same genome. I.e. it will run all the analysis from scratch for the given genome.')
 def explore_pipolin(
         genome,
+        out_dir_prefix,
         out_dir,
         pipolb_hmm_profile,
         ref_att,
@@ -66,11 +91,12 @@ def explore_pipolin(
 
     check_external_dependencies()
 
-    set_logging_dir(out_dir)
+    out_dir_name = get_out_dir_name(out_dir_prefix, out_dir)
+    set_logging_dir(out_dir_name)
 
     state = get_flow().run(
         genome_file=genome,
-        out_dir=out_dir,
+        out_dir=out_dir_name,
         pipolb_hmm_profile=pipolb_hmm_profile,
         ref_att=ref_att,
         percent_identity=percent_identity,
