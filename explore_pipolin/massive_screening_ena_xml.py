@@ -33,9 +33,13 @@ def unzip_genome(genome_zip: str, new_genome: str) -> None:
         shutil.copyfileobj(inf, ouf)
 
 
-def _is_analysed(acc: str, out_dir) -> bool:
+_CHECKED_LIST = 'checked.txt'
+_FOUND_PIPOLINS_LIST = 'found_pipolins.txt'
+
+
+def _is_in_list(acc: str, list_file: str) -> bool:
     try:
-        with open(os.path.join(out_dir, 'analysed.txt')) as inf:
+        with open(list_file) as inf:
             for line in inf:
                 if line.strip() == acc:
                     return True
@@ -44,28 +48,21 @@ def _is_analysed(acc: str, out_dir) -> bool:
         return False
 
 
-def _update_checked(acc: str, out_dir: str) -> None:
-    with open(os.path.join(out_dir, 'checked.txt'), 'a') as ouf:
+def _update_list(acc: str, list_file: str) -> None:
+    with open(list_file, 'a') as ouf:
         print(acc, file=ouf)
 
 
 def _is_found(acc: str, out_dir: str) -> bool:
-    log_path = os.path.join(out_dir, 'logs', acc + '.log')
+    log_path = os.path.join(out_dir, acc, acc + '.log')
     if not os.path.exists(log_path):
         raise AssertionError('Log should exist!')
     with open(log_path) as inf:
         return 'No piPolBs were found!' not in inf.read()
 
 
-def _update_found_pipolins(acc: str, out_dir: str) -> None:
-    with open(os.path.join(out_dir, 'found_pipolins.txt'), 'a') as ouf:
-        print(acc, file=ouf)
-
-
 def _clean_all(acc: str, out_dir: str) -> None:
-    os.remove(os.path.join(out_dir, 'pipolbs', acc + '.faa'))
-    os.remove(os.path.join(out_dir, 'pipolbs', acc + '.tbl'))
-    os.remove(os.path.join(out_dir, 'logs', acc + '.log'))
+    shutil.rmtree(os.path.join(out_dir, acc))
 
 
 async def analyse_genome(genome: str, out_dir: str) -> None:
@@ -77,12 +74,12 @@ async def analyse_genome(genome: str, out_dir: str) -> None:
 
 async def download_and_analyse(acc: str, url: str, out_dir: str, sem: asyncio.BoundedSemaphore) -> None:
     try:
-        if _is_analysed(acc, out_dir):
+        if _is_in_list(acc, os.path.join(out_dir, _CHECKED_LIST)):
             return
         await do_download_and_analyse(acc, url, out_dir)
     except URLError:
         print(f'Broken URL for {acc}. Skip.')
-        _update_checked(acc, out_dir)
+        _update_list(acc, os.path.join(out_dir, _CHECKED_LIST))
     finally:
         sem.release()
 
@@ -91,15 +88,18 @@ async def do_download_and_analyse(acc: str, url: str, out_dir: str) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         genome = os.path.join(tmp, acc + '.fasta')
         download_genome(url, genome)
-        await analyse_genome(genome, out_dir)
+        await analyse_genome(genome, tmp)
         print(f'Finished analysis for {acc}')
 
-    if _is_found(acc, out_dir):
-        _update_found_pipolins(acc, out_dir)
-    else:
-        _clean_all(acc, out_dir)
+        if _is_found(acc, tmp):
+            print(f'Pipolin(s) were found for {acc}')
+            # it might be added in the list and copied previously, right before a Keyboard Interrupt signal
+            # for that reason, we check first if it's in the list and set dirs_exist_ok
+            if not _is_in_list(acc, os.path.join(out_dir, _FOUND_PIPOLINS_LIST)):
+                _update_list(acc, os.path.join(out_dir, _FOUND_PIPOLINS_LIST))
+            shutil.copytree(os.path.join(tmp, acc), os.path.join(out_dir, acc), dirs_exist_ok=True)
 
-    _update_checked(acc, out_dir)
+    _update_list(acc, os.path.join(out_dir, _CHECKED_LIST))
 
 
 def download_genome(url: str, genome: str) -> None:
