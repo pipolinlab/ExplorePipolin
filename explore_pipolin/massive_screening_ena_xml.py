@@ -1,8 +1,11 @@
+import datetime
 import gzip
+import logging
 import os
 import shutil
 import subprocess
 import asyncio
+import sys
 import tempfile
 
 import urllib.request
@@ -78,8 +81,11 @@ async def download_and_analyse(acc: str, url: str, out_dir: str, sem: asyncio.Bo
             return
         await do_download_and_analyse(acc, url, out_dir)
     except URLError:
-        print(f'Broken URL for {acc}. Skip.')
+        logging.info(f'Broken URL for {acc}. Skip.')
         _update_list(acc, os.path.join(out_dir, _CHECKED_LIST))
+    except Exception as e:
+        logging.exception(str(e))
+        raise
     finally:
         sem.release()
 
@@ -89,12 +95,13 @@ async def do_download_and_analyse(acc: str, url: str, out_dir: str) -> None:
         genome = os.path.join(tmp, acc + '.fasta')
         download_genome(url, genome)
         await analyse_genome(genome, tmp)
-        print(f'Finished analysis for {acc}')
+        logging.info(f'Finished analysis for {acc}')
 
         if _is_found(acc, tmp):
-            print(f'Pipolin(s) were found for {acc}')
-            # it might be added in the list and copied previously, right before a Keyboard Interrupt signal
-            # for that reason, we check first if it's in the list and set dirs_exist_ok
+            logging.info(f'Pipolin(s) were found for {acc}')
+            # it might be added in the list and copied to out_dir previously,
+            # right before a Keyboard Interrupt signal.
+            # For that reason, we check first if it's in the list and set dirs_exist_ok.
             if not _is_in_list(acc, os.path.join(out_dir, _FOUND_PIPOLINS_LIST)):
                 _update_list(acc, os.path.join(out_dir, _FOUND_PIPOLINS_LIST))
             shutil.copytree(os.path.join(tmp, acc), os.path.join(out_dir, acc), dirs_exist_ok=True)
@@ -115,15 +122,28 @@ def download_genome_to_path(url: str, genome_path: str) -> None:
 async def download_and_analyse_all(ena_xml: str, out_dir: str, p: int) -> None:
     sem = asyncio.BoundedSemaphore(p)
     tasks = []
+
     for acc, url in yield_acc_and_url(ena_xml):
 
         await sem.acquire()
 
-        print(acc, url)
+        logging.info(f'{acc}, {url}')
         tasks.append(asyncio.create_task(download_and_analyse(acc, url, out_dir, sem)))
+
+        if any(task.done() and task.exception() is not None for task in tasks):
+            break
+
         tasks = [task for task in tasks if not task.done()]
 
     await asyncio.gather(*tasks)
+
+
+def set_logging_to_file_and_stdout(log_file: str):
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    logger.addHandler(logging.FileHandler(log_file))
+    logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -139,6 +159,9 @@ def massive_screening(ena_xml, out_dir, p):
     Accessions of pipolin-harboring genomes will be written to the found_pipolins.txt file.
     """
     os.makedirs(out_dir, exist_ok=True)
+
+    log_file = datetime.datetime.now().strftime('%H%M%S') + '.log'
+    set_logging_to_file_and_stdout(os.path.join(out_dir, log_file))
 
     asyncio.run(download_and_analyse_all(ena_xml, out_dir, p))
 
