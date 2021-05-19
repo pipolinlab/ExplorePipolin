@@ -15,7 +15,7 @@ from urllib.error import URLError
 import click
 
 from explore_pipolin.common import CONTEXT_SETTINGS
-from explore_pipolin.extract_metadata_ena_xml import retrieve_ena_xml, extract_metadata
+from explore_pipolin.collect_metadata import retrieve_ena_xml, extract_metadata
 
 
 def yield_accession(accessions):
@@ -148,7 +148,7 @@ def set_logging_to_file_and_stdout(log_file: str):
 @click.argument('accessions', type=click.Path(exists=True))
 @click.argument('out-dir', type=click.Path())
 @click.option('-p', type=int, default=1, show_default=True, help='Number of processes to run.')
-def massive_screening(accessions, out_dir, p):
+def main(accessions, out_dir, p):
     """
     ACCESSIONS is a file with assembly accession IDs.
     An accession of each checked genome assembly will be written to the checked.txt file.
@@ -165,4 +165,4 @@ def massive_screening(accessions, out_dir, p):
 
 
 if __name__ == '__main__':
-    massive_screening()
+    main()

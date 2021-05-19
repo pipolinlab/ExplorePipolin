@@ -41,17 +41,17 @@ def create_acc_version_dict(json_data) -> Mapping[str, str]:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('taxon-id', type=int)
 @click.argument('out-file', type=click.Path())
-def download_taxon_accessions(taxon_id, out_file):
+def main(taxon_id, out_file):
     """
     Given NCBI taxon ID, a list of assembly accessions, registered under the given taxon tree,
     will be downloaded from the ENA database.
     """
     data = request_taxon_data(taxon_id)
-    print(f'Number of downloaded assemblies: {len(data)}')
+    print(f'Number of downloaded assembly accessions: {len(data)}')
 
     print('NOTE: Only the last version of each assembly accession will be saved!')
     acc_version_dict = create_acc_version_dict(data)
-    print(f'Number of assemblies after filtering: {len(acc_version_dict)}')
+    print(f'Number of assembly accessions after filtering: {len(acc_version_dict)}')
 
     with open(out_file, 'w') as ouf:
         for acc, version in acc_version_dict.items():
@@ -60,4 +60,4 @@ def download_taxon_accessions(taxon_id, out_file):
 
 
 if __name__ == '__main__':
-    download_taxon_accessions()
+    main()

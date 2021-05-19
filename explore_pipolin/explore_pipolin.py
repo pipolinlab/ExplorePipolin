@@ -62,7 +62,7 @@ def get_out_dir_name(out_dir_prefix: Optional[str], out_dir: Optional[str]) -> s
 @click.option('--do-not-reuse', is_flag=True,
               help='Do not reuse information about piPolBs, ATTs and tRNAs found in a previous run for '
                    'the same genome. I.e. it will run all the analysis from scratch for the given genome.')
-def explore_pipolin(
+def main(
         genome,
         out_dir_prefix,
         out_dir,
@@ -110,4 +110,4 @@ def explore_pipolin(
 
 
 if __name__ == '__main__':
-    explore_pipolin()
+    main()

@@ -52,8 +52,8 @@ def extract_metadata(ena_xml: str) -> Tuple[str, str, str, str, str, str]:
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('accessions', type=click.Path(exists=True))
-@click.option('--out-file', type=click.Path(), required=True)
-def extract_metadata_all(accessions, out_file):
+@click.argument('out-file', type=click.Path())
+def main(accessions, out_file):
     """
     ACCESSIONS is a file with accession ids (e.g., found_pipolins.txt) for which
     the metadata will be downloaded and extracted from the ENA database.
@@ -72,4 +72,4 @@ def extract_metadata_all(accessions, out_file):
 
 
 if __name__ == '__main__':
-    extract_metadata_all()
+    main()

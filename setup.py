@@ -12,10 +12,11 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': [
-            'explore_pipolin=explore_pipolin.main:explore_pipolin',
-            'massive_screening_ena_xml=explore_pipolin.massive_screening_ena_xml:massive_screening',
-            'extract_metadata_ena_xml=explore_pipolin.extract_metadata_ena_xml:extract_metadata_all',
-            'download_pipolin_genomes=explore_pipolin.download_pipolin_genomes:download_pipolin_genomes'
+            'explore_pipolin=explore_pipolin.explore_pipolin:main',
+            'download_taxon_assemblies=explore_pipolin.download_taxon_accessions:main',
+            'massive_screening=explore_pipolin.massive_screening:main',
+            'collect_metadata=explore_pipolin.collect_metadata:main',
+            'download_pipolin_genomes=explore_pipolin.download_genomes:main',
         ]
     },
     test_suite='tests',
