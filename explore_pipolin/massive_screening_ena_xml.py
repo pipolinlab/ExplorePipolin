@@ -9,7 +9,7 @@ import sys
 import tempfile
 
 import urllib.request
-from typing import Tuple, Iterator
+from typing import Tuple, Iterator, Optional
 from urllib.error import URLError
 import xml.etree.ElementTree as ElementTree
 
@@ -18,7 +18,7 @@ import click
 from explore_pipolin.common import CONTEXT_SETTINGS
 
 
-def yield_acc_and_url(ena_xml: str) -> Iterator[Tuple[str, str]]:
+def yield_acc_and_url(ena_xml: str) -> Iterator[Tuple[str, Optional[str]]]:
     for event, elem in ElementTree.iterparse(ena_xml, events=('start',)):
         asmbl_acc, asmbl_url = None, None
         if event == 'start' and elem.tag == 'ASSEMBLY':
@@ -27,7 +27,7 @@ def yield_acc_and_url(ena_xml: str) -> Iterator[Tuple[str, str]]:
             for link in elem.findall('ASSEMBLY_LINKS/ASSEMBLY_LINK/URL_LINK[LABEL="WGS_SET_FASTA"]/URL'):
                 asmbl_url = link.text
 
-            if (asmbl_acc is not None) and (asmbl_url is not None):
+            if asmbl_acc is not None:
                 yield asmbl_acc, asmbl_url
 
 
@@ -75,7 +75,7 @@ async def analyse_genome(genome: str, out_dir: str) -> None:
     await proc.wait()
 
 
-async def download_and_analyse(acc: str, url: str, out_dir: str, sem: asyncio.BoundedSemaphore) -> None:
+async def download_and_analyse(acc: str, url: Optional[str], out_dir: str, sem: asyncio.BoundedSemaphore) -> None:
     try:
         if _is_in_list(acc, os.path.join(out_dir, _CHECKED_LIST)):
             return
@@ -90,21 +90,22 @@ async def download_and_analyse(acc: str, url: str, out_dir: str, sem: asyncio.Bo
         sem.release()
 
 
-async def do_download_and_analyse(acc: str, url: str, out_dir: str) -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        genome = os.path.join(tmp, acc + '.fasta')
-        download_genome(url, genome)
-        await analyse_genome(genome, tmp)
-        logging.info(f'Finished analysis for {acc}')
+async def do_download_and_analyse(acc: str, url: Optional[str], out_dir: str) -> None:
+    if url is not None:
+        with tempfile.TemporaryDirectory() as tmp:
+            genome = os.path.join(tmp, acc + '.fasta')
+            download_genome(url, genome)
+            await analyse_genome(genome, tmp)
+            logging.info(f'Finished analysis for {acc}')
 
-        if _is_found(acc, tmp):
-            logging.info(f'Pipolin(s) were found for {acc}')
-            # it might be added in the list and copied to out_dir previously,
-            # right before a Keyboard Interrupt signal.
-            # For that reason, we check first if it's in the list and set dirs_exist_ok.
-            if not _is_in_list(acc, os.path.join(out_dir, _FOUND_PIPOLINS_LIST)):
-                _update_list(acc, os.path.join(out_dir, _FOUND_PIPOLINS_LIST))
-            shutil.copytree(os.path.join(tmp, acc), os.path.join(out_dir, acc), dirs_exist_ok=True)
+            if _is_found(acc, tmp):
+                logging.info(f'Pipolin(s) were found for {acc}')
+                # it might be added in the list and copied to out_dir previously,
+                # right before a Keyboard Interrupt signal.
+                # For that reason, we check first if it's in the list and set dirs_exist_ok.
+                if not _is_in_list(acc, os.path.join(out_dir, _FOUND_PIPOLINS_LIST)):
+                    _update_list(acc, os.path.join(out_dir, _FOUND_PIPOLINS_LIST))
+                shutil.copytree(os.path.join(tmp, acc), os.path.join(out_dir, acc), dirs_exist_ok=True)
 
     _update_list(acc, os.path.join(out_dir, _CHECKED_LIST))
 
