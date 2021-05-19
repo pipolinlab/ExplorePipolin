@@ -9,31 +9,19 @@ import sys
 import tempfile
 
 import urllib.request
-from typing import Tuple, Iterator, Optional
+from typing import Optional
 from urllib.error import URLError
-import xml.etree.ElementTree as ElementTree
 
 import click
 
 from explore_pipolin.common import CONTEXT_SETTINGS
+from explore_pipolin.extract_metadata_ena_xml import retrieve_ena_xml, extract_metadata
 
 
-def yield_acc_and_url(ena_xml: str) -> Iterator[Tuple[str, Optional[str]]]:
-    for event, elem in ElementTree.iterparse(ena_xml, events=('start',)):
-        asmbl_acc, asmbl_url = None, None
-        if event == 'start' and elem.tag == 'ASSEMBLY':
-            asmbl_acc = elem.attrib['accession']
-
-            for link in elem.findall('ASSEMBLY_LINKS/ASSEMBLY_LINK/URL_LINK[LABEL="WGS_SET_FASTA"]/URL'):
-                asmbl_url = link.text
-
-            if asmbl_acc is not None:
-                yield asmbl_acc, asmbl_url
-
-
-def unzip_genome(genome_zip: str, new_genome: str) -> None:
-    with gzip.open(genome_zip, 'rb') as inf, open(new_genome, 'wb') as ouf:
-        shutil.copyfileobj(inf, ouf)
+def yield_accession(accessions):
+    with open(accessions) as inf:
+        for line in inf:
+            yield line.strip()
 
 
 _CHECKED_LIST = 'checked.txt'
@@ -64,8 +52,19 @@ def _is_found(acc: str, out_dir: str) -> bool:
         return 'No piPolBs were found!' not in inf.read()
 
 
-def _clean_all(acc: str, out_dir: str) -> None:
-    shutil.rmtree(os.path.join(out_dir, acc))
+def download_genome_to_path(url: str, genome_path: str) -> None:
+    urllib.request.urlretrieve(url, genome_path)
+
+
+def unzip_genome(genome_zip: str, new_genome: str) -> None:
+    with gzip.open(genome_zip, 'rb') as inf, open(new_genome, 'wb') as ouf:
+        shutil.copyfileobj(inf, ouf)
+
+
+def download_genome(url: str, genome: str) -> None:
+    with tempfile.NamedTemporaryFile() as genome_zip:
+        download_genome_to_path(url, genome_zip.name)
+        unzip_genome(genome_zip.name, genome)
 
 
 async def analyse_genome(genome: str, out_dir: str) -> None:
@@ -73,21 +72,6 @@ async def analyse_genome(genome: str, out_dir: str) -> None:
         f'explore_pipolin --out-dir {out_dir} --no-annotation {genome}',
         stdout=subprocess.DEVNULL)
     await proc.wait()
-
-
-async def download_and_analyse(acc: str, url: Optional[str], out_dir: str, sem: asyncio.BoundedSemaphore) -> None:
-    try:
-        if _is_in_list(acc, os.path.join(out_dir, _CHECKED_LIST)):
-            return
-        await do_download_and_analyse(acc, url, out_dir)
-    except URLError:
-        logging.info(f'Broken URL for {acc}. Skip.')
-        _update_list(acc, os.path.join(out_dir, _CHECKED_LIST))
-    except Exception as e:
-        logging.exception(str(e))
-        raise
-    finally:
-        sem.release()
 
 
 async def do_download_and_analyse(acc: str, url: Optional[str], out_dir: str) -> None:
@@ -110,21 +94,34 @@ async def do_download_and_analyse(acc: str, url: Optional[str], out_dir: str) ->
     _update_list(acc, os.path.join(out_dir, _CHECKED_LIST))
 
 
-def download_genome(url: str, genome: str) -> None:
-    with tempfile.NamedTemporaryFile() as genome_zip:
-        download_genome_to_path(url, genome_zip.name)
-        unzip_genome(genome_zip.name, genome)
+async def download_and_analyse(acc: str, url: Optional[str], out_dir: str, sem: asyncio.BoundedSemaphore) -> None:
+    try:
+        await do_download_and_analyse(acc, url, out_dir)
+    except URLError:
+        logging.info(f'Broken URL for {acc}. Skip.')
+        _update_list(acc, os.path.join(out_dir, _CHECKED_LIST))
+    except Exception as e:
+        logging.exception(str(e))
+        raise
+    finally:
+        sem.release()
 
 
-def download_genome_to_path(url: str, genome_path: str) -> None:
-    urllib.request.urlretrieve(url, genome_path)
-
-
-async def download_and_analyse_all(ena_xml: str, out_dir: str, p: int) -> None:
+async def download_and_analyse_all(accessions: str, out_dir: str, p: int) -> None:
     sem = asyncio.BoundedSemaphore(p)
     tasks = []
 
-    for acc, url in yield_acc_and_url(ena_xml):
+    for acc in yield_accession(accessions):
+
+        if _is_in_list(acc, os.path.join(out_dir, _CHECKED_LIST)):
+            continue
+
+        ena_xml = retrieve_ena_xml(acc)
+        _, _, _, _, _, url = extract_metadata(ena_xml)
+        if url == '-':
+            logging.info(f'No URL for {acc}. Skip.')
+            _update_list(acc, os.path.join(out_dir, _CHECKED_LIST))
+            continue
 
         await sem.acquire()
 
@@ -148,23 +145,23 @@ def set_logging_to_file_and_stdout(log_file: str):
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('ena-xml', type=click.Path(exists=True))
+@click.argument('accessions', type=click.Path(exists=True))
 @click.argument('out-dir', type=click.Path())
 @click.option('-p', type=int, default=1, show_default=True, help='Number of processes to run.')
-def massive_screening(ena_xml, out_dir, p):
+def massive_screening(accessions, out_dir, p):
     """
-    ENA_XML is a file downloaded from ENA database after a search of genome assemblies
-    for an organism of interest.
-    An accession of each analysed genome assembly will be written to the analysed.txt file.
+    ACCESSIONS is a file with assembly accession IDs.
+    An accession of each checked genome assembly will be written to the checked.txt file.
     When the process is interrupted and rerun again, these accessions will be skipped.
     Accessions of pipolin-harboring genomes will be written to the found_pipolins.txt file.
+    Stdout will be saved to the log file in the output directory.
     """
     os.makedirs(out_dir, exist_ok=True)
 
     log_file = datetime.datetime.now().strftime('%H%M%S') + '.log'
     set_logging_to_file_and_stdout(os.path.join(out_dir, log_file))
 
-    asyncio.run(download_and_analyse_all(ena_xml, out_dir, p))
+    asyncio.run(download_and_analyse_all(accessions, out_dir, p))
 
 
 if __name__ == '__main__':
