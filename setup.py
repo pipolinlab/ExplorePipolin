@@ -13,10 +13,10 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'explore_pipolin=explore_pipolin.explore_pipolin:main',
-            'download_taxon_assemblies=explore_pipolin.download_taxon_accessions:main',
+            'download_taxon_accessions=explore_pipolin.download_taxon_accessions:main',
             'massive_screening=explore_pipolin.massive_screening:main',
             'collect_metadata=explore_pipolin.collect_metadata:main',
-            'download_pipolin_genomes=explore_pipolin.download_genomes:main',
+            'download_genomes=explore_pipolin.download_genomes:main',
         ]
     },
     test_suite='tests',
