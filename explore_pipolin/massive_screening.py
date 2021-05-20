@@ -179,7 +179,7 @@ def main(accessions, out_dir, p):
     log_file = datetime.datetime.now().strftime('%H%M%S') + '.log'
     set_logging_to_file_and_stdout(os.path.join(out_dir, log_file))
 
-    asyncio.get_event_loop().set_default_executor(ThreadPoolExecutor(p))
+    asyncio.get_event_loop().set_default_executor(ThreadPoolExecutor(1))
 
     asyncio.run(download_and_analyse_all(accessions, out_dir, p))
 
