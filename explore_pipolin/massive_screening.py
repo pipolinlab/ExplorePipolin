@@ -68,12 +68,15 @@ async def download_genome(url: str, genome: str) -> None:
             try:
                 await asyncio.wait_for(download_genome_to_path(url, genome_zip.name), timeout=5)
                 break
-            except (asyncio.TimeoutError, URLError):
+            except (asyncio.TimeoutError, URLError) as e:
                 if i == 4:
-                    raise AssertionError(
-                        f'Cannot download genome for {os.path.splitext(os.path.basename(genome))[0]}. '
-                        f'Check the link: {url} of check your Internet connection!'
-                    )
+                    if e == URLError:
+                        raise
+                    else:
+                        raise AssertionError(
+                            f'Cannot download genome for {os.path.splitext(os.path.basename(genome))[0]}. '
+                            f'Check the link: {url} of check your Internet connection!'
+                        )
                 else:
                     logging.info('Timeout! Trying again...')
                     continue
