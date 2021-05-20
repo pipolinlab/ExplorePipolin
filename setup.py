@@ -12,7 +12,7 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': [
-            'explore_pipolin=explore_pipolin.explore_pipolin:main',
+            'explore_pipolin=explore_pipolin.main:main',
             'download_taxon_accessions=explore_pipolin.download_taxon_accessions:main',
             'massive_screening=explore_pipolin.massive_screening:main',
             'collect_metadata=explore_pipolin.collect_metadata:main',

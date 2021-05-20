@@ -1,16 +1,28 @@
 import os
+import tempfile
+import urllib.request
 
 import click
 
 from explore_pipolin.common import CONTEXT_SETTINGS
 from explore_pipolin.collect_metadata import retrieve_ena_xml, extract_metadata
-from explore_pipolin.massive_screening import download_genome
+from explore_pipolin.massive_screening import unzip_genome
 
 
 def yield_acc(found_pipolins_file):
     with open(found_pipolins_file) as inf:
         for line in inf:
             yield line.strip()
+
+
+def download_genome_to_path(url: str, genome_path: str) -> None:
+    urllib.request.urlretrieve(url, genome_path)
+
+
+def download_genome(url: str, genome: str) -> None:
+    with tempfile.NamedTemporaryFile() as genome_zip:
+        download_genome_to_path(url, genome_zip.name)
+        unzip_genome(genome_zip.name, genome)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

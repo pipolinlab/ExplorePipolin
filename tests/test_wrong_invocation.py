@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from contextlib import contextmanager
 
-from explore_pipolin.explore_pipolin import main
+from explore_pipolin.main import main
 
 
 class TestWrongInvocation(unittest.TestCase):

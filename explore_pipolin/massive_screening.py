@@ -9,6 +9,7 @@ import sys
 import tempfile
 
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 from urllib.error import URLError
 
@@ -52,8 +53,8 @@ def _is_found(acc: str, out_dir: str) -> bool:
         return 'No piPolBs were found!' not in inf.read()
 
 
-def download_genome_to_path(url: str, genome_path: str) -> None:
-    urllib.request.urlretrieve(url, genome_path)
+async def download_genome_to_path(url: str, genome_path: str) -> None:
+    await asyncio.get_running_loop().run_in_executor(None, urllib.request.urlretrieve, url, genome_path)
 
 
 def unzip_genome(genome_zip: str, new_genome: str) -> None:
@@ -61,9 +62,22 @@ def unzip_genome(genome_zip: str, new_genome: str) -> None:
         shutil.copyfileobj(inf, ouf)
 
 
-def download_genome(url: str, genome: str) -> None:
+async def download_genome(url: str, genome: str) -> None:
     with tempfile.NamedTemporaryFile() as genome_zip:
-        download_genome_to_path(url, genome_zip.name)
+        for i in range(5):
+            try:
+                await asyncio.wait_for(download_genome_to_path(url, genome_zip.name), timeout=5)
+                break
+            except (asyncio.TimeoutError, URLError):
+                if i == 4:
+                    raise AssertionError(
+                        f'Cannot download genome for {os.path.splitext(os.path.basename(genome))[0]}. '
+                        f'Check the link: {url} of check your Internet connection!'
+                    )
+                else:
+                    logging.info('Timeout! Trying again...')
+                    continue
+
         unzip_genome(genome_zip.name, genome)
 
 
@@ -78,9 +92,10 @@ async def do_download_and_analyse(acc: str, url: Optional[str], out_dir: str) ->
     if url is not None:
         with tempfile.TemporaryDirectory() as tmp:
             genome = os.path.join(tmp, acc + '.fasta')
-            download_genome(url, genome)
+            await download_genome(url, genome)
+            logging.info(f'Started analysing {acc}')
             await analyse_genome(genome, tmp)
-            logging.info(f'Finished analysis for {acc}')
+            logging.info(f'Finished analysing {acc}')
 
             if _is_found(acc, tmp):
                 logging.info(f'Pipolin(s) were found for {acc}')
@@ -160,6 +175,8 @@ def main(accessions, out_dir, p):
 
     log_file = datetime.datetime.now().strftime('%H%M%S') + '.log'
     set_logging_to_file_and_stdout(os.path.join(out_dir, log_file))
+
+    asyncio.get_event_loop().set_default_executor(ThreadPoolExecutor(p))
 
     asyncio.run(download_and_analyse_all(accessions, out_dir, p))
 
