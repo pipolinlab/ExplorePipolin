@@ -22,6 +22,7 @@ class TestWrongInvocation(unittest.TestCase):
                 main, ['--out-dir-prefix', 'my_output', '--out-dir', tmp, genome_file]
             )
             assert result.exit_code == 1
+            print(result.output)
             assert 'Options --out-dir-prefix and --out-dir are mutually exclusive!' in result.output
 
 
