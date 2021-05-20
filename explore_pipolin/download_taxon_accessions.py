@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import Mapping
 
@@ -40,7 +41,7 @@ def create_acc_version_dict(json_data) -> Mapping[str, str]:
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('taxon-id', type=int)
-@click.argument('out-file', type=click.Path())
+@click.option('--out-file', type=click.Path())
 def main(taxon_id, out_file):
     """
     Given NCBI taxon ID, a list of assembly accessions, registered under the given taxon tree,
@@ -53,10 +54,12 @@ def main(taxon_id, out_file):
     acc_version_dict = create_acc_version_dict(data)
     print(f'Number of assembly accessions after filtering: {len(acc_version_dict)}')
 
+    out_file = out_file if out_file else os.path.join(os.getcwd(), f'{taxon_id}.accessions.txt')
+
     with open(out_file, 'w') as ouf:
         for acc, version in acc_version_dict.items():
             print('.'.join([acc, version]), file=ouf)
-    print('Finished!')
+    print(f'Finished! The results can be found in {out_file}')
 
 
 if __name__ == '__main__':

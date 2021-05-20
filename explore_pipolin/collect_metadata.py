@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import Tuple
 import xml.etree.ElementTree as ElementTree
@@ -52,12 +53,17 @@ def extract_metadata(ena_xml: str) -> Tuple[str, str, str, str, str, str]:
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('accessions', type=click.Path(exists=True))
-@click.argument('out-file', type=click.Path())
+@click.option('--out-file', type=click.Path())
 def main(accessions, out_file):
     """
     ACCESSIONS is a file with accession ids (e.g., found_pipolins.txt) for which
     the metadata will be downloaded and extracted from the ENA database.
     """
+    default_out_file = os.path.join(
+        os.getcwd(), os.path.splitext(os.path.basename(accessions))[0] + '.metadata.txt'
+    )
+    out_file = out_file if out_file else default_out_file
+
     with open(accessions) as inf, open(out_file, 'w') as ouf:
         print('assembly_accession', 'assembly_level', 'genome_representation', 'taxon_id',
               'scientific_name', 'strain', 'assembly_url', sep='\t', file=ouf)
@@ -69,6 +75,8 @@ def main(accessions, out_file):
             asmbl_level, g_repr, tax_id, sci_name, strain, asmbl_url = extract_metadata(ena_xml)
             print(acc, asmbl_level, g_repr, tax_id, sci_name, strain, asmbl_url,
                   sep='\t', file=ouf, flush=True)
+
+    print(f'Finished! The results can be found in {out_file}')
 
 
 if __name__ == '__main__':
