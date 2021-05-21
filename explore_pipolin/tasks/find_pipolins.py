@@ -144,13 +144,12 @@ class PipolinFinder:
         for fragment in candidates:
             pipolin_candidates.append(Pipolin.from_fragments(fragment))
 
-            for other_fragments in self._find_remaining_fragments(fragment):
-                pipolin_candidates.append(Pipolin.from_fragments(fragment, *other_fragments))
+            other_fragments = self._find_remaining_fragments(fragment)
+            pipolin_candidates.append(Pipolin.from_fragments(fragment, *other_fragments))
 
         return pipolin_candidates
 
-    def _find_remaining_fragments(self, fragment: PipolinFragment) -> Sequence[Sequence[PipolinFragment]]:
-        # [*sorted_by_att_id[*sorted_by_contig_id]]
+    def _find_remaining_fragments(self, fragment: PipolinFragment) -> Sequence[PipolinFragment]:
         fragment_atts = set(f for f in fragment.features if f.ftype == FeatureType.ATT)
 
         if not fragment_atts:
@@ -164,24 +163,15 @@ class PipolinFinder:
         return self._fragments_from_orphan_atts(atts_on_other_contigs)
 
     def _fragments_from_orphan_atts(self, other_fragment_atts):
+        other_fragments: MutableSequence[PipolinFragment] = []
 
-        other_fragments: MutableSequence[Sequence[PipolinFragment]] = []
-        # [*sorted_by_att_id[*sorted_by_contig_id]]
-        grouped_by_att_id = groupby(sorted(other_fragment_atts, key=lambda x: x.att_id),
-                                    lambda x: x.att_id)
-        for _, atts_by_id in grouped_by_att_id:
-
-            fragments_same_att_id = []
-            grouped_by_contig_id = groupby(sorted(atts_by_id, key=lambda x: x.contig_id),
-                                           lambda x: x.contig_id)
-            for _, atts_by_contig in grouped_by_contig_id:
-
-                atts = sorted(atts_by_contig, key=lambda x: x.start)
-                new_fragment = self._create_pipolin_fragment(atts[0], atts[-1])
-                if all(f.ftype != FeatureType.PIPOLB for f in new_fragment.features):
-                    fragments_same_att_id.append(new_fragment)
-
-            other_fragments.append(fragments_same_att_id)
+        grouped_by_contig_id = groupby(sorted(other_fragment_atts, key=lambda x: x.contig_id),
+                                       lambda x: x.contig_id)
+        for _, atts_by_contig in grouped_by_contig_id:
+            atts = sorted(atts_by_contig, key=lambda x: x.start)
+            new_fragment = self._create_pipolin_fragment(atts[0], atts[-1])
+            if all(f.ftype != FeatureType.PIPOLB for f in new_fragment.features):
+                other_fragments.append(new_fragment)
         return other_fragments
 
     def _get_orphan_atts(self, fragment_atts):
