@@ -27,6 +27,7 @@ def yield_accession(accessions):
 
 _CHECKED_LIST = 'checked.txt'
 _FOUND_PIPOLINS_LIST = 'found_pipolins.txt'
+_BROKEN_LIST = 'broken_urls.txt'
 
 
 def _is_in_list(acc: str, list_file: str) -> bool:
@@ -66,11 +67,11 @@ async def download_genome(url: str, genome: str) -> None:
     with tempfile.NamedTemporaryFile() as genome_zip:
         for i in range(5):
             try:
-                await asyncio.wait_for(download_genome_to_path(url, genome_zip.name), timeout=5)
+                await asyncio.wait_for(download_genome_to_path(url, genome_zip.name), timeout=30)
                 break
             except (asyncio.TimeoutError, URLError) as e:
                 if i == 4:
-                    if e == URLError:
+                    if isinstance(e, URLError):
                         raise
                     else:
                         raise AssertionError(
@@ -118,6 +119,7 @@ async def download_and_analyse(acc: str, url: Optional[str], out_dir: str, sem: 
     except URLError:
         logging.info(f'Broken URL for {acc}. Skip.')
         _update_list(acc, os.path.join(out_dir, _CHECKED_LIST))
+        _update_list(acc, os.path.join(out_dir, _BROKEN_LIST))
     except Exception as e:
         logging.exception(str(e))
         raise
