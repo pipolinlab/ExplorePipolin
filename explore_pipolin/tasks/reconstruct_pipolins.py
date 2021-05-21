@@ -16,7 +16,7 @@ def _get_fragment_string(fragment: PipolinFragment) -> str:
     if fragment.orientation == Strand.REVERSE:
         features = features[::-1]
 
-    fragment_string = f'{fragment.contig_id}: {_get_feature_string(features[0])}'
+    fragment_string = f'contig {fragment.contig_id}: {_get_feature_string(features[0])}'
     for f1, f2 in zip(features, features[1:]):
         if f1.location.is_overlapping(f2.location):
             fragment_string += _get_feature_string(f2)
@@ -45,9 +45,10 @@ def reconstruct_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
 
     result: MutableSequence[Pipolin] = []
 
-    for pipolin in pipolins:
+    for i_p, pipolin in enumerate(pipolins):
+        logger.info(f'Reconstructing pipolin {i_p + 1}:')
         if len(pipolin.fragments) == 1:
-            logger.warning('>>> Reconstruction is not required!')
+            logger.info('>>> Reconstruction is not required for pipolin:')
 
             features = pipolin.fragments[0].get_fragment_features_sorted()
             if features[0].ftype == FeatureType.TARGET_TRNA:
@@ -56,13 +57,13 @@ def reconstruct_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
             logger.warning(f'{draw_pipolin_structure(pipolin)[0]}')
             single_fragment_pipolins.append(pipolin)
         else:
-            logger.warning('>>> Trying to reconstruct the structure from fragments:')
-            logger.warning(''.join(f'\n\t{i}' for i in draw_pipolin_structure(pipolin)))
+            logger.info('>>> Trying to reconstruct the structure from fragments:')
+            logger.info(''.join(f'\n\t{i}' for i in draw_pipolin_structure(pipolin)))
             try:
                 reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
                 result.append(reconstructor.reconstruct_pipolin())
-                logger.warning('>>> Reconstruction is done! The resulting pipolin is:')
-                logger.warning('...'.join([i.split(sep=': ')[1] for i in draw_pipolin_structure(result[-1])]))
+                logger.info('>>> Reconstruction is done! The resulting pipolin is:')
+                logger.info('...'.join([i.split(sep=': ')[1] for i in draw_pipolin_structure(result[-1])]))
                 logger.warning('PLEASE, DOUBLE CHECK THE FINAL STRUCTURE MANUALLY!')
             except CannotReconstructError as e:
                 logger.warning(f'>>> Cannot reconstruct the structure! {e}')
@@ -75,7 +76,12 @@ def reconstruct_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
     for pipolin in other_pipolins:
         reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
         result.append(reconstructor.inflate_unreconstructed_pipolin())
-    return _filter_overlapping(result) if len(result) > 1 else result
+
+    filtered = _filter_redundant(result) if len(result) > 1 else result
+    logger.info('Pipolins after filtering:')
+    for f in filtered:
+        logger.info('...'.join([i.split(sep=': ')[1] for i in draw_pipolin_structure(f)]))
+    return filtered
 
 
 class CannotReconstructError(Exception):
@@ -384,14 +390,14 @@ class Reconstructor:
         return [f for f in features if f.ftype != FeatureType.TARGET_TRNA]
 
 
-def _filter_overlapping(pipolins_to_filter: Sequence[Pipolin]) -> Sequence[Pipolin]:
+def _filter_redundant(pipolins_to_filter: Sequence[Pipolin]) -> Sequence[Pipolin]:
     filtered = set()
     for comb in combinations(pipolins_to_filter, 2):
         p1_features = list(chain.from_iterable(f.features for f in comb[0].fragments))
         p2_features = list(chain.from_iterable(f.features for f in comb[1].fragments))
-        if set(p1_features) in set(p2_features):
+        if set(p1_features).issubset(set(p2_features)):
             filtered.add(comb[1])
-        elif set(p2_features) in set(p1_features):
+        elif set(p2_features).issubset(set(p1_features)):
             filtered.add(comb[0])
         else:
             filtered.update(comb)

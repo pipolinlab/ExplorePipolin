@@ -1,3 +1,5 @@
+import os
+import shutil
 import unittest
 from typing import Sequence, List
 
@@ -5,6 +7,8 @@ from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, Featu
     Pipolin, PipolinFragment, AttFeature, ContigID
 from explore_pipolin.tasks.find_pipolins import PipolinFinder
 from explore_pipolin.tasks.reconstruct_pipolins import Reconstructor, CannotReconstructError
+
+from explore_pipolin.tasks.reconstruct_pipolins import reconstruct_pipolins
 
 _GENOME_ID = 'GENOME'
 _GENOME_FILE = 'GENOME.fa'
@@ -353,6 +357,10 @@ class TestPipolinFinder(unittest.TestCase):
         p1f2 = PipolinFragment(Range(100, 640), ContigID('CONTIG_1'), genome)
         p2f1 = PipolinFragment(Range(300, 400), ContigID('CONTIG_0'), genome)
         found = self.check_found_pipolins(genome, scheme, [p1f1, p1f2], [p2f1])
+
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1, p1f2),
+                                                          create_pipolin(scheme, p2f1)])
+        shutil.rmtree(os.path.join(os.getcwd(), 'logs'))
 
         # self.check_scaffolded_pipolins(genome, scheme, [p1f1, p1f2], found[0 or 1])
 
