@@ -222,9 +222,6 @@ class PipolinFragment:
 
     orientation: Strand = Strand.FORWARD
 
-    def change_orientation(self):
-        object.__setattr__(self, 'orientation', -self.orientation)
-
     @property
     def start(self):
         return self.location.start
@@ -239,13 +236,13 @@ class PipolinFragment:
 
     def get_fragment_features_sorted(self) -> Sequence[Feature]:
         features = []
-        features.extend(self._get_fragment_features_of_type(FeatureType.PIPOLB))
-        features.extend(self._get_fragment_features_of_type(FeatureType.ATT))
-        features.extend(self._get_fragment_features_of_type(FeatureType.TARGET_TRNA))
+        features.extend(self.get_fragment_features_of_type_sorted(FeatureType.PIPOLB))
+        features.extend(self.get_fragment_features_of_type_sorted(FeatureType.ATT))
+        features.extend(self.get_fragment_features_of_type_sorted(FeatureType.TARGET_TRNA))
 
         return sorted(features, key=lambda x: x.start)
 
-    def _get_fragment_features_of_type(
+    def get_fragment_features_of_type_sorted(
             self, feature_type: FeatureType) -> Sequence[Feature]:
 
         features = self.genome.features.get_features(feature_type)

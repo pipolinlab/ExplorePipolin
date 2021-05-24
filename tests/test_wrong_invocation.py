@@ -1,4 +1,4 @@
-from click.testing import CliRunner
+from click.testing import CliRunner, Result
 import tempfile
 import unittest
 from contextlib import contextmanager
@@ -12,18 +12,21 @@ class TestWrongInvocation(unittest.TestCase):
 
     def test_identical_genome_file_names(self):
         with temp_genome_file() as genome_file:
-            result = self.runner.invoke(main, [genome_file, genome_file])
-            assert result.exit_code == 1
-            assert 'GENOME files should have different names!' in result.output
+            with self.assertLogs() as logs:
+                result: Result = self.runner.invoke(main, [genome_file, genome_file])
+                assert result.exit_code == 1
+            self.assertEqual(len(logs.output), 1)
+            self.assertIn('GENOME files should have different names!', logs.output[0])
 
     def test_out_dirs_conflict(self):
         with temp_genome_file() as genome_file, tempfile.TemporaryDirectory() as tmp:
-            result = self.runner.invoke(
-                main, ['--out-dir-prefix', 'my_output', '--out-dir', tmp, genome_file]
-            )
-            assert result.exit_code == 1
-            print(result.output)
-            assert 'Options --out-dir-prefix and --out-dir are mutually exclusive!' in result.output
+            with self.assertLogs() as logs:
+                result = self.runner.invoke(
+                    main, ['--out-dir-prefix', 'my_output', '--out-dir', tmp, genome_file]
+                )
+                assert result.exit_code == 1
+            self.assertEqual(len(logs.output), 1)
+            self.assertIn('Options --out-dir-prefix and --out-dir are mutually exclusive!', logs.output[0])
 
 
 @contextmanager
