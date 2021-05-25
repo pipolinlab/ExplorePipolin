@@ -1,5 +1,5 @@
-from itertools import combinations, chain, groupby
-from typing import Sequence, MutableSequence, List, Tuple, Optional
+from itertools import chain, groupby
+from typing import Sequence, MutableSequence, List, Optional
 
 from prefect import task, context
 
@@ -39,62 +39,34 @@ def _rev_comp_fragment(f: PipolinFragment) -> PipolinFragment:
     return PipolinFragment(f.location, f.contig_id, f.genome, f.features, -f.orientation)
 
 
-def _rev_comp_fragment_if_required(fragment: PipolinFragment) -> PipolinFragment:
-    features = fragment.get_fragment_features_sorted()
-    if features[0].ftype == FeatureType.TARGET_TRNA:
-        return _rev_comp_fragment(fragment)
-    else:
-        return fragment
-
-
 @task()
 @genome_specific_logging
 def reconstruct_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
+
     logger = context.get('logger')
 
-    single_fragment_pipolins: MutableSequence[Pipolin] = []
-    other_pipolins: MutableSequence[Pipolin] = []
+    result: MutableSequence[Sequence[Pipolin]] = []
 
-    result: MutableSequence[Pipolin] = []
+    for pipolin in pipolins:
+        logger.info('>>> Trying to reconstruct the structure from fragments:')
+        logger.info(''.join(f'\n\t{i}' for i in draw_pipolin_structure(pipolin)))
 
-    for i_p, pipolin in enumerate(pipolins):
-        logger.info(f'Reconstructing pipolin {i_p + 1}:')
-        if len(pipolin.fragments) == 1:
-            logger.info('>>> Reconstruction is not required for single fragment:')
+        try:
+            reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
+            pipolin_variants = reconstructor.reconstruct_pipolin()
+            logger.info('>>> Reconstruction is done! The resulting pipolin variants are:')
+            for variant in pipolin_variants:
+                logger.info('...'.join([i.split(sep=': ')[1] for i in draw_pipolin_structure(variant)]))
+            result.append(pipolin_variants)
 
-            pipolin = Pipolin.from_fragments(
-                _rev_comp_fragment_if_required(pipolin.fragments[0])
-            )
-            logger.info(f'{draw_pipolin_structure(pipolin)[0]}')
+        except CannotReconstructError as e:
+            logger.warning(f'>>> Cannot reconstruct the structure! {e}')
 
-            single_fragment_pipolins.append(pipolin)
-        else:
-            logger.info('>>> Trying to reconstruct the structure from fragments:')
-            logger.info(''.join(f'\n\t{i}' for i in draw_pipolin_structure(pipolin)))
-            try:
-                reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
-                pipolin_variants = reconstructor.reconstruct_pipolin()
-                result.extend(pipolin_variants)
-                logger.info('>>> Reconstruction is done! The resulting pipolin variants are:')
-                for p in pipolin_variants:
-                    logger.info('...'.join([i.split(sep=': ')[1] for i in draw_pipolin_structure(p)]))
-            except CannotReconstructError as e:
-                logger.warning(f'>>> Cannot reconstruct the structure! {e}')
-                other_pipolins.append(pipolin)
-
-    for pipolin in single_fragment_pipolins:
-        reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
-        result.append(reconstructor.inflate_single_fragment_pipolin())
-
-    for pipolin in other_pipolins:
-        reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
-        result.append(reconstructor.inflate_unreconstructed_pipolin())
-
-    # TODO: fix filtering!!!
     filtered = _filter_redundant(result) if len(result) > 1 else result
     logger.info('Pipolins after filtering:')
-    for f in filtered:
-        logger.info('...'.join([i.split(sep=': ')[1] for i in draw_pipolin_structure(f)]))
+    for pipolin_variants in filtered:
+        for variant in pipolin_variants:
+            logger.info('...'.join([i.split(sep=': ')[1] for i in draw_pipolin_structure(variant)]))
     return filtered
 
 
@@ -121,20 +93,37 @@ class Reconstructor:
         if len(self.att_pipolb_att_fragments) > 1 or \
                 len(self.att_pipolb_fragments) > 1 or \
                 len(self.pipolb_only_fragments) > 1:
-            raise CannotReconstructError
-
+            raise CannotReconstructError(f'att---pol---att: {len(self.att_pipolb_att_fragments)} > 1 or '
+                                         f'att---pol: {len(self.att_pipolb_fragments)} > 1 or '
+                                         f'pol: {len(self.pipolb_only_fragments)} > 1')
+        # TODO: check this condition if it still holds
         # If >=2 contigs with tRNAs or a contig with >=2 tRNAs on different strands -> raise CannotReconstructError
         self._check_ttrnas(pipolin.fragments)
 
     def reconstruct_pipolin(self) -> Sequence[Pipolin]:
-        if self.att_pipolb_att_fragments:
-            return self._att_pipolb_att_plus_atts()
-        elif self.att_pipolb_fragments:
-            return self._att_pipolb_plus_atts()
-        elif self.pipolb_only_fragments:
-            return self._pipolb_plus_atts()
+        if len(self.pipolin.fragments) == 1:
+            return self._single_fragment()
         else:
-            raise AssertionError
+            if self.att_pipolb_att_fragments:
+                return self._att_pipolb_att_plus_atts()
+            elif self.att_pipolb_fragments:
+                return self._att_pipolb_plus_atts()
+            elif self.pipolb_only_fragments:
+                return self._pipolb_plus_atts()
+            else:
+                raise AssertionError
+
+    def _single_fragment(self) -> Sequence[Pipolin]:
+        ttrna_fragment = self._get_single_ttrna_containing_fragment([self.pipolin.fragments[0]])
+        if ttrna_fragment:
+            (fragment,) = self._orient_fragments_according_ttrnas(ttrna_fragment)
+            return [self._inflate_single_fragment_pipolin(fragment)]
+        else:
+            fragment1 = self._orient_according_pipolb(self.pipolin.fragments[0])
+            fragment2 = _rev_comp_fragment(fragment1)
+            variant1 = self._inflate_single_fragment_pipolin(fragment1)
+            variant2 = self._inflate_single_fragment_pipolin(fragment2)
+            return [variant1, variant2]
 
     def _att_pipolb_att_plus_atts(self) -> Sequence[Pipolin]:
         att_pipolb_att_fragment = self.att_pipolb_att_fragments[0]
@@ -295,6 +284,7 @@ class Reconstructor:
             variant2 = self._create_pipolin(left=left_fragment, middle=pipolb_fragment2, right=right_fragment)
             return [variant1, variant2]
         else:
+            # TODO: not just pipolb!
             return [self._create_pipolin(middle=pipolb_fragment1),
                     self._create_pipolin(middle=pipolb_fragment2)]
 
@@ -317,20 +307,6 @@ class Reconstructor:
                 continue
         return ttrna_containing_fragment
 
-    def inflate_single_fragment_pipolin(self):
-        atts_and_pipolbs = self._get_fragment_atts_and_pipolbs(self.pipolin.fragments[0])
-
-        left = _BORDER_INFLATE if atts_and_pipolbs[0].ftype == FeatureType.ATT else _NO_BORDER_INFLATE
-        right = _BORDER_INFLATE if atts_and_pipolbs[-1].ftype == FeatureType.ATT else _NO_BORDER_INFLATE
-        fragment = self._inflate_fragment(self.pipolin.fragments[0], left, right)
-        return Pipolin.from_fragments(fragment)
-
-    def inflate_unreconstructed_pipolin(self):
-        inflated_fragments = []
-        for fragment in self.pipolin.fragments:
-            inflated_fragments.append(self._inflate_fragment(fragment, _NO_BORDER_INFLATE, _NO_BORDER_INFLATE))
-        return Pipolin.from_fragments(*inflated_fragments)
-
     def _inflate_fragment(self, fragment: PipolinFragment, left: int, right: int) -> PipolinFragment:
         contig_length = self.genome.get_contig_by_id(fragment.contig_id).length
 
@@ -342,6 +318,14 @@ class Reconstructor:
         new = PipolinFragment(loc, fragment.contig_id, fragment.genome, orientation=fragment.orientation)
         new_features = new.get_fragment_features_sorted()
         return PipolinFragment(new.location, new.contig_id, new.genome, tuple(new_features), new.orientation)
+
+    def _inflate_single_fragment_pipolin(self, fragment: PipolinFragment) -> Pipolin:
+        atts_and_pipolbs = self._get_fragment_atts_and_pipolbs(fragment)
+
+        left = _BORDER_INFLATE if atts_and_pipolbs[0].ftype == FeatureType.ATT else _NO_BORDER_INFLATE
+        right = _BORDER_INFLATE if atts_and_pipolbs[-1].ftype == FeatureType.ATT else _NO_BORDER_INFLATE
+        fragment = self._inflate_fragment(fragment, left, right)
+        return Pipolin.from_fragments(fragment)
 
     def _create_pipolin(self, left=None, middle=None, right=None, complete=None) -> Pipolin:
         fragments = []
@@ -363,17 +347,6 @@ class Reconstructor:
             if pipolbs_strands.pop() == Strand.REVERSE:
                 return _rev_comp_fragment(pipolb_containing_fragment)
         return pipolb_containing_fragment
-
-    def _define_left_right_fragments_and_ttrna(
-            self, fragment1, fragment2) -> Tuple[PipolinFragment, PipolinFragment, Feature]:
-        try:
-            ttrna = self._get_ttrna_of_fragment(fragment1)
-            right_fragment, left_fragment = fragment1, fragment2
-        except CannotReconstructError:
-            ttrna = self._get_ttrna_of_fragment(fragment2)
-            right_fragment, left_fragment = fragment2, fragment1
-
-        return left_fragment, right_fragment, ttrna
 
     def _orient_fragment_according_main(
             self, main_fragment: PipolinFragment, dependent_fragment: PipolinFragment) -> PipolinFragment:
@@ -454,7 +427,7 @@ class Reconstructor:
                 the_fragment = fragment
 
         if num_fragments_with_ttrnas > 1:
-            raise CannotReconstructError
+            raise CannotReconstructError(f'Number of fragments with tRNAs: {num_fragments_with_ttrnas} > 1')
 
         if the_fragment is not None:
             self._check_ttrnas_directions(the_fragment)
@@ -464,7 +437,7 @@ class Reconstructor:
         ttrnas = [f for f in fragment.features if f.ftype == FeatureType.TARGET_TRNA]
         strands = set(ttrna.strand for ttrna in ttrnas)
         if len(strands) != 1:
-            raise CannotReconstructError
+            raise CannotReconstructError(f'tRNAs on different strands on the fragment {fragment}')
 
     def _classify_fragments(self, fragments: Sequence[PipolinFragment]):
         for fragment in fragments:
@@ -487,20 +460,33 @@ class Reconstructor:
         return [f for f in features if f.ftype != FeatureType.TARGET_TRNA]
 
 
-def _filter_redundant(pipolins_to_filter: MutableSequence[Pipolin]) -> Sequence[Pipolin]:
-    # TODO: fix!!! We need the same order of pipolins.
-    pipolins_to_remove = set()
-    for comb in combinations(pipolins_to_filter, 2):
-        p1_features = list(chain.from_iterable(f.features for f in comb[0].fragments))
-        p2_features = list(chain.from_iterable(f.features for f in comb[1].fragments))
-        if set(p1_features).issubset(set(p2_features)):
-            pipolins_to_remove.add(comb[1])
-        elif set(p2_features).issubset(set(p1_features)):
-            pipolins_to_remove.add(comb[0])
-    for p in pipolins_to_remove:
-        pipolins_to_filter.remove(p)
+def _filter_redundant(
+        pipolins_to_filter: MutableSequence[Sequence[Pipolin]]
+) -> Sequence[Sequence[Pipolin]]:
 
-    return pipolins_to_filter
+    filtered = []
+
+    for i, pipolin_variants in enumerate(pipolins_to_filter[:-1]):
+        variants_to_leave = []
+        for variant in pipolin_variants:
+            if not _is_subset_of_any(variant, pipolins_to_filter[i + 1:]):
+                variants_to_leave.append(variant)
+        filtered.append(variants_to_leave)
+    filtered.append(pipolins_to_filter[-1])
+
+    return filtered
+
+
+def _is_subset_of_any(pipolin: Pipolin, pipolins_to_filter: Sequence[Sequence[Pipolin]]) -> bool:
+    pipolin_features = list(chain.from_iterable(f.features for f in pipolin.fragments))
+
+    for pipolin_variants in pipolins_to_filter:
+        for variant in pipolin_variants:
+            if _are_comparable(pipolin, variant):
+                variant_features = list(chain.from_iterable(f.features for f in variant.fragments))
+                if set(pipolin_features).issubset(set(variant_features)):
+                    return True
+    return False
 
 
 def _are_comparable(pipolin1: Pipolin, pipolin2: Pipolin) -> bool:
@@ -512,7 +498,5 @@ def _are_comparable(pipolin1: Pipolin, pipolin2: Pipolin) -> bool:
         group = list(group)
         if len(group) == 2:
             if group[0].orientation != group[1].orientation:
-                print(group[0])
-                print(group[1])
                 return False
     return True

@@ -109,72 +109,55 @@ class TestPipolinFinder(unittest.TestCase):
 
         return obt_found
 
-    def check_resulting_pipolin(self, genome, scheme,
-                                exp_pipolin: Sequence[PipolinFragment],
-                                pipolin_to_scaffold: Pipolin):
-        exp_scaffolded = create_pipolin(scheme, *exp_pipolin)
-        obt_scaffolded = Reconstructor(genome, pipolin_to_scaffold).reconstruct_pipolin()
-        self.assertEqual(exp_scaffolded, obt_scaffolded)
-
-    def check_single_fragment_pipolin(self, genome, scheme,
-                                      exp_pipolin: Sequence[PipolinFragment],
-                                      pipolin_to_refine: Pipolin):
-        exp = create_pipolin(scheme, *exp_pipolin)
-        obt = Reconstructor(genome, pipolin_to_refine).inflate_single_fragment_pipolin()
-        self.assertEqual(exp, obt)
-
-    # def check_refined_pipolins(self, genome, scheme, *pipolin: Sequence[PipolinFragment], found):
-    #     exp_refined = [create_pipolin(scheme, *i) for i in pipolin]
-    #     obt_refined = refine_pipolins.run(genome, found)
-    #     self._check_pipolins(exp_refined, obt_refined, ordered=True)
-
     def test_genome1(self):
         scheme = '---pol---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1])
+        self.check_found_pipolins(genome, scheme, [f1])
 
-        f1 = PipolinFragment(Range(0, 300), ContigID('CONTIG_0'), genome)
-        self.check_single_fragment_pipolin(genome, scheme, [f1], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1)])
 
     def test_genome1_1(self):
         scheme = '---pol---pol---'
         genome = create_genome_from_scheme(scheme)
         p1f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         p2f1 = PipolinFragment(Range(300, 400), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+        self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+
+        reconstruct_pipolins.run(
+            genome=genome, pipolins=[create_pipolin(scheme, p1f1), create_pipolin(scheme, p2f1)]
+        )
 
     def test_genome2(self):
         scheme = '---at1---pol---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 400), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1])
+        self.check_found_pipolins(genome, scheme, [f1])
 
-        f1 = PipolinFragment(Range(100, 500), ContigID('CONTIG_0'), genome)
-        self.check_single_fragment_pipolin(genome, scheme, [f1], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1)])
 
     def test_genome3(self):
         scheme = '---at1---pol---at1---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 600), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1])
+        self.check_found_pipolins(genome, scheme, [f1])
 
-        self.check_single_fragment_pipolin(genome, scheme, [f1], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1)])
 
     def test_genome3_strange(self):
         scheme = '---at1(t)---pol---at1(t)---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 740), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1])
+        self.check_found_pipolins(genome, scheme, [f1])
 
-        self.check_single_fragment_pipolin(genome, scheme, [f1], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1)])
 
     def test_genome4(self):
         scheme = '---at1---pol---...---at1---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 400), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 200), ContigID('CONTIG_1'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2])
+        self.check_found_pipolins(genome, scheme, [f1, f2])
 
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2)])
 
@@ -184,10 +167,10 @@ class TestPipolinFinder(unittest.TestCase):
         f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 200), ContigID('CONTIG_1'), genome)
         f3 = PipolinFragment(Range(100, 200), ContigID('CONTIG_2'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2, f3])
+        self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
-        # with self.assertRaises(CannotReconstructError):
-        #     self.check_resulting_pipolin(genome, scheme, [f1, f2, f3], found[0])
+        # TODO: not just pipolb!
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2, f3)])
 
     def test_genome5_trna(self):
         scheme = '---at1---...---pol---...---at1(t)---'
@@ -195,58 +178,44 @@ class TestPipolinFinder(unittest.TestCase):
         f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 200), ContigID('CONTIG_1'), genome)
         f3 = PipolinFragment(Range(100, 240), ContigID('CONTIG_2'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2, f3])
+        self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
-        # f1 = PipolinFragment(Range(100, 300), ContigID('CONTIG_0'), genome)
-        # f2 = PipolinFragment(Range(0, 300), ContigID('CONTIG_1'), genome)
-        # f3 = PipolinFragment(Range(0, 240), ContigID('CONTIG_2'), genome)
-        # self.check_resulting_pipolin(genome, scheme, [f1, f2, f3], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2, f3)])
 
     def test_genome6(self):
         scheme = '---at1---pol---at1---at1(t)---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 840), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1])
+        self.check_found_pipolins(genome, scheme, [f1])
 
-        self.check_single_fragment_pipolin(genome, scheme, [f1], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1)])
 
     def test_genome7(self):
         scheme = '---at1---...---pol---at1---at1(t)---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 640), ContigID('CONTIG_1'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2])
+        self.check_found_pipolins(genome, scheme, [f1, f2])
 
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2)])
-        # f1 = PipolinFragment(Range(100, 300), ContigID('CONTIG_0'), genome)
-        # f2 = PipolinFragment(Range(0, 640), ContigID('CONTIG_1'), genome)
-        # self.check_resulting_pipolin(genome, scheme, [f1, f2], found[0])
 
     def test_genome8(self):
         scheme = '---at1---pol---...---at1---at1(t)---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 400), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 440), ContigID('CONTIG_1'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2])
+        self.check_found_pipolins(genome, scheme, [f1, f2])
 
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2)])
-        # f1 = PipolinFragment(Range(100, 500), ContigID('CONTIG_0'), genome)
-        # f2 = PipolinFragment(Range(0, 440), ContigID('CONTIG_1'), genome)
-        # self.check_resulting_pipolin(genome, scheme, [f1, f2], found[0])
 
     def test_genome9(self):
         scheme = '---at1---pol---at1---...---at1(t)---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 600), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 240), ContigID('CONTIG_1'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2])
+        self.check_found_pipolins(genome, scheme, [f1, f2])
 
-        reconstruct_pipolins.run(genome=genome,
-                                 pipolins=[create_pipolin(scheme, f1, f2)])
-        shutil.rmtree(os.path.join(os.getcwd(), 'logs'))
-        # f1 = PipolinFragment(Range(100, 700), ContigID('CONTIG_0'), genome)
-        # f2 = PipolinFragment(Range(0, 240), ContigID('CONTIG_1'), genome)
-        # self.check_resulting_pipolin(genome, scheme, [f1, f2], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2)])
 
     def test_genome10(self):
         scheme = '---at1---...---pol---...---at1---at1(t)---'
@@ -254,12 +223,9 @@ class TestPipolinFinder(unittest.TestCase):
         f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 200), ContigID('CONTIG_1'), genome)
         f3 = PipolinFragment(Range(100, 440), ContigID('CONTIG_2'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2, f3])
+        self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
-        # f1 = PipolinFragment(Range(100, 300), ContigID('CONTIG_0'), genome)
-        # f2 = PipolinFragment(Range(0, 300), ContigID('CONTIG_1'), genome)
-        # f3 = PipolinFragment(Range(0, 440), ContigID('CONTIG_2'), genome)
-        # self.check_resulting_pipolin(genome, scheme, [f1, f2, f3], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2, f3)])
 
     def test_genome11(self):
         scheme = '---at1---pol---...---at1---...---at1(t)---'
@@ -267,10 +233,10 @@ class TestPipolinFinder(unittest.TestCase):
         f1 = PipolinFragment(Range(100, 400), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 200), ContigID('CONTIG_1'), genome)
         f3 = PipolinFragment(Range(100, 240), ContigID('CONTIG_2'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2, f3])
+        self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
-        with self.assertRaises(CannotReconstructError):
-            self.check_resulting_pipolin(genome, scheme, [f1, f2, f3], found[0])
+        # TODO: check this case!
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2, f3)])
 
     def test_genome12(self):
         scheme = '---at1---...---pol---at1---...---at1(t)---'
@@ -278,13 +244,10 @@ class TestPipolinFinder(unittest.TestCase):
         f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 400), ContigID('CONTIG_1'), genome)
         f3 = PipolinFragment(Range(100, 240), ContigID('CONTIG_2'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2, f3])
+        self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
+        # TODO: should be three variants!
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2, f3)])
-        # f1 = PipolinFragment(Range(100, 300), ContigID('CONTIG_0'), genome)
-        # f2 = PipolinFragment(Range(0, 500), ContigID('CONTIG_1'), genome)
-        # f3 = PipolinFragment(Range(0, 240), ContigID('CONTIG_2'), genome)
-        # self.check_resulting_pipolin(genome, scheme, [f1, f2, f3], found[0])
 
     # fails from time to time (it's expected)
     def test_genome13(self):
@@ -293,56 +256,61 @@ class TestPipolinFinder(unittest.TestCase):
         p1f1 = PipolinFragment(Range(100, 400), ContigID('CONTIG_0'), genome)
         p1f2 = PipolinFragment(Range(300, 440), ContigID('CONTIG_1'), genome)
         p2f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_1'), genome)
-        found = self.check_found_pipolins(genome, scheme, [p1f1, p1f2], [p2f1])
+        self.check_found_pipolins(genome, scheme, [p1f1, p1f2], [p2f1])
 
-        # self.check_scaffolded_pipolin(genome, scheme, [p1f1, p1f2], found[0 or 1])
+        # TODO: check this case!
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1, p1f2),
+                                                          create_pipolin(scheme, p2f1)])
 
     def test_genome18(self):
         scheme = '---at1---pol---at1(t)---at2---pol---at2(t)---'
         genome = create_genome_from_scheme(scheme)
         p1f1 = PipolinFragment(Range(100, 640), ContigID('CONTIG_0'), genome)
         p2f1 = PipolinFragment(Range(800, 1340), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+        self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1), create_pipolin(scheme, p2f1)])
 
     def test_genome19(self):
         scheme = '---at1---pol---at1(t)---...---at2---pol---at2(t)---'
         genome = create_genome_from_scheme(scheme)
         p1f1 = PipolinFragment(Range(100, 640), ContigID('CONTIG_0'), genome)
         p2f1 = PipolinFragment(Range(100, 640), ContigID('CONTIG_1'), genome)
-        found = self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+        self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1), create_pipolin(scheme, p2f1)])
 
     def test_genome21(self):
         scheme = '---at1---pol---pol---at1---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 800), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1])
+        self.check_found_pipolins(genome, scheme, [f1])
 
-        self.check_single_fragment_pipolin(genome, scheme, [f1], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1)])
 
     def test_genome22(self):
         scheme = '---at1---at1---pol---pol---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 800), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1])
+        self.check_found_pipolins(genome, scheme, [f1])
 
-        f1 = PipolinFragment(Range(100, 900), ContigID('CONTIG_0'), genome)
-        self.check_single_fragment_pipolin(genome, scheme, [f1], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1)])
 
     def test_genome23(self):
         scheme = '---at1---pol---pol---at1---at1---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 1000), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1])
+        self.check_found_pipolins(genome, scheme, [f1])
 
-        self.check_single_fragment_pipolin(genome, scheme, [f1], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1)])
 
     def test_genome_strange1(self):
         scheme = '---at1---pol---at1---pol---at1(t)---'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 1040), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1])
+        self.check_found_pipolins(genome, scheme, [f1])
 
-        self.check_single_fragment_pipolin(genome, scheme, [f1], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1)])
 
     def test_genome_strange2(self):
         scheme = '---at1---...---pol---at1---pol---at1(t)---'
@@ -350,14 +318,13 @@ class TestPipolinFinder(unittest.TestCase):
         p1f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         p1f2 = PipolinFragment(Range(300, 840), ContigID('CONTIG_1'), genome)
         p2f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_1'), genome)
-        found = self.check_found_pipolins(genome, scheme, [p1f1, p1f2], [p2f1])
+        self.check_found_pipolins(genome, scheme, [p1f1, p1f2], [p2f1])
 
         reconstruct_pipolins.run(
             genome=genome,
             pipolins=[create_pipolin(scheme, p1f1, p1f2), create_pipolin(scheme, p2f1)]
         )
         shutil.rmtree(os.path.join(os.getcwd(), 'logs'))
-        # self.check_scaffolded_pipolins(genome, scheme, [p1f1, p1f2], found[0 or 1])
 
     def test_genome_strange3(self):
         scheme = '---at1---pol---...---at1---pol---at1(t)---'
@@ -365,12 +332,11 @@ class TestPipolinFinder(unittest.TestCase):
         p1f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         p1f2 = PipolinFragment(Range(100, 640), ContigID('CONTIG_1'), genome)
         p2f1 = PipolinFragment(Range(300, 400), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [p1f1, p1f2], [p2f1])
+        self.check_found_pipolins(genome, scheme, [p1f1, p1f2], [p2f1])
 
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1, p1f2),
                                                           create_pipolin(scheme, p2f1)])
         shutil.rmtree(os.path.join(os.getcwd(), 'logs'))
-        # self.check_scaffolded_pipolins(genome, scheme, [p1f1, p1f2], found[0 or 1])
 
     def test_genome_strange4(self):
         scheme = '---at1---pol---at1---...---pol---at1(t)---'
@@ -378,26 +344,29 @@ class TestPipolinFinder(unittest.TestCase):
         p1f1 = PipolinFragment(Range(100, 600), ContigID('CONTIG_0'), genome)
         p1f2 = PipolinFragment(Range(300, 440), ContigID('CONTIG_1'), genome)
         p2f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_1'), genome)
-        found = self.check_found_pipolins(genome, scheme, [p1f1, p1f2], [p2f1])
+        self.check_found_pipolins(genome, scheme, [p1f1, p1f2], [p2f1])
 
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1, p1f2),
                                                           create_pipolin(scheme, p2f1)])
         shutil.rmtree(os.path.join(os.getcwd(), 'logs'))
-        # self.check_scaffolded_pipolins(genome, scheme, [p1f1, p1f2], found[0 or 1])
 
     def test_genome_strange5(self):
         scheme = '---at1---pol---at1---pol---'
         genome = create_genome_from_scheme(scheme)
         p1f1 = PipolinFragment(Range(100, 600), ContigID('CONTIG_0'), genome)
         p2f1 = PipolinFragment(Range(700, 800), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+        self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1), create_pipolin(scheme, p2f1)])
 
     def test_genome_strange6(self):
         scheme = '---pol---at1---pol---at1---'
         genome = create_genome_from_scheme(scheme)
         p1f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         p2f1 = PipolinFragment(Range(300, 800), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+        self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1), create_pipolin(scheme, p2f1)])
 
     def test_test(self):
         scheme = '---at0---pol---at1---pol---at0---at1---pol---at2---pol---at2---pol---'
@@ -406,21 +375,28 @@ class TestPipolinFinder(unittest.TestCase):
         p2f1 = PipolinFragment(Range(1300, 1400), ContigID('CONTIG_0'), genome)
         p3f1 = PipolinFragment(Range(1500, 2000), ContigID('CONTIG_0'), genome)
         p4f1 = PipolinFragment(Range(2100, 2200), ContigID('CONTIG_0'), genome)
-        found = self.check_found_pipolins(genome, scheme, [p1f1], [p2f1], [p3f1], [p4f1])
+        self.check_found_pipolins(genome, scheme, [p1f1], [p2f1], [p3f1], [p4f1])
+
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1),
+                                                          create_pipolin(scheme, p2f1),
+                                                          create_pipolin(scheme, p3f1),
+                                                          create_pipolin(scheme, p4f1)])
 
     def test_two_contigs_with_ttrnas(self):
         scheme = '---at2(t)---...---pol---at2(t)'
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 240), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 440), ContigID('CONTIG_1'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2])
+        self.check_found_pipolins(genome, scheme, [f1, f2])
 
-        with self.assertRaises(CannotReconstructError):
-            self.check_resulting_pipolin(genome, scheme, [f1, f2], found[0])
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2)])
 
     def test_contig_with_two_ttrnas(self):
         scheme = '---at2---at1---...---pol---at2(t)---at1(t)---'   # ???
         genome = create_genome_from_scheme(scheme)
         f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         f2 = PipolinFragment(Range(100, 440), ContigID('CONTIG_1'), genome)
-        found = self.check_found_pipolins(genome, scheme, [f1, f2])
+        self.check_found_pipolins(genome, scheme, [f1, f2])
+
+        # TODO: check this case!
+        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2)])
