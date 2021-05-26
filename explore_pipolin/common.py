@@ -136,6 +136,13 @@ class Feature:
     def contig(self) -> Contig:
         return self.genome.get_contig_by_id(self.contig_id)
 
+    def get_att_overlapping_ttrna(self):
+        assert self.ftype == FeatureType.TARGET_TRNA
+        att = self.genome.features.get_features(FeatureType.ATT).get_overlapping(self)
+        if not att:
+            raise AssertionError
+        return att
+
 
 @dataclass(frozen=True)
 class AttFeature(Feature):
@@ -230,12 +237,12 @@ class PipolinFragment:
     def end(self):
         return self.location.end
 
+    def reverse_complement(self):
+        return PipolinFragment(self.location, self.contig_id, self.genome, self.features, -self.orientation)
+
     def is_overlapping(self, other):
         if self.contig_id == other.contig_id:
             return self.location.is_overlapping(other.location)
-
-    def reverse_complement(self):
-        return PipolinFragment(self.location, self.contig_id, self.genome, self.features, -self.orientation)
 
     def get_fragment_features_sorted(self) -> Sequence[Feature]:
         features = []
@@ -251,6 +258,33 @@ class PipolinFragment:
         features = self.genome.features.get_features(feature_type)
         contig_features = features.get_dict_by_contig_sorted()[self.contig_id]
         return [f for f in contig_features if f.start >= self.start and f.end <= self.end]
+
+    def get_prime3_ttrnas(self) -> Sequence[Feature]:
+        ttrnas = self.get_fragment_features_of_type_sorted(FeatureType.TARGET_TRNA)
+        prime3_ttrnas = self._get_prime3_ttrnas(ttrnas)
+
+        if len(prime3_ttrnas) != 0 or self._is_same_direction(prime3_ttrnas):
+            return prime3_ttrnas
+
+        return []
+
+    @staticmethod
+    def _get_prime3_ttrnas(ttrnas: Sequence[Feature]) -> Sequence[Feature]:
+        prime3_ttrnas = []
+        for ttrna in ttrnas:
+            att = ttrna.get_att_overlapping_ttrna()
+
+            if ttrna.strand == Strand.FORWARD and ttrnas[0].start < att.start:  # 3'-overlap
+                prime3_ttrnas.append(ttrna)
+            elif ttrnas[0].strand == Strand.REVERSE and ttrnas[0].end > att.end:  # 3'-overlap
+                prime3_ttrnas.append(ttrna)
+
+        return prime3_ttrnas
+
+    @staticmethod
+    def _is_same_direction(prime3_ttrnas: Sequence[Feature]) -> bool:
+        strands = set(ttrna.strand for ttrna in prime3_ttrnas)
+        return True if len(strands) == 1 else False
 
 
 @dataclass(frozen=True)
