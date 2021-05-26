@@ -6,7 +6,6 @@ from typing import Sequence, List
 from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, \
     Pipolin, PipolinFragment, AttFeature, ContigID
 from explore_pipolin.tasks.find_pipolins import PipolinFinder
-from explore_pipolin.tasks.reconstruct_pipolins import Reconstructor, CannotReconstructError
 
 from explore_pipolin.tasks.reconstruct_pipolins import reconstruct_pipolins
 

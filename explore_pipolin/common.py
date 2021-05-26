@@ -234,6 +234,9 @@ class PipolinFragment:
         if self.contig_id == other.contig_id:
             return self.location.is_overlapping(other.location)
 
+    def reverse_complement(self):
+        return PipolinFragment(self.location, self.contig_id, self.genome, self.features, -self.orientation)
+
     def get_fragment_features_sorted(self) -> Sequence[Feature]:
         features = []
         features.extend(self.get_fragment_features_of_type_sorted(FeatureType.PIPOLB))

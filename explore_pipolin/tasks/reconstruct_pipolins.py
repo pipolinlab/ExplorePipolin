@@ -35,10 +35,6 @@ def _get_feature_string(feature) -> str:
         return '(t)'
 
 
-def _rev_comp_fragment(f: PipolinFragment) -> PipolinFragment:
-    return PipolinFragment(f.location, f.contig_id, f.genome, f.features, -f.orientation)
-
-
 @task()
 @genome_specific_logging
 def reconstruct_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
@@ -120,7 +116,7 @@ class Reconstructor:
             return [self._inflate_single_fragment_pipolin(fragment)]
         else:
             fragment1 = self._orient_according_pipolb(self.pipolin.fragments[0])
-            fragment2 = _rev_comp_fragment(fragment1)
+            fragment2 = fragment1.reverse_complement()
             variant1 = self._inflate_single_fragment_pipolin(fragment1)
             variant2 = self._inflate_single_fragment_pipolin(fragment2)
             return [variant1, variant2]
@@ -141,7 +137,7 @@ class Reconstructor:
             # variant 3: ---att---pol---att---...---att(t)---   tRNA is required
             fr1 = self._orient_according_pipolb(att_pipolb_att_fragment)
             variant1 = self._create_pipolin(complete=fr1)
-            fr2 = _rev_comp_fragment(fr1)
+            fr2 = fr1.reverse_complement()
             variant2 = self._create_pipolin(complete=fr2)
 
             pipolin_variants.extend([variant1, variant2])
@@ -204,8 +200,8 @@ class Reconstructor:
         else:
             raise AssertionError
         variant1 = self._create_pipolin(left=left_fragment, right=right_fragment)
-        variant2 = self._create_pipolin(left=_rev_comp_fragment(right_fragment),
-                                        right=_rev_comp_fragment(left_fragment))
+        variant2 = self._create_pipolin(left=right_fragment.reverse_complement(),
+                                        right=left_fragment.reverse_complement())
         return [variant1, variant2]
 
     def _att_pipolb_plus_two_atts(self) -> Sequence[Pipolin]:
@@ -253,7 +249,7 @@ class Reconstructor:
         ttrna_fragment = self._get_single_ttrna_containing_fragment([self.att_only_fragments[0]])
 
         pipolb_fragment1 = self._orient_according_pipolb(self.pipolb_only_fragments[0])
-        pipolb_fragment2 = _rev_comp_fragment(pipolb_fragment1)
+        pipolb_fragment2 = pipolb_fragment1.reverse_complement()
 
         if ttrna_fragment:
             variant1 = self._create_pipolin(middle=pipolb_fragment1, right=ttrna_fragment)
@@ -269,7 +265,7 @@ class Reconstructor:
             [self.att_only_fragments[0], self.att_only_fragments[1]]
         )
         pipolb_fragment1 = self._orient_according_pipolb(self.pipolb_only_fragments[0])
-        pipolb_fragment2 = _rev_comp_fragment(pipolb_fragment1)
+        pipolb_fragment2 = pipolb_fragment1.reverse_complement()
 
         if ttrna_fragment:
             if ttrna_fragment == self.att_only_fragments[0]:
@@ -345,7 +341,7 @@ class Reconstructor:
         pipolbs_strands = set(i.strand for i in pipolbs)
         if len(pipolbs_strands) == 1:
             if pipolbs_strands.pop() == Strand.REVERSE:
-                return _rev_comp_fragment(pipolb_containing_fragment)
+                return pipolb_containing_fragment.reverse_complement()
         return pipolb_containing_fragment
 
     def _orient_fragment_according_main(
@@ -359,7 +355,7 @@ class Reconstructor:
         dependent_fragment_strand = self._get_fragment_atts_strand(dependent_fragment, att_id)
 
         if main_fragment_strand != dependent_fragment_strand:
-            return _rev_comp_fragment(dependent_fragment)
+            return dependent_fragment.reverse_complement()
         else:
             return dependent_fragment
 
@@ -373,7 +369,7 @@ class Reconstructor:
         att = self._get_att_overlapping_ttrna(ttrnas[0])
 
         if ttrnas[0].strand == Strand.FORWARD and ttrnas[0].start < att.start:  # 3'-overlap
-            ttrna_containing_fragment = _rev_comp_fragment(ttrna_containing_fragment)
+            ttrna_containing_fragment = ttrna_containing_fragment.reverse_complement()
 
         elif ttrnas[0].strand == Strand.REVERSE and ttrnas[0].end > att.end:  # 3'-overlap
             pass
@@ -388,9 +384,9 @@ class Reconstructor:
             for f, s in zip(other_fragment, other_fragment_strands):
                 if s:
                     if ttrna_containing_fragment.orientation == f.orientation and att.strand != s:
-                        new_other_fragments.append(_rev_comp_fragment(f))
+                        new_other_fragments.append(f.reverse_complement())
                     elif ttrna_containing_fragment.orientation != f.orientation and att.strand == s:
-                        new_other_fragments.append(_rev_comp_fragment(f))
+                        new_other_fragments.append(f.reverse_complement())
                     else:
                         new_other_fragments.append(f)
                 else:
