@@ -5,7 +5,7 @@ from typing import Sequence, List
 
 from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, \
     Pipolin, PipolinFragment, AttFeature, ContigID
-from explore_pipolin.tasks.find_pipolins import PipolinFinder
+from explore_pipolin.tasks.find_pipolins import PipolinFinder, find_pipolins
 
 from explore_pipolin.tasks.reconstruct_pipolins import reconstruct_pipolins
 
@@ -234,7 +234,6 @@ class TestPipolinFinder(unittest.TestCase):
         f3 = PipolinFragment(Range(100, 240), ContigID('CONTIG_2'), genome)
         self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
-        # TODO: check this case!
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2, f3)])
 
     def test_genome12(self):
@@ -245,7 +244,6 @@ class TestPipolinFinder(unittest.TestCase):
         f3 = PipolinFragment(Range(100, 240), ContigID('CONTIG_2'), genome)
         self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
-        # TODO: should be three variants!
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2, f3)])
 
     # fails from time to time (it's expected)
@@ -257,7 +255,6 @@ class TestPipolinFinder(unittest.TestCase):
         p2f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_1'), genome)
         self.check_found_pipolins(genome, scheme, [p1f1, p1f2], [p2f1])
 
-        # TODO: check this case!
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1, p1f2),
                                                           create_pipolin(scheme, p2f1)])
 
@@ -361,11 +358,11 @@ class TestPipolinFinder(unittest.TestCase):
     def test_genome_strange6(self):
         scheme = '---pol---at1---pol---at1---'
         genome = create_genome_from_scheme(scheme)
-        p1f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
-        p2f1 = PipolinFragment(Range(300, 800), ContigID('CONTIG_0'), genome)
-        self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
-
-        reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1), create_pipolin(scheme, p2f1)])
+        # p1f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
+        # p2f1 = PipolinFragment(Range(300, 800), ContigID('CONTIG_0'), genome)
+        # self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
+        found = find_pipolins.run(genome=genome)
+        reconstruct_pipolins.run(genome=genome, pipolins=found)
 
     def test_test(self):
         scheme = '---at0---pol---at1---pol---at0---at1---pol---at2---pol---at2---pol---'
@@ -397,5 +394,4 @@ class TestPipolinFinder(unittest.TestCase):
         f2 = PipolinFragment(Range(100, 440), ContigID('CONTIG_1'), genome)
         self.check_found_pipolins(genome, scheme, [f1, f2])
 
-        # TODO: check this case!
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2)])
