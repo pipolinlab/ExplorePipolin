@@ -52,20 +52,13 @@ class PipolinFinder:
 
         return result
 
-    def _filter_candidates(self, best_candidate, candidates):
+    @staticmethod
+    def _filter_candidates(best_candidate, candidates):
         filtered_candidates = []
         for cdt in candidates:
-            if not self._is_candidate_overlapping_best(cdt.pipolin, best_candidate.pipolin):
+            if not cdt.pipolin.is_overlapping(best_candidate.pipolin):
                 filtered_candidates.append(cdt)
         return filtered_candidates
-
-    @staticmethod
-    def _is_candidate_overlapping_best(candidate: Pipolin, best: Pipolin):
-        for b_f in best.fragments:
-            for c_f in candidate.fragments:
-                if b_f.is_overlapping(c_f):
-                    return True
-        return False
 
     def _calc_pipolin_score(self, pipolin: Pipolin) -> PipolinScore:
         max_score = max(self._calc_pipolin_fragment_score(f) for f in pipolin.fragments)

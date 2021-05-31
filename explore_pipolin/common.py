@@ -297,3 +297,10 @@ class Pipolin:
         if len(contigs) != len(fragments):
             raise AssertionError('Two fragments from the same contig!')
         return Pipolin(fragments)
+
+    def is_overlapping(self, other):
+        for s_f in self.fragments:
+            for o_f in other.fragments:
+                if s_f.is_overlapping(o_f):
+                    return True
+        return False

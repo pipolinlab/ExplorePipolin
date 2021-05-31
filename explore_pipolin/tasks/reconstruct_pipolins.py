@@ -75,6 +75,18 @@ _TOO_MANY_ATTS_MESSAGE = 'Unable to reconstruct pipolin: too many orphan ATTs. '
 class PipolinVariants:
     variants: Tuple[Pipolin, ...]
 
+    @staticmethod
+    def from_variants(*variants: Pipolin):
+        return PipolinVariants(variants)
+
+
+def _is_overlapping_result(pipolin: Pipolin, result: Sequence[PipolinVariants]) -> bool:
+    for r in result:
+        for v in r.variants:
+            if pipolin.is_overlapping(v):
+                return True
+    return False
+
 
 class Reconstructor:
     def __init__(self, genome: Genome, pipolin: Pipolin, no_border_inflate: Optional[int]):
@@ -114,13 +126,13 @@ class Reconstructor:
         ttrna_fragments = self._get_ttrna_fragments(single_fragment)
         if len(ttrna_fragments) == 1:
             (fragment,) = self._orient_fragments_according_ttrna(ttrna_fragments[0])
-            return PipolinVariants(variants=(self._create_pipolin(single=fragment),))
+            return PipolinVariants.from_variants(self._create_pipolin(single=fragment))
         else:
             fragment1 = self._orient_according_pipolb(single_fragment)
             fragment2 = fragment1.reverse_complement()
             variant1 = self._create_pipolin(single=fragment1)
             variant2 = self._create_pipolin(single=fragment2)
-            return PipolinVariants(variants=(variant1, variant2))
+            return PipolinVariants.from_variants(variant1, variant2)
 
     def _att_pipolb_att_plus_atts(self) -> PipolinVariants:
         att_pipolb_att_fragment = self.att_pipolb_att_fragments[0]
@@ -130,7 +142,7 @@ class Reconstructor:
             if ttrna_fragments[0] == att_pipolb_att_fragment:
                 # variant: ---att---pol---att(t)
                 (att_pipolb_att_fragment,) = self._orient_fragments_according_ttrna(ttrna_fragments[0])
-                return PipolinVariants(variants=(self._create_pipolin(complete=att_pipolb_att_fragment),))
+                return PipolinVariants.from_variants(self._create_pipolin(complete=att_pipolb_att_fragment))
             else:
                 # variant 1: ---att---pol---att---...---att(t)---   tRNA is required
                 (ttrna_fragment, att_pipolb_att_fragment) = self._orient_fragments_according_ttrna(
@@ -139,7 +151,7 @@ class Reconstructor:
                 variant1 = self._create_pipolin(
                     left=att_pipolb_att_fragment, right=ttrna_fragment
                 )
-                return PipolinVariants((variant1,))
+                return PipolinVariants.from_variants(variant1)
 
         # variant 2: ---att---pol---att---
         # variant 3: variant 2 reverse-complement
@@ -148,7 +160,7 @@ class Reconstructor:
         fr3 = fr2.reverse_complement()
         variant3 = self._create_pipolin(complete=fr3)
 
-        return PipolinVariants((variant2, variant3))
+        return PipolinVariants.from_variants(variant2, variant3)
 
     def _att_pipolb_plus_atts(self) -> PipolinVariants:
         # we can reconstruct the cases:
@@ -174,13 +186,13 @@ class Reconstructor:
                 att_pipolb_fragment, att_fragment = self._orient_fragments_according_ttrna(
                     att_pipolb_fragment, att_fragment
                 )
-                return PipolinVariants((self._create_pipolin(left=att_fragment, right=att_pipolb_fragment),))
+                return PipolinVariants.from_variants(self._create_pipolin(left=att_fragment, right=att_pipolb_fragment))
             else:
                 # variant: ---att---pol---...---att(t)---
                 att_fragment, att_pipolb_fragment = self._orient_fragments_according_ttrna(
                     att_fragment, att_pipolb_fragment
                 )
-                return PipolinVariants((self._create_pipolin(left=att_pipolb_fragment, right=att_fragment),))
+                return PipolinVariants.from_variants(self._create_pipolin(left=att_pipolb_fragment, right=att_fragment))
 
         # variant 1: ---att---pol---...---att---
         # variant 2: ---att---...---pol---att---
@@ -198,7 +210,7 @@ class Reconstructor:
         variant1 = self._create_pipolin(left=left_fragment, right=right_fragment)
         variant2 = self._create_pipolin(left=right_fragment.reverse_complement(),
                                         right=left_fragment.reverse_complement())
-        return PipolinVariants((variant1, variant2))
+        return PipolinVariants.from_variants(variant1, variant2)
 
     def _att_pipolb_plus_two_atts(self) -> PipolinVariants:
         ttrna_fragments = self._get_ttrna_fragments(*self.att_only_fragments)
@@ -219,15 +231,15 @@ class Reconstructor:
 
             if pipolb_is_left:
                 # ---att---...---pol---att---...---att(t)---
-                return PipolinVariants(
-                    (self._create_pipolin(left=left_fragment, middle=middle_fragment, right=right_fragment),)
+                return PipolinVariants.from_variants(
+                    self._create_pipolin(left=left_fragment, middle=middle_fragment, right=right_fragment)
                 )
             else:
                 # ---att---pol---...---att---...---att(t)---
                 # ---att---...---att---pol---...---att(t)---
-                return PipolinVariants(
-                    (self._create_pipolin(left=middle_fragment, middle=left_fragment, right=right_fragment),
-                     self._create_pipolin(left=left_fragment, middle=middle_fragment, right=right_fragment))
+                return PipolinVariants.from_variants(
+                    self._create_pipolin(left=middle_fragment, middle=left_fragment, right=right_fragment),
+                    self._create_pipolin(left=left_fragment, middle=middle_fragment, right=right_fragment)
                 )
         else:
             ttrna_fragments = self._get_ttrna_fragments(self.att_pipolb_fragments[0])
@@ -238,7 +250,7 @@ class Reconstructor:
                 )
                 variant1 = self._create_pipolin(left=att1_fragment, middle=att2_fragment, right=att_pipolb_fragment)
                 variant2 = self._create_pipolin(left=att2_fragment, middle=att1_fragment, right=att_pipolb_fragment)
-                return PipolinVariants((variant1, variant2))
+                return PipolinVariants.from_variants(variant1, variant2)
             else:
                 att_pipolb_fragment = self._orient_according_pipolb(self.att_pipolb_fragments[0])
                 (att1_fragment, att2_fragment) = self._orient_fragment_according_main(
@@ -256,7 +268,7 @@ class Reconstructor:
                     variant2 = self._create_pipolin(left=att2_fragment, middle=att_pipolb_fragment, right=att1_fragment)
                     variant3 = self._create_pipolin(left=att1_fragment, middle=att2_fragment, right=att_pipolb_fragment)
                     variant4 = self._create_pipolin(left=att2_fragment, middle=att1_fragment, right=att_pipolb_fragment)
-                    return PipolinVariants((variant1, variant2, variant3, variant4))
+                    return PipolinVariants.from_variants(variant1, variant2, variant3, variant4)
                 else:
                     # ---att---pol---...---att---...---att---   +different order of atts
                     # ---att---...---att---pol---...---att---   +different order of atts
@@ -264,7 +276,7 @@ class Reconstructor:
                     variant2 = self._create_pipolin(left=att_pipolb_fragment, middle=att2_fragment, right=att1_fragment)
                     variant3 = self._create_pipolin(left=att1_fragment, middle=att_pipolb_fragment, right=att2_fragment)
                     variant4 = self._create_pipolin(left=att2_fragment, middle=att_pipolb_fragment, right=att1_fragment)
-                    return PipolinVariants((variant1, variant2, variant3, variant4))
+                    return PipolinVariants.from_variants(variant1, variant2, variant3, variant4)
 
     def _pipolb_plus_atts(self) -> PipolinVariants:
         # we can try to reconstruct the cases, assuming that pipolb is on the plus strand:
@@ -291,13 +303,13 @@ class Reconstructor:
         if len(ttrna_fragments) == 1:
             variant1 = self._create_pipolin(middle=pipolb_fragment1, right=ttrna_fragments[0])
             variant2 = self._create_pipolin(middle=pipolb_fragment2, right=ttrna_fragments[0])
-            return PipolinVariants((variant1, variant2))
+            return PipolinVariants.from_variants(variant1, variant2)
         else:
-            return PipolinVariants(
-                (self._create_pipolin(left=self.att_only_fragments[0], middle=pipolb_fragment1),
-                 self._create_pipolin(middle=pipolb_fragment1, right=self.att_only_fragments[0]),
-                 self._create_pipolin(left=self.att_only_fragments[0], middle=pipolb_fragment2),
-                 self._create_pipolin(middle=pipolb_fragment2, right=self.att_only_fragments[0]))
+            return PipolinVariants.from_variants(
+                self._create_pipolin(left=self.att_only_fragments[0], middle=pipolb_fragment1),
+                self._create_pipolin(middle=pipolb_fragment1, right=self.att_only_fragments[0]),
+                self._create_pipolin(left=self.att_only_fragments[0], middle=pipolb_fragment2),
+                self._create_pipolin(middle=pipolb_fragment2, right=self.att_only_fragments[0])
             )
 
     def _pipolb_plus_two_atts(self) -> PipolinVariants:
@@ -317,15 +329,15 @@ class Reconstructor:
                 )
             variant1 = self._create_pipolin(left=left_fragment, middle=pipolb_fragment1, right=right_fragment)
             variant2 = self._create_pipolin(left=left_fragment, middle=pipolb_fragment2, right=right_fragment)
-            return PipolinVariants((variant1, variant2))
+            return PipolinVariants.from_variants(variant1, variant2)
         else:
             main_att_fragment = self.att_only_fragments[0]
             (dep_att_fragment,) = self._orient_fragment_according_main(main_att_fragment, self.att_only_fragments[1])
-            return PipolinVariants(
-                (self._create_pipolin(left=main_att_fragment, middle=pipolb_fragment1, right=dep_att_fragment),
-                 self._create_pipolin(left=dep_att_fragment, middle=pipolb_fragment1, right=main_att_fragment),
-                 self._create_pipolin(left=main_att_fragment, middle=pipolb_fragment2, right=dep_att_fragment),
-                 self._create_pipolin(left=dep_att_fragment, middle=pipolb_fragment2, right=main_att_fragment))
+            return PipolinVariants.from_variants(
+                self._create_pipolin(left=main_att_fragment, middle=pipolb_fragment1, right=dep_att_fragment),
+                self._create_pipolin(left=dep_att_fragment, middle=pipolb_fragment1, right=main_att_fragment),
+                self._create_pipolin(left=main_att_fragment, middle=pipolb_fragment2, right=dep_att_fragment),
+                self._create_pipolin(left=dep_att_fragment, middle=pipolb_fragment2, right=main_att_fragment)
             )
 
     # -----------------------------------
@@ -377,10 +389,8 @@ class Reconstructor:
         new_features = new.get_fragment_features_sorted()
         return PipolinFragment(new.location, new.contig_id, new.genome, tuple(new_features), new.orientation)
 
-    def _inflate_single(self, fragment: PipolinFragment) -> PipolinFragment:
-        atts_and_pipolbs = self._get_fragment_atts_and_pipolbs(fragment)
-
-        no_border_inflate = self.no_border_inflate if self.no_border_inflate else NO_BORDER_INFLATE
+    def _inflate_single(self, fragment: PipolinFragment, no_border_inflate: int) -> PipolinFragment:
+        atts_and_pipolbs = _get_fragment_atts_and_pipolbs(fragment)
 
         left = BORDER_INFLATE if atts_and_pipolbs[0].ftype == FeatureType.ATT else no_border_inflate
         right = BORDER_INFLATE if atts_and_pipolbs[-1].ftype == FeatureType.ATT else no_border_inflate
@@ -391,16 +401,16 @@ class Reconstructor:
         no_border_inflate = self.no_border_inflate if self.no_border_inflate else NO_BORDER_INFLATE
 
         fragments = []
-        if left is not None:
+        if left:
             fragments.append(self._inflate_fragment(left, BORDER_INFLATE, no_border_inflate))
-        if middle is not None:
+        if middle:
             fragments.append(self._inflate_fragment(middle, no_border_inflate, no_border_inflate))
-        if right is not None:
+        if right:
             fragments.append(self._inflate_fragment(right, no_border_inflate, BORDER_INFLATE))
         if complete:
             fragments.append(self._inflate_fragment(complete, BORDER_INFLATE, BORDER_INFLATE))
         if single:
-            fragments.append(self._inflate_single(single))
+            fragments.append(self._inflate_single(single, no_border_inflate))
         return Pipolin.from_fragments(*fragments)
 
     @staticmethod
@@ -443,7 +453,7 @@ class Reconstructor:
 
     def _classify_fragments(self, fragments: Sequence[PipolinFragment]):
         for fragment in fragments:
-            fragment_atts_and_pipolbs = self._get_fragment_atts_and_pipolbs(fragment)
+            fragment_atts_and_pipolbs = _get_fragment_atts_and_pipolbs(fragment)
 
             if all([i.ftype == FeatureType.PIPOLB for i in fragment_atts_and_pipolbs]):
                 self.pipolb_only_fragments.append(fragment)
@@ -456,17 +466,7 @@ class Reconstructor:
             else:
                 self.att_pipolb_fragments.append(fragment)
 
-    @staticmethod
-    def _get_fragment_atts_and_pipolbs(fragment: PipolinFragment):
-        features = fragment.get_fragment_features_sorted()
-        return [f for f in features if f.ftype != FeatureType.TARGET_TRNA]
 
-
-def _is_overlapping_result(pipolin: Pipolin, result: MutableSequence[PipolinVariants]) -> bool:
-    for r in result:
-        for v in r.variants:
-            for v_f in v.fragments:
-                for p_f in pipolin.fragments:
-                    if v_f.is_overlapping(p_f):
-                        return True
-    return False
+def _get_fragment_atts_and_pipolbs(fragment: PipolinFragment):
+    features = fragment.get_fragment_features_sorted()
+    return [f for f in features if f.ftype != FeatureType.TARGET_TRNA]
