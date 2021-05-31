@@ -22,6 +22,7 @@ def get_flow():
         pipolb_hmm_profile = Parameter('pipolb_hmm_profile')
         ref_att = Parameter('ref_att')
         percent_identity = Parameter('percent_identity')
+        max_inflate = Parameter('max_inflate')
         no_annotation = Parameter('no_annotation')
         proteins = Parameter('proteins')
         skip_colours = Parameter('skip_colours')
@@ -61,7 +62,9 @@ def get_flow():
         genome = are_atts_present.map(genome=genome)
 
         pipolins = find_pipolins.map(genome=genome)
-        reconstructed_pipolins = reconstruct_pipolins.map(genome=genome, pipolins=pipolins)
+        reconstructed_pipolins = reconstruct_pipolins.map(
+            genome=genome, pipolins=pipolins, no_border_inflate=max_inflate
+        )
 
         pipolin_seqs_dir = save_pipolin_sequences.map(
             genome=genome, pipolins=reconstructed_pipolins, out_dir=unmapped(out_dir)

@@ -38,7 +38,9 @@ def _get_feature_string(feature) -> str:
 
 @task(name='reconstruct_pipolins')
 @genome_specific_logging
-def reconstruct_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
+def reconstruct_pipolins(
+        genome: Genome, pipolins: Sequence[Pipolin], no_border_inflate: Optional[int] = None
+):
 
     logger = context.get('logger')
 
@@ -48,7 +50,7 @@ def reconstruct_pipolins(genome: Genome, pipolins: Sequence[Pipolin]):
         logger.info('>>> Trying to reconstruct the structure from fragments:')
         logger.info(''.join(f'\n\t{i}' for i in draw_pipolin_structure(pipolin)))
 
-        reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
+        reconstructor = Reconstructor(genome=genome, pipolin=pipolin, no_border_inflate=no_border_inflate)
         pipolin_variants = reconstructor.reconstruct_pipolin()
         logger.info('>>> Reconstruction is done! The resulting pipolin variants are:')
         for variant in pipolin_variants:
@@ -67,14 +69,16 @@ class CannotReconstructError(Exception):
     pass
 
 
-_BORDER_INFLATE = 0
-_NO_BORDER_INFLATE = 100_000
+BORDER_INFLATE = 0
+NO_BORDER_INFLATE = 30_000
 
 
 class Reconstructor:
-    def __init__(self, genome: Genome, pipolin: Pipolin):
+    def __init__(self, genome: Genome, pipolin: Pipolin, no_border_inflate: Optional[int]):
         self.genome = genome
         self.pipolin = pipolin
+
+        self.no_border_inflate = no_border_inflate
 
         self.att_pipolb_att_fragments: List[PipolinFragment] = []
         self.att_pipolb_fragments: List[PipolinFragment] = []
@@ -157,7 +161,7 @@ class Reconstructor:
         else:
             logger = get_logger(name='reconstruct_pipolins')
             logger.warning('Unable to reconstruct pipolin: too many orphan ATTs. '
-                           'Only the fragment with piPolB genes will be included.')
+                           'Only the fragment with piPolB gene will be included.')
             return self._single_fragment(self.att_pipolb_fragments[0])
 
     def _att_pipolb_plus_one_att(self) -> Sequence[Pipolin]:
@@ -270,7 +274,7 @@ class Reconstructor:
         else:
             logger = get_logger(name='reconstruct_pipolins')
             logger.warning('Unable to reconstruct pipolin: too many orphan ATTs. '
-                           'Only the fragment with piPolB genes will be included.')
+                           'Only the fragment with piPolB gene will be included.')
             return self._single_fragment(self.pipolb_only_fragments[0])
 
     def _pipolb_plus_one_att(self) -> Sequence[Pipolin]:
@@ -368,20 +372,25 @@ class Reconstructor:
     def _inflate_single(self, fragment: PipolinFragment) -> PipolinFragment:
         atts_and_pipolbs = self._get_fragment_atts_and_pipolbs(fragment)
 
-        left = _BORDER_INFLATE if atts_and_pipolbs[0].ftype == FeatureType.ATT else _NO_BORDER_INFLATE
-        right = _BORDER_INFLATE if atts_and_pipolbs[-1].ftype == FeatureType.ATT else _NO_BORDER_INFLATE
+        no_border_inflate = self.no_border_inflate if self.no_border_inflate else NO_BORDER_INFLATE
+
+        left = BORDER_INFLATE if atts_and_pipolbs[0].ftype == FeatureType.ATT else no_border_inflate
+        right = BORDER_INFLATE if atts_and_pipolbs[-1].ftype == FeatureType.ATT else no_border_inflate
         return self._inflate_fragment(fragment, left, right)
 
     def _create_pipolin(self, left=None, middle=None, right=None, complete=None, single=None) -> Pipolin:
+
+        no_border_inflate = self.no_border_inflate if self.no_border_inflate else NO_BORDER_INFLATE
+
         fragments = []
         if left is not None:
-            fragments.append(self._inflate_fragment(left, _BORDER_INFLATE, _NO_BORDER_INFLATE))
+            fragments.append(self._inflate_fragment(left, BORDER_INFLATE, no_border_inflate))
         if middle is not None:
-            fragments.append(self._inflate_fragment(middle, _NO_BORDER_INFLATE, _NO_BORDER_INFLATE))
+            fragments.append(self._inflate_fragment(middle, no_border_inflate, no_border_inflate))
         if right is not None:
-            fragments.append(self._inflate_fragment(right, _NO_BORDER_INFLATE, _BORDER_INFLATE))
+            fragments.append(self._inflate_fragment(right, no_border_inflate, BORDER_INFLATE))
         if complete:
-            fragments.append(self._inflate_fragment(complete, _BORDER_INFLATE, _BORDER_INFLATE))
+            fragments.append(self._inflate_fragment(complete, BORDER_INFLATE, BORDER_INFLATE))
         if single:
             fragments.append(self._inflate_single(single))
         return Pipolin.from_fragments(*fragments)

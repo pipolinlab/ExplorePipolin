@@ -11,7 +11,9 @@ from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, S
 from explore_pipolin.utilities.external_tools import blastn_against_ref_att, blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml, create_seqio_records_dict
 from explore_pipolin.utilities.logging import genome_specific_logging
-from explore_pipolin.tasks.reconstruct_pipolins import _NO_BORDER_INFLATE
+
+
+_SEARCH_AROUND_REGION = 100_000
 
 
 @task()
@@ -173,7 +175,7 @@ class AttDenovoFinder:
 
             for pipolb in pipolbs:
                 search_range = pipolb.location.inflate_within_contig(
-                    _NO_BORDER_INFLATE, _contig_length=contig_length
+                    _SEARCH_AROUND_REGION, _contig_length=contig_length
                 )
                 range_pairs.append(PairedLocation(Range(search_range.start, pipolb.start),
                                                   Range(pipolb.end, search_range.end), ContigID(contig_id)))
@@ -231,5 +233,5 @@ def are_atts_present(genome: Genome) -> Genome:
 
     num_atts = len(genome.features.get_features(FeatureType.ATT))
     if num_atts == 0:
-        logger.warning('\n\n>>>No atts were found! Not able to define pipolin bounds!\n')
+        logger.warning('\n\n>>>No atts were found! Not able to define pipolin borders!\n')
     return genome

@@ -11,6 +11,8 @@ from explore_pipolin.utilities.external_tools import check_external_dependencies
 from explore_pipolin.utilities.logging import set_logging_dir
 from explore_pipolin.common import CONTEXT_SETTINGS
 
+from explore_pipolin.tasks.reconstruct_pipolins import NO_BORDER_INFLATE
+
 
 def check_genome_file_names(genome):
     if len(genome) > 1:
@@ -51,6 +53,9 @@ def get_out_dir_name(out_dir_prefix: Optional[str], out_dir: Optional[str]) -> s
                    'If not provided, the default file will be used instead.')
 @click.option('--percent-identity', type=int, default=85, show_default=True,
               help='Minimum percent identity in direct repeats search')
+@click.option('--max-inflate', type=int, default=NO_BORDER_INFLATE, show_default=True,
+              help='If no borders of pipolin are found (no ATTs), '
+                   'inflate the analysed region from both sides of piPolB.')
 @click.option('--no-annotation', is_flag=True, help='Do not run the annotation step (i.e. Prokka).')
 @click.option('--proteins', type=click.Path(exists=True),
               help='Prokka param: FASTA or GBK file to use as 1st priority. '
@@ -69,6 +74,7 @@ def main(
         pipolb_hmm_profile,
         ref_att,
         percent_identity,
+        max_inflate,
         no_annotation,
         proteins,
         skip_colours,
@@ -100,6 +106,7 @@ def main(
         pipolb_hmm_profile=pipolb_hmm_profile,
         ref_att=ref_att,
         percent_identity=percent_identity,
+        max_inflate=max_inflate,
         no_annotation=no_annotation,
         proteins=proteins,
         skip_colours=skip_colours,
