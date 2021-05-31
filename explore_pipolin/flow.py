@@ -63,7 +63,7 @@ def get_flow():
 
         pipolins = find_pipolins.map(genome=genome)
         reconstructed_pipolins = reconstruct_pipolins.map(
-            genome=genome, pipolins=pipolins, no_border_inflate=max_inflate
+            genome=genome, pipolins=pipolins, no_border_inflate=unmapped(max_inflate)
         )
 
         pipolin_seqs_dir = save_pipolin_sequences.map(

@@ -304,3 +304,12 @@ class Pipolin:
                 if s_f.is_overlapping(o_f):
                     return True
         return False
+
+
+@dataclass(frozen=True)
+class PipolinVariants:
+    variants: Tuple[Pipolin, ...]
+
+    @staticmethod
+    def from_variants(*variants: Pipolin):
+        return PipolinVariants(variants)

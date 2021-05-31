@@ -5,7 +5,7 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 from prefect import task
 
-from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genome
+from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genome, PipolinVariants
 from explore_pipolin.utilities.io import SeqIORecords, create_seqio_records_dict, write_genbank_records, \
     read_gff_records, write_gff_records
 from explore_pipolin.utilities.logging import genome_specific_logging
@@ -13,15 +13,18 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[Pipolin]):
+def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVariants]):
     results_dir = os.path.join(os.path.dirname(prokka_dir), 'pipolins')
     os.makedirs(results_dir, exist_ok=True)
 
     for prokka_file in os.listdir(prokka_dir):
 
         if prokka_file.startswith(genome.id):
-            pipolin_index = int(os.path.splitext(prokka_file)[0].split(sep='_')[-1])
-            cur_pipolin = pipolins[pipolin_index]
+            # genome_N_vN
+            variant_index = int(os.path.splitext(prokka_file)[0].split(sep='_')[-1][1:])
+            pipolin_index = int(os.path.splitext(prokka_file)[0].split(sep='_')[-2])
+
+            cur_pipolin = pipolins[pipolin_index].variants[variant_index]
 
             if prokka_file.endswith('.gbk'):
                 gb_records = create_seqio_records_dict(file=os.path.join(prokka_dir, prokka_file),

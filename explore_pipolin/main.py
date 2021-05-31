@@ -42,10 +42,10 @@ def get_out_dir_name(out_dir_prefix: Optional[str], out_dir: Optional[str]) -> s
 @click.option('--out-dir-prefix', type=str,
               help=f'Use this prefix for the output directory, '
                    f'instead of the default "{_DEFAULT_OUT_DIR_PREFIX}" prefix.')
-@click.option('--out-dir', type=click.Path(exists=True),
-              help='Use the existing output directory. If the directory contains results of a previous run, '
-                   'such as found piPolBs, ATTs and tRNAs, the program will reuse them, unless '
-                   '--do-not-reuse option is specified.')
+@click.option('--out-dir', type=click.Path(),
+              help='Use this output directory instead. If the directory contains results '
+                   'of a previous run, such as found piPolBs, ATTs and tRNAs, the program will reuse them, '
+                   'unless --do-not-reuse option is specified.')
 @click.option('--pipolb-hmm-profile', type=click.Path(exists=True),
               help='If not provided, the default profile will be used instead.')
 @click.option('--ref-att', type=click.Path(exists=True),

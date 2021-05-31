@@ -4,7 +4,7 @@ from typing import Sequence
 from Bio import SeqIO
 from prefect import task
 
-from explore_pipolin.common import Genome, Pipolin, PipolinFragment
+from explore_pipolin.common import Genome, PipolinFragment, PipolinVariants
 from explore_pipolin.utilities.external_tools import run_prokka
 from explore_pipolin.utilities.io import create_seqio_records_dict, SeqIORecords
 from explore_pipolin.utilities.logging import genome_specific_logging
@@ -12,16 +12,17 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def save_pipolin_sequences(genome: Genome, pipolins: Sequence[Pipolin], out_dir):
+def save_pipolin_sequences(genome: Genome, pipolins: Sequence[PipolinVariants], out_dir):
     pipolins_dir = os.path.join(out_dir, genome.id, 'pipolins')
     os.makedirs(pipolins_dir, exist_ok=True)
 
     genome_dict = create_seqio_records_dict(file=genome.file, file_format='fasta')
 
     for i, pipolin in enumerate(pipolins):
-        with open(os.path.join(pipolins_dir, genome.id + f'_{i}.fa'), 'w') as ouf:
-            records = [create_fragment_record(f, genome_dict) for f in pipolin.fragments]
-            SeqIO.write(records, ouf, 'fasta')
+        for j, variant in enumerate(pipolin.variants):
+            with open(os.path.join(pipolins_dir, genome.id + f'_{i}_v{j}.fa'), 'w') as ouf:
+                records = [create_fragment_record(f, genome_dict) for f in variant.fragments]
+                SeqIO.write(records, ouf, 'fasta')
 
     return pipolins_dir
 

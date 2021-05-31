@@ -1,10 +1,10 @@
-from dataclasses import dataclass
-from typing import Sequence, MutableSequence, List, Optional, Tuple
+from typing import Sequence, MutableSequence, List, Optional
 
 from prefect import task, context
 from prefect.utilities.logging import get_logger
 
-from explore_pipolin.common import Genome, Pipolin, FeatureType, PipolinFragment, Strand, Range, AttFeature
+from explore_pipolin.common import Genome, Pipolin, FeatureType, PipolinFragment, Strand, Range, AttFeature, \
+    PipolinVariants
 from explore_pipolin.utilities.logging import genome_specific_logging
 
 
@@ -51,7 +51,8 @@ def reconstruct_pipolins(
             # as pipolins are sorted from the longest to the shortest, let's skip the sorter ones
             # which will overlap the longer ones after their inflation (result)
             logger.info('>>> Trying to reconstruct the structure from fragments:')
-            logger.info(''.join(f'\n\t{i}' for i in draw_pipolin_structure(pipolin)))
+            for structure in draw_pipolin_structure(pipolin):
+                logger.info(f'{structure}')
 
             reconstructor = Reconstructor(genome=genome, pipolin=pipolin, no_border_inflate=no_border_inflate)
             pipolin_variants = reconstructor.reconstruct_pipolin()
@@ -69,15 +70,6 @@ NO_BORDER_INFLATE = 30_000
 
 _TOO_MANY_ATTS_MESSAGE = 'Unable to reconstruct pipolin: too many orphan ATTs. ' \
                          'Only the fragment with piPolB gene will be included.'
-
-
-@dataclass(frozen=True)
-class PipolinVariants:
-    variants: Tuple[Pipolin, ...]
-
-    @staticmethod
-    def from_variants(*variants: Pipolin):
-        return PipolinVariants(variants)
 
 
 def _is_overlapping_result(pipolin: Pipolin, result: Sequence[PipolinVariants]) -> bool:
