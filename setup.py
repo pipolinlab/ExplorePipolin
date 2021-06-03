@@ -4,8 +4,7 @@ setuptools.setup(
     name='ExplorePipolin',
     version='0.0.a1',
     packages=setuptools.find_packages(),
-    install_requires=['click', 'numpy == 1.18.0', 'biopython <= 1.76', 'bcbio-gff', 'prefect >= 0.11.5'],
-    # TODO: numpy version is only for MacOS: https://github.com/numpy/numpy/issues/15947
+    install_requires=['click', 'biopython <= 1.76', 'bcbio-gff', 'prefect >= 0.11.5'],
     python_requires='>=3.6',
     package_data={
         'explore_pipolin': ['data/*']
