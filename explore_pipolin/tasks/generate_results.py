@@ -58,9 +58,6 @@ def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin) -> SeqIO
             del gb_records[fragment.contig_id].features[0]   # delete source feature
             record += revcompl_if_reverse(gb_records[fragment.contig_id], fragment.orientation)
 
-    genome_id = pipolin.fragments[0].genome.id
-    record.id, record.name, record.description = genome_id, genome_id, genome_id
-
     old_source = record.features[0]
     new_source = SeqFeature(FeatureLocation(0, len(record), 1), type=old_source.type,
                             location_operator=old_source.location_operator, strand=old_source.strand,
@@ -69,12 +66,13 @@ def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin) -> SeqIO
     del record.features[0]
     record.features.insert(0, new_source)
 
+    genome_id = pipolin.fragments[0].genome.id
     return {genome_id: record}
 
 
 def revcompl_if_reverse(gb_record: SeqRecord, orientation: Strand) -> SeqRecord:
     if orientation == Strand.REVERSE:
-        return gb_record.reverse_complement()
+        return gb_record.reverse_complement(id=True, name=True, description=True, annotations=True)
     return gb_record
 
 
