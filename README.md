@@ -95,19 +95,61 @@ or contigs (in a single multiFASTA file).
 
 ```bash
 --> explore_pipolin -h
-Usage: explore_pipolin [OPTIONS] GENOMES...
+Usage: explore_pipolin [OPTIONS] GENOME...
 
-  ExplorePipolin is a search tool that identifies and analyses
-  pipolin elements  within bacterial genome(s).
+  ExplorePipolin is a search tool for prediction and analysis of pipolins,
+  bacterial mobile genetic elements. GENOME is a FASTA file with genome
+  sequence(s): either a single complete chromosome (preferred) or contigs
+  (in a single multiFASTA file). Several genomes can be analysed at once.
 
 Options:
-  --out-dir PATH  [required]
-  -h, --help      Show this message and exit.
+  --out-dir-prefix TEXT       Use this prefix for the output directory,
+                              instead of the default "results" prefix.
+
+  --out-dir PATH              Use this output directory instead. If the
+                              directory contains results of a previous run,
+                              such as found piPolBs, ATTs and tRNAs, the
+                              program will reuse them, unless --do-not-reuse
+                              option is specified.
+
+  --pipolb-hmm-profile PATH   piPolB's HMM profile to use as 1st priority.If
+                              not provided, the default profile will be used
+                              instead.
+
+  --ref-att PATH              Att sequence in FASTA file to use as 1st
+                              priority. If not provided, the default file will
+                              be used instead.
+
+  --percent-identity INTEGER  Minimum percent identity in direct repeats
+                              search  [default: 85]
+
+  --max-inflate INTEGER       If no borders of pipolin are found (no ATTs),
+                              inflate the analysed region from both sides of
+                              piPolB.  [default: 30000]
+
+  --no-annotation             Do not run the annotation step (i.e. Prokka).
+  --proteins PATH             Prokka param: FASTA or GBK file to use as 1st
+                              priority. If not provided, the default file will
+                              be used instead.
+
+  --skip-colours              Do not add an Easyfig-compatible colouring
+                              scheme to the final Genbank file.
+
+  --cpus INTEGER              Prokka param: Number of CPUs to use [0=all]
+                              [default: 8]
+
+  --do-not-reuse              Do not reuse information about piPolBs, ATTs and
+                              tRNAs found in a previous run for the same
+                              genome. I.e. it will run all the analysis from
+                              scratch for the given genome.
+
+  -h, --help                  Show this message and exit.
 ```
 
 ### Output files
 
-The output directory will contain several folders:
+The output directory will contain a separate folder for each analysed genome. In the genome-specific folder,
+the following files can be found:
  
  | Folder | Content description |
  |--------|---------------------|
@@ -115,9 +157,9 @@ The output directory will contain several folders:
  | `atts` | BLAST search results for the known *att* sites |
  | `atts_denovo` | Results of *de novo* search for *att* sites |
  | `trnas` | ARAGORN search results for tRNAs/tmRNAs |
- | `pipolins` | extracted pipolin sequences in FASTA format, GenBank and GFF annotation results with the *att*s included |
+ | `pipolins` | extracted pipolin sequences in FASTA format, GenBank and GFF annotations of pipolin genes with *att*s included |
  | `prokka` | Prokka annotation results (check files description [here](https://github.com/tseemann/prokka/blob/master/README.md#output-files))|
- | `logs` | log files |
+ | `<genome>.log` | log file |
 
 
 # Running with Docker
@@ -127,9 +169,9 @@ See https://docs.docker.com/install/ to install Docker.
 **NOTE:** superuser privileges are required to run the analysis and around 3GB of disk space for the image.
 
 ```
-sudo docker pull docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.a1
-sudo docker tag docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.a1 explore_pipolin
+sudo docker pull docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.1
+sudo docker tag docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.1 explore_pipolin
 sudo docker run --rm explore_pipolin -h
 sudo docker run --rm -v $(pwd):/output -w /output explore_pipolin 
- --out-dir output ./input_genomes/*.fa   #(example run)
+ --out-dir output ./input_genomes/*.fa   #(example run) # TODO: chekc
 ```

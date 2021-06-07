@@ -47,7 +47,8 @@ def get_out_dir_name(out_dir_prefix: Optional[str], out_dir: Optional[str]) -> s
                    'of a previous run, such as found piPolBs, ATTs and tRNAs, the program will reuse them, '
                    'unless --do-not-reuse option is specified.')
 @click.option('--pipolb-hmm-profile', type=click.Path(exists=True),
-              help='If not provided, the default profile will be used instead.')
+              help="piPolB's HMM profile to use as 1st priority."
+                   'If not provided, the default profile will be used instead.')
 @click.option('--ref-att', type=click.Path(exists=True),
               help='Att sequence in FASTA file to use as 1st priority. '
                    'If not provided, the default file will be used instead.')
@@ -61,7 +62,7 @@ def get_out_dir_name(out_dir_prefix: Optional[str], out_dir: Optional[str]) -> s
               help='Prokka param: FASTA or GBK file to use as 1st priority. '
                    'If not provided, the default file will be used instead.')
 @click.option('--skip-colours', is_flag=True,
-              help='Do not add an Easyfig-compatible colouring scheme to the final Genbank file features.')
+              help='Do not add an Easyfig-compatible colouring scheme to the final Genbank file.')
 @click.option('--cpus', default=8, type=int, show_default=True,
               help='Prokka param: Number of CPUs to use [0=all]')
 @click.option('--do-not-reuse', is_flag=True,
@@ -83,6 +84,8 @@ def main(
 ):
     """
     ExplorePipolin is a search tool for prediction and analysis of pipolins, bacterial mobile genetic elements.
+    GENOME is a FASTA file with genome sequence(s): either a single complete chromosome (preferred) or
+    contigs (in a single multiFASTA file). Several genomes can be analysed at once.
     """
 
     # from graphviz import Digraph
