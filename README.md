@@ -51,40 +51,16 @@ NOTE: before installing, it is possible to run unit tests:
 
 ### Install using Conda
 
-Before installing ExplorePipolin, make sure you're running the latest 
+ * Before installing ExplorePipolin, make sure you're running the latest 
  version of Conda:
  
  `conda update conda`
-
-#### Option 1: 
 
  * Install into a new environment in one-step:
 
  `conda create -n <new_env_name> -c bioconda -c conda-forge -c liubovch explore-pipolin`
 
 NOTE: solving the environment takes time. Be patient.
-
-#### Option 2:
-
- `conda install wget`
- 
- * Create a new environment specific for ExplorePipolin:
-
- `wget https://github.com/liubovch/ExplorePipolin/releases/download/0.0.1/explore-pipolin-0.0.1.linux-64.yml` (**on Linux**)
-
- `wget https://github.com/liubovch/ExplorePipolin/releases/download/0.0.1/explore-pipolin-0.0.1.osx-64.yml` (**on MacOS**)
- 
- `conda env create -n <new_env_name> --file explore-pipolin-0.0.1.<platform>.yml`
-
-  * Clean up (optional):
- 
- `rm explore-pipolin-0.0.1.<platform>.yml`
- 
- * Activate the environment and install ExplorePipolin:
- 
- `conda activate <new_env_name>`
- 
- `conda install -c liubovch explore-pipolin --no-deps`
 
 # Quick usage
 
@@ -98,9 +74,7 @@ or contigs (in a single multiFASTA file).
 Usage: explore_pipolin [OPTIONS] GENOME...
 
   ExplorePipolin is a search tool for prediction and analysis of pipolins,
-  bacterial mobile genetic elements. GENOME is a FASTA file with genome
-  sequence(s): either a single complete chromosome (preferred) or contigs
-  (in a single multiFASTA file). Several genomes can be analysed at once.
+  bacterial mobile genetic elements.
 
 Options:
   --out-dir-prefix TEXT       Use this prefix for the output directory,
@@ -173,5 +147,5 @@ sudo docker pull docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0
 sudo docker tag docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.1 explore_pipolin
 sudo docker run --rm explore_pipolin -h
 sudo docker run --rm -v $(pwd):/output -w /output explore_pipolin 
- --out-dir output ./input_genomes/*.fa   #(example run) # TODO: chekc
+ --out-dir output ./input_genomes/*.fa   #(example run) # TODO: check
 ```

@@ -84,8 +84,6 @@ def main(
 ):
     """
     ExplorePipolin is a search tool for prediction and analysis of pipolins, bacterial mobile genetic elements.
-    GENOME is a FASTA file with genome sequence(s): either a single complete chromosome (preferred) or
-    contigs (in a single multiFASTA file). Several genomes can be analysed at once.
     """
 
     # from graphviz import Digraph
