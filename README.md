@@ -11,7 +11,7 @@ phyla and mitochondria.
 >coli* strains. *Scientific Reports*, 2020](https://www.nature.com/articles/s41598-020-69356-6#Sec18)
 
  **ExplorePipolin** is a search tool that identifies and analyses
- pipolins within bacterial genome.
+ pipolins within bacterial genomes.
 
 # Table of contents
 
@@ -37,8 +37,8 @@ phyla and mitochondria.
 ### Install from source
 
  1. Install the requirements (see above).
- 1. `wget https://github.com/liubovch/ExplorePipolin/archive/0.0.a1.zip`
- 1. `unzip 0.0.a1.zip && cd ExplorePipolin-0.0.a1` 
+ 1. `wget https://github.com/liubovch/ExplorePipolin/archive/0.0.1.zip`
+ 1. `unzip 0.0.1.zip && cd ExplorePipolin-0.0.1` 
  1. `pip install .` (install in user site-package) or
  `sudo pip install .` (requires superuser privileges)
  
@@ -50,36 +50,41 @@ NOTE: before installing, it is possible to run unit tests:
 `(sudo) pip uninstall ExplorePipolin`
 
 ### Install using Conda
- 
- * Before installing ExplorePipolin, make sure you'are running the latest 
+
+Before installing ExplorePipolin, make sure you're running the latest 
  version of Conda:
  
  `conda update conda`
- 
+
+#### Option 1: 
+
+ * Install into a new environment in one-step:
+
+ `conda create -n <new_env_name> -c bioconda -c conda-forge -c liubovch explore-pipolin`
+
+NOTE: solving the environment takes time. Be patient.
+
+#### Option 2:
+
  `conda install wget`
  
- * Create a new environment that is specific for ExplorePipolin. You can 
- choose whatever name you'd like for the environment.
+ * Create a new environment specific for ExplorePipolin:
+
+ `wget https://github.com/liubovch/ExplorePipolin/releases/download/0.0.1/explore-pipolin-0.0.1.linux-64.yml` (**on Linux**)
+
+ `wget https://github.com/liubovch/ExplorePipolin/releases/download/0.0.1/explore-pipolin-0.0.1.osx-64.yml` (**on MacOS**)
  
- `wget https://github.com/liubovch/ExplorePipolin/releases/download/0.0.a1/explore-pipolin-0.0.a1-py_0.yml`
- 
- `conda env create -n ExplorePipolin-0.0.a1 --file explore-pipolin-0.0.a1-py_0.yml`
- 
- * Download and install ExplorePipolin into the created environment:
- 
- `wget https://github.com/liubovch/ExplorePipolin/releases/download/0.0.a1/explore-pipolin-0.0.a1-py_0.tar.bz2`
- 
- `conda install -n ExplorePipolin-0.0.a1 explore-pipolin-0.0.a1-py_0.tar.bz2`
- 
+ `conda env create -n <new_env_name> --file explore-pipolin-0.0.1.<platform>.yml`
+
   * Clean up (optional):
  
- `rm explore-pipolin-0.0.a1-py_0.yml explore-pipolin-0.0.a1-py_0.tar.bz2`
+ `rm explore-pipolin-0.0.1.<platform>.yml`
  
- * Activate the environment and check the installation:
+ * Activate the environment and install ExplorePipolin:
  
- `conda activate ExplorePipolin-0.0.a1`
+ `conda activate <new_env_name>`
  
- `explore_pipolin -h`
+ `conda install -c liubovch explore-pipolin --no-deps`
 
 # Quick usage
 
