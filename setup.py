@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='ExplorePipolin',
-    version='0.0.a1',
+    version='0.0.1',
     packages=setuptools.find_packages(),
     install_requires=['click', 'biopython <= 1.76', 'bcbio-gff', 'prefect >= 0.11.5'],
     python_requires='>=3.6',
@@ -12,10 +12,6 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'explore_pipolin=explore_pipolin.main:main',
-            'download_taxon_accessions=explore_pipolin.download_taxon_accessions:main',
-            'massive_screening=explore_pipolin.massive_screening:main',
-            'collect_metadata=explore_pipolin.collect_metadata:main',
-            'download_genomes=explore_pipolin.download_genomes:main',
         ]
     },
     test_suite='tests',
