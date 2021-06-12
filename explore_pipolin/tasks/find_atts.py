@@ -18,12 +18,12 @@ _SEARCH_AROUND_REGION = 100_000
 
 @task()
 @genome_specific_logging
-def find_atts(genome: Genome, ref_att, do_not_reuse) -> Genome:
+def find_atts(genome: Genome, ref_att) -> Genome:
     atts_dir = os.path.join(os.path.dirname(genome.file), 'atts')
     os.makedirs(atts_dir, exist_ok=True)
 
     finder = AttFinder(genome=genome, output_dir=atts_dir, ref_att=ref_att)
-    finder.find_atts(do_not_reuse=do_not_reuse)
+    finder.find_atts()
 
     return genome
 
@@ -34,12 +34,11 @@ class AttFinder:
         self.output_dir = output_dir
         self.ref_att = ref_att
 
-    def find_atts(self, do_not_reuse):
+    def find_atts(self):
         output_file = os.path.join(self.output_dir, self.genome.id + '.fmt5')
-        if do_not_reuse or not os.path.exists(output_file):
-            blastn_against_ref_att(
-                genome_file=self.genome.file, output_file=output_file, ref_att=self.ref_att
-            )
+        blastn_against_ref_att(
+            genome_file=self.genome.file, output_file=output_file, ref_att=self.ref_att
+        )
         entries = read_blastxml(blast_xml=output_file)
 
         self._add_att_features(entries)
@@ -73,7 +72,7 @@ class AttFinder:
 
 @task()
 @genome_specific_logging
-def find_atts_denovo(genome: Genome, percent_identity, do_not_reuse) -> Genome:
+def find_atts_denovo(genome: Genome, percent_identity) -> Genome:
     atts_denovo_dir = os.path.join(os.path.dirname(genome.file), 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 

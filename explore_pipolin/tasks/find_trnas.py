@@ -11,15 +11,14 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def find_trnas(genome: Genome, do_not_reuse) -> Genome:
+def find_trnas(genome: Genome) -> Genome:
     trnas_dir = os.path.join(os.path.dirname(genome.file), 'trnas')
     os.makedirs(trnas_dir, exist_ok=True)
 
     output_file = os.path.join(trnas_dir, genome.id + '.batch')
-    if do_not_reuse or not os.path.exists(output_file):
-        run_aragorn(genome_file=genome.file, output_file=output_file)
-    entries = read_aragorn_batch(aragorn_batch=output_file)
+    run_aragorn(genome_file=genome.file, output_file=output_file)
 
+    entries = read_aragorn_batch(aragorn_batch=output_file)
     add_trna_features(entries=entries, genome=genome)
 
     return genome

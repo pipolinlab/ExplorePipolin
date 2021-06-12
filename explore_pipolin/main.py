@@ -43,9 +43,7 @@ def get_out_dir_name(out_dir_prefix: Optional[str], out_dir: Optional[str]) -> s
               help=f'Use this prefix for the output directory, '
                    f'instead of the default "{_DEFAULT_OUT_DIR_PREFIX}" prefix.')
 @click.option('--out-dir', type=click.Path(),
-              help='Use this output directory instead. If the directory contains results '
-                   'of a previous run, such as found piPolBs, ATTs and tRNAs, the program will reuse them, '
-                   'unless --do-not-reuse option is specified.')
+              help='Use this output directory instead.')
 @click.option('--pipolb-hmm-profile', type=click.Path(exists=True),
               help="piPolB's HMM profile to use as 1st priority."
                    'If not provided, the default profile will be used instead.')
@@ -65,9 +63,6 @@ def get_out_dir_name(out_dir_prefix: Optional[str], out_dir: Optional[str]) -> s
               help='Do not add an Easyfig-compatible colouring scheme to the final Genbank file.')
 @click.option('--cpus', default=8, type=int, show_default=True,
               help='Prokka param: Number of CPUs to use [0=all]')
-@click.option('--do-not-reuse', is_flag=True,
-              help='Do not reuse information about piPolBs, ATTs and tRNAs found in a previous run for '
-                   'the same genome. I.e. it will run all the analysis from scratch for the given genome.')
 def main(
         genome,
         out_dir_prefix,
@@ -80,7 +75,6 @@ def main(
         proteins,
         skip_colours,
         cpus,
-        do_not_reuse,
 ):
     """
     ExplorePipolin is a search tool for prediction and analysis of pipolins, bacterial mobile genetic elements.
@@ -113,7 +107,6 @@ def main(
         proteins=proteins,
         skip_colours=skip_colours,
         cpus=cpus,
-        do_not_reuse=do_not_reuse,
     )
     assert state.is_successful()
 
