@@ -1,7 +1,7 @@
 from prefect import Flow, Parameter, unmapped, case
 from prefect.tasks.control_flow import FilterTask
 
-from explore_pipolin.tasks.create_genome import create_genome
+from explore_pipolin.tasks.prepare_for_the_analysis import prepare_for_the_analysis
 from explore_pipolin.tasks.find_pipolbs import find_pipolbs, are_pipolbs_present, \
     continue_if_true_else_finished
 from explore_pipolin.tasks.find_trnas import find_trnas
@@ -29,11 +29,10 @@ def get_flow():
         cpus = Parameter('cpus')
         do_not_reuse = Parameter('do_not_reuse')
 
-        genome = create_genome.map(genome_file=genome_file)
+        genome = prepare_for_the_analysis.map(original_file=genome_file, out_dir=unmapped(out_dir))
 
         genome = find_pipolbs.map(
             genome=genome,
-            out_dir=unmapped(out_dir),
             pipolb_hmm_profile=unmapped(pipolb_hmm_profile),
             do_not_reuse=unmapped(do_not_reuse),
         )
@@ -44,18 +43,16 @@ def get_flow():
         )
 
         genome = find_trnas.map(
-            genome=genome, out_dir=unmapped(out_dir), do_not_reuse=unmapped(do_not_reuse)
+            genome=genome, do_not_reuse=unmapped(do_not_reuse)
         )
 
         genome = find_atts.map(
             genome=genome,
-            out_dir=unmapped(out_dir),
             ref_att=unmapped(ref_att),
             do_not_reuse=unmapped(do_not_reuse),
         )
         genome = find_atts_denovo.map(
             genome=genome,
-            out_dir=unmapped(out_dir),
             percent_identity=unmapped(percent_identity),
             do_not_reuse=unmapped(do_not_reuse),
         )
@@ -67,7 +64,7 @@ def get_flow():
         )
 
         pipolin_seqs_dir = save_pipolin_sequences.map(
-            genome=genome, pipolins=reconstructed_pipolins, out_dir=unmapped(out_dir)
+            genome=genome, pipolins=reconstructed_pipolins
         )
 
         with case(no_annotation, False):

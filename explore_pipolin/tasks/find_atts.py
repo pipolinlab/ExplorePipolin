@@ -18,8 +18,8 @@ _SEARCH_AROUND_REGION = 100_000
 
 @task()
 @genome_specific_logging
-def find_atts(genome: Genome, out_dir, ref_att, do_not_reuse) -> Genome:
-    atts_dir = os.path.join(out_dir, genome.id, 'atts')
+def find_atts(genome: Genome, ref_att, do_not_reuse) -> Genome:
+    atts_dir = os.path.join(os.path.dirname(genome.file), 'atts')
     os.makedirs(atts_dir, exist_ok=True)
 
     finder = AttFinder(genome=genome, output_dir=atts_dir, ref_att=ref_att)
@@ -73,8 +73,8 @@ class AttFinder:
 
 @task()
 @genome_specific_logging
-def find_atts_denovo(genome: Genome, out_dir, percent_identity, do_not_reuse) -> Genome:
-    atts_denovo_dir = os.path.join(out_dir, genome.id, 'atts_denovo')
+def find_atts_denovo(genome: Genome, percent_identity, do_not_reuse) -> Genome:
+    atts_denovo_dir = os.path.join(os.path.dirname(genome.file), 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
     finder = AttDenovoFinder(

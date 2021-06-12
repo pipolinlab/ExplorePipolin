@@ -11,8 +11,8 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def find_trnas(genome: Genome, out_dir, do_not_reuse) -> Genome:
-    trnas_dir = os.path.join(out_dir, genome.id, 'trnas')
+def find_trnas(genome: Genome, do_not_reuse) -> Genome:
+    trnas_dir = os.path.join(os.path.dirname(genome.file), 'trnas')
     os.makedirs(trnas_dir, exist_ok=True)
 
     output_file = os.path.join(trnas_dir, genome.id + '.batch')

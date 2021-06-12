@@ -11,8 +11,8 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def find_pipolbs(genome: Genome, out_dir, pipolb_hmm_profile, do_not_reuse) -> Genome:
-    pipolbs_dir = os.path.join(out_dir, genome.id, 'pipolbs')
+def find_pipolbs(genome: Genome, pipolb_hmm_profile, do_not_reuse) -> Genome:
+    pipolbs_dir = os.path.join(os.path.dirname(genome.file), 'pipolbs')
     os.makedirs(pipolbs_dir, exist_ok=True)
 
     genes = os.path.join(pipolbs_dir, genome.id + '.faa')

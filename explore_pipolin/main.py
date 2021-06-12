@@ -99,6 +99,7 @@ def main(
     check_external_dependencies()
 
     out_dir_name = get_out_dir_name(out_dir_prefix, out_dir)
+    os.makedirs(out_dir_name, exist_ok=True)
     set_logging_dir(out_dir_name)
 
     state = get_flow().run(

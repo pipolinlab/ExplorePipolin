@@ -6,7 +6,7 @@ from Bio.SeqRecord import SeqRecord
 from prefect import task
 
 from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genome, PipolinVariants
-from explore_pipolin.utilities.io import SeqIORecords, create_seqio_records_dict, write_genbank_records, \
+from explore_pipolin.utilities.io import SeqIORecords, create_seqio_records_dict, write_seqio_records, \
     read_gff_records, write_gff_records
 from explore_pipolin.utilities.logging import genome_specific_logging
 
@@ -34,10 +34,10 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
 
                 single_record = create_single_gb_record(gb_records=gb_records, pipolin=cur_pipolin)
                 output_file_single_record = os.path.join(results_dir, prokka_file + '.single_record')
-                write_genbank_records(gb_records=single_record, output_file=output_file_single_record)
+                write_seqio_records(single_record, output_file_single_record, 'genbank')
 
                 output_file = os.path.join(results_dir, prokka_file)
-                write_genbank_records(gb_records=gb_records, output_file=output_file)
+                write_seqio_records(gb_records, output_file, 'genbank')
 
             if prokka_file.startswith(genome.id) and prokka_file.endswith('.gff'):
                 gff_records = read_gff_records(file=os.path.join(prokka_dir, prokka_file))

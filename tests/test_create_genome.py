@@ -1,6 +1,6 @@
 import unittest
 
-from explore_pipolin.tasks.create_genome import define_genome_id
+from explore_pipolin.tasks.prepare_for_the_analysis import define_genome_id
 
 
 class TestCreateGenome(unittest.TestCase):

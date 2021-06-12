@@ -12,8 +12,8 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def save_pipolin_sequences(genome: Genome, pipolins: Sequence[PipolinVariants], out_dir):
-    pipolins_dir = os.path.join(out_dir, genome.id, 'pipolins')
+def save_pipolin_sequences(genome: Genome, pipolins: Sequence[PipolinVariants]):
+    pipolins_dir = os.path.join(os.path.dirname(genome.file), 'pipolins')
     os.makedirs(pipolins_dir, exist_ok=True)
 
     genome_dict = create_seqio_records_dict(file=genome.file, file_format='fasta')

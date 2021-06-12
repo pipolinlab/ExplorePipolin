@@ -11,10 +11,10 @@ def create_seqio_records_dict(file, file_format) -> SeqIORecords:
     if file_format not in file_formats:
         raise AssertionError(f'Unknown file format: {file_format}! Only genbank or fasta formats are acceptable.')
 
-    records = SeqIO.to_dict(SeqIO.parse(file, format=file_format))
-    if len(records) == 0:
+    records_dict = SeqIO.to_dict(SeqIO.parse(file, format=file_format))
+    if len(records_dict) == 0:
         raise AssertionError(f'Empty file {file}!')
-    return records
+    return records_dict
 
 
 def read_gff_records(file) -> SeqIORecords:
@@ -26,10 +26,14 @@ def read_gff_records(file) -> SeqIORecords:
     return gff_records
 
 
-def write_genbank_records(gb_records: SeqIORecords, output_file: str):
-    records = [record for record in gb_records.values()]
+def write_seqio_records(records_dict: SeqIORecords, output_file: str, file_format) -> None:
+    file_formats = ['genbank', 'fasta']
+    if file_format not in file_formats:
+        raise AssertionError(f'Unknown file format: {file_format}! Only genbank or fasta formats are acceptable.')
+
+    records = [record for record in records_dict.values()]
     with open(output_file, 'w') as ouf:
-        SeqIO.write(records, ouf, 'genbank')
+        SeqIO.write(records, ouf, file_format)
 
 
 def write_gff_records(gff_records: SeqIORecords, output_file: str):
