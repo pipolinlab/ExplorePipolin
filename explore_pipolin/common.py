@@ -306,10 +306,27 @@ class Pipolin:
         return False
 
 
+class PipolinType(Enum):
+    COMPLETE = auto()
+    TRUNCATED = auto()
+    MINIMAL = auto()
+
+    def to_str(self) -> str:
+        if self == PipolinType.COMPLETE:
+            return 'complete'
+        elif self == PipolinType.TRUNCATED:
+            return 'truncated'
+        elif self == PipolinType.MINIMAL:
+            return 'minimal'
+        else:
+            raise AssertionError
+
+
 @dataclass(frozen=True)
 class PipolinVariants:
     variants: Tuple[Pipolin, ...]
+    type: PipolinType
 
     @staticmethod
-    def from_variants(*variants: Pipolin):
-        return PipolinVariants(variants)
+    def from_variants(*variants: Pipolin, pipolin_type: PipolinType):
+        return PipolinVariants(variants, pipolin_type)

@@ -21,8 +21,8 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
 
         if prokka_file.startswith(genome.id):
             # genome_N_vN
-            variant_index = int(os.path.splitext(prokka_file)[0].split(sep='_')[-1][1:])
-            pipolin_index = int(os.path.splitext(prokka_file)[0].split(sep='_')[-2])
+            variant_index = int(os.path.splitext(os.path.splitext(prokka_file)[0])[0].split(sep='_')[-1][1:])
+            pipolin_index = int(os.path.splitext(os.path.splitext(prokka_file)[0])[0].split(sep='_')[-2])
 
             cur_pipolin = pipolins[pipolin_index].variants[variant_index]
 
@@ -41,7 +41,7 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
                 output_file = os.path.join(results_dir, prokka_file)
                 write_seqio_records(gb_records, output_file, 'genbank')
 
-            if prokka_file.startswith(genome.id) and prokka_file.endswith('.gff'):
+            if prokka_file.endswith('.gff'):
                 gff_records = read_gff_records(file=os.path.join(prokka_dir, prokka_file))
                 include_atts_into_gff(gff_records=gff_records, pipolin=cur_pipolin)
 
