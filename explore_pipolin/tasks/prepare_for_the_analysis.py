@@ -3,12 +3,13 @@ from typing import MutableSequence
 
 from prefect import task
 
+import explore_pipolin.settings as settings
 from explore_pipolin.common import Genome, Contig, ContigID
 from explore_pipolin.utilities.io import create_seqio_records_dict, SeqIORecords, write_seqio_records
 
 
 @task()
-def prepare_for_the_analysis(original_file: str, out_dir: str) -> Genome:
+def prepare_for_the_analysis(original_file: str) -> Genome:
     genome_dict = create_seqio_records_dict(file=original_file, file_format='fasta')
     genome_dict = make_contig_ids_shorter_if_long(genome_dict)
 
@@ -16,8 +17,9 @@ def prepare_for_the_analysis(original_file: str, out_dir: str) -> Genome:
     genome_id = define_genome_id(original_file)
 
     # create genome-specific output directory and put genome fasta file with short headers there
-    os.makedirs(os.path.join(out_dir, genome_id), exist_ok=True)
-    internal_use_file = os.path.join(out_dir, genome_id, os.path.basename(original_file))
+    genome_dir = os.path.join(settings.get_instance().out_dir, genome_id)
+    os.makedirs(genome_dir, exist_ok=True)
+    internal_use_file = os.path.join(genome_dir, os.path.basename(original_file))
     write_seqio_records(genome_dict, internal_use_file, 'fasta')
 
     return Genome(genome_id, internal_use_file, contigs)

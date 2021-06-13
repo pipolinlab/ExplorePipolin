@@ -1,17 +1,14 @@
-import datetime
 import logging
 import os
-from typing import Optional
 
 import click
 
 from explore_pipolin.flow import get_flow
+import explore_pipolin.settings as settings
+from explore_pipolin.settings import GlobalSettings, _DEFAULT_OUT_DIR_PREFIX, _NO_BORDER_INFLATE
 
 from explore_pipolin.utilities.external_tools import check_external_dependencies
-from explore_pipolin.utilities.logging import set_logging_dir
 from explore_pipolin.common import CONTEXT_SETTINGS
-
-from explore_pipolin.tasks.reconstruct_pipolins import NO_BORDER_INFLATE
 
 
 def check_genome_file_names(genome):
@@ -19,22 +16,6 @@ def check_genome_file_names(genome):
         if len(genome) != len(set(os.path.basename(i) for i in genome)):
             logging.fatal('GENOME files should have different names!')
             exit(1)
-
-
-_DEFAULT_OUT_DIR_PREFIX = 'results'
-_SUFFIX = datetime.datetime.now().strftime('_%H%M%S')
-
-
-def get_out_dir_name(out_dir_prefix: Optional[str], out_dir: Optional[str]) -> str:
-    if out_dir_prefix and out_dir:
-        logging.fatal('Options --out-dir-prefix and --out-dir are mutually exclusive!')
-        exit(1)
-    elif out_dir_prefix:
-        return os.path.join(os.getcwd(), out_dir_prefix + _SUFFIX)
-    elif out_dir:
-        return out_dir
-    else:
-        return os.path.join(os.getcwd(), _DEFAULT_OUT_DIR_PREFIX + _SUFFIX)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -52,7 +33,7 @@ def get_out_dir_name(out_dir_prefix: Optional[str], out_dir: Optional[str]) -> s
                    'If not provided, the default file will be used instead.')
 @click.option('--percent-identity', type=int, default=85, show_default=True,
               help='Minimum percent identity in direct repeats search')
-@click.option('--max-inflate', type=int, default=NO_BORDER_INFLATE, show_default=True,
+@click.option('--max-inflate', type=int, default=_NO_BORDER_INFLATE, show_default=True,
               help='If no borders of pipolin are found (no ATTs), '
                    'inflate the analysed region from both sides of piPolB.')
 @click.option('--no-annotation', is_flag=True, help='Do not run the annotation step (i.e. Prokka).')
@@ -92,21 +73,15 @@ def main(
 
     check_external_dependencies()
 
-    out_dir_name = get_out_dir_name(out_dir_prefix, out_dir)
-    os.makedirs(out_dir_name, exist_ok=True)
-    set_logging_dir(out_dir_name)
+    settings.set_instance(GlobalSettings.create_instance(
+        out_dir_prefix, out_dir, pipolb_hmm_profile, ref_att, percent_identity, max_inflate, proteins, cpus
+    ))
+    os.makedirs(settings.get_instance().out_dir, exist_ok=True)
 
     state = get_flow().run(
         genome_file=genome,
-        out_dir=out_dir_name,
-        pipolb_hmm_profile=pipolb_hmm_profile,
-        ref_att=ref_att,
-        percent_identity=percent_identity,
-        max_inflate=max_inflate,
         no_annotation=no_annotation,
-        proteins=proteins,
         skip_colours=skip_colours,
-        cpus=cpus,
     )
     assert state.is_successful()
 

@@ -5,6 +5,7 @@ from prefect.utilities.logging import get_logger
 
 from explore_pipolin.common import Genome, Pipolin, FeatureType, PipolinFragment, Strand, Range, AttFeature, \
     PipolinVariants
+import explore_pipolin.settings as settings
 from explore_pipolin.utilities.logging import genome_specific_logging
 
 
@@ -39,7 +40,7 @@ def _get_feature_string(feature) -> str:
 @task(name='reconstruct_pipolins')
 @genome_specific_logging
 def reconstruct_pipolins(
-        genome: Genome, pipolins: Sequence[Pipolin], no_border_inflate: Optional[int] = None
+        genome: Genome, pipolins: Sequence[Pipolin]
 ):
 
     logger = context.get('logger')
@@ -54,7 +55,7 @@ def reconstruct_pipolins(
             for structure in draw_pipolin_structure(pipolin):
                 logger.info(f'{structure}')
 
-            reconstructor = Reconstructor(genome=genome, pipolin=pipolin, no_border_inflate=no_border_inflate)
+            reconstructor = Reconstructor(genome=genome, pipolin=pipolin)
             pipolin_variants = reconstructor.reconstruct_pipolin()
             logger.info('>>> Reconstruction is done! The resulting pipolin variants are:')
             for variant in pipolin_variants.variants:
@@ -62,10 +63,6 @@ def reconstruct_pipolins(
             result.append(pipolin_variants)
 
     return result
-
-
-BORDER_INFLATE = 0
-NO_BORDER_INFLATE = 30_000
 
 
 _TOO_MANY_ATTS_MESSAGE = 'Unable to reconstruct pipolin: too many orphan ATTs. ' \
@@ -81,11 +78,9 @@ def _is_overlapping_result(pipolin: Pipolin, result: Sequence[PipolinVariants]) 
 
 
 class Reconstructor:
-    def __init__(self, genome: Genome, pipolin: Pipolin, no_border_inflate: Optional[int]):
+    def __init__(self, genome: Genome, pipolin: Pipolin):
         self.genome = genome
         self.pipolin = pipolin
-
-        self.no_border_inflate = no_border_inflate
 
         self.att_pipolb_att_fragments: List[PipolinFragment] = []
         self.att_pipolb_fragments: List[PipolinFragment] = []
@@ -100,6 +95,14 @@ class Reconstructor:
             raise AssertionError(f'att---pol---att: {len(self.att_pipolb_att_fragments)} > 1 or '
                                  f'att---pol: {len(self.att_pipolb_fragments)} > 1 or '
                                  f'pol: {len(self.pipolb_only_fragments)} > 1')
+
+    @property
+    def _border_inflate(self):
+        return settings.get_instance().border_inflate
+
+    @property
+    def _no_border_inflate(self):
+        return settings.get_instance().no_border_inflate
 
     def reconstruct_pipolin(self) -> PipolinVariants:
         if len(self.pipolin.fragments) == 1:
@@ -381,28 +384,26 @@ class Reconstructor:
         new_features = new.get_fragment_features_sorted()
         return PipolinFragment(new.location, new.contig_id, new.genome, tuple(new_features), new.orientation)
 
-    def _inflate_single(self, fragment: PipolinFragment, no_border_inflate: int) -> PipolinFragment:
+    def _inflate_single(self, fragment: PipolinFragment) -> PipolinFragment:
         atts_and_pipolbs = _get_fragment_atts_and_pipolbs(fragment)
 
-        left = BORDER_INFLATE if atts_and_pipolbs[0].ftype == FeatureType.ATT else no_border_inflate
-        right = BORDER_INFLATE if atts_and_pipolbs[-1].ftype == FeatureType.ATT else no_border_inflate
+        left = self._border_inflate if atts_and_pipolbs[0].ftype == FeatureType.ATT else self._no_border_inflate
+        right = self._border_inflate if atts_and_pipolbs[-1].ftype == FeatureType.ATT else self._no_border_inflate
         return self._inflate_fragment(fragment, left, right)
 
     def _create_pipolin(self, left=None, middle=None, right=None, complete=None, single=None) -> Pipolin:
-
-        no_border_inflate = self.no_border_inflate if self.no_border_inflate else NO_BORDER_INFLATE
-
         fragments = []
+
         if left:
-            fragments.append(self._inflate_fragment(left, BORDER_INFLATE, no_border_inflate))
+            fragments.append(self._inflate_fragment(left, self._border_inflate, self._no_border_inflate))
         if middle:
-            fragments.append(self._inflate_fragment(middle, no_border_inflate, no_border_inflate))
+            fragments.append(self._inflate_fragment(middle, self._no_border_inflate, self._no_border_inflate))
         if right:
-            fragments.append(self._inflate_fragment(right, no_border_inflate, BORDER_INFLATE))
+            fragments.append(self._inflate_fragment(right, self._no_border_inflate, self._border_inflate))
         if complete:
-            fragments.append(self._inflate_fragment(complete, BORDER_INFLATE, BORDER_INFLATE))
+            fragments.append(self._inflate_fragment(complete, self._border_inflate, self._border_inflate))
         if single:
-            fragments.append(self._inflate_single(single, no_border_inflate))
+            fragments.append(self._inflate_single(single))
         return Pipolin.from_fragments(*fragments)
 
     @staticmethod

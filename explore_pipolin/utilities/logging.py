@@ -9,20 +9,16 @@ from typing import MutableMapping
 from prefect import context
 
 from explore_pipolin.common import Genome
+import explore_pipolin.settings as settings
 
 _HANDLERS: MutableMapping[str, Handler] = {}
-_LOG_DIR: str = 'logs'
-
-
-def set_logging_dir(log_dir: str):
-    global _LOG_DIR
-    _LOG_DIR = log_dir
 
 
 def _ensure_handler_for(genome: Genome):
     if genome.id not in _HANDLERS:
+        os.makedirs(os.path.join(settings.get_instance().out_dir, genome.id), exist_ok=True)   # it's required for tests
         _HANDLERS[genome.id] = _create_logging_handler(
-            genome=genome, out_dir=os.path.join(_LOG_DIR, genome.id))
+            genome=genome, out_dir=os.path.join(settings.get_instance().out_dir, genome.id))
         logging.getLogger().addHandler(_HANDLERS[genome.id])
 
 

@@ -1,10 +1,11 @@
-import os
-import shutil
+import tempfile
 import unittest
 from typing import Sequence, List
 
 from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, \
     Pipolin, PipolinFragment, AttFeature, ContigID
+import explore_pipolin.settings as settings
+from explore_pipolin.settings import GlobalSettings
 from explore_pipolin.tasks.find_pipolins import PipolinFinder, find_pipolins
 
 from explore_pipolin.tasks.reconstruct_pipolins import reconstruct_pipolins
@@ -86,6 +87,20 @@ def _create_features_for_pipolin_fragment(
 
 
 class TestPipolinFinder(unittest.TestCase):
+    def setUp(self) -> None:
+        tmp_dir = tempfile.TemporaryDirectory()
+        self.settings = GlobalSettings.create_instance(
+            out_dir_prefix=None,
+            user_defined_out_dir=tmp_dir.name,
+            user_defined_profile=None,
+            user_defined_att=None,
+            percent_identity=85,
+            max_inflate=30_000,
+            user_defined_proteins=None,
+            prokka_cpus=0
+        )
+        settings.set_instance(self.settings)
+
     def _check_pipolins(self, expected: Sequence[Pipolin], obtained: Sequence[Pipolin], ordered=False):
         self.assertEqual(len(expected), len(obtained))
         if not ordered:
@@ -320,7 +335,6 @@ class TestPipolinFinder(unittest.TestCase):
             genome=genome,
             pipolins=[create_pipolin(scheme, p1f1, p1f2), create_pipolin(scheme, p2f1)]
         )
-        shutil.rmtree(os.path.join(os.getcwd(), 'logs'))
 
     def test_genome_strange3(self):
         scheme = '---at1---pol---...---at1---pol---at1(t)---'
@@ -332,7 +346,6 @@ class TestPipolinFinder(unittest.TestCase):
 
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1, p1f2),
                                                           create_pipolin(scheme, p2f1)])
-        shutil.rmtree(os.path.join(os.getcwd(), 'logs'))
 
     def test_genome_strange4(self):
         scheme = '---at1---pol---at1---...---pol---at1(t)---'
@@ -344,7 +357,6 @@ class TestPipolinFinder(unittest.TestCase):
 
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, p1f1, p1f2),
                                                           create_pipolin(scheme, p2f1)])
-        shutil.rmtree(os.path.join(os.getcwd(), 'logs'))
 
     def test_genome_strange5(self):
         scheme = '---at1---pol---at1---pol---'

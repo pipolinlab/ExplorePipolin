@@ -18,27 +18,24 @@ _SEARCH_AROUND_REGION = 100_000
 
 @task()
 @genome_specific_logging
-def find_atts(genome: Genome, ref_att) -> Genome:
+def find_atts(genome: Genome) -> Genome:
     atts_dir = os.path.join(os.path.dirname(genome.file), 'atts')
     os.makedirs(atts_dir, exist_ok=True)
 
-    finder = AttFinder(genome=genome, output_dir=atts_dir, ref_att=ref_att)
+    finder = AttFinder(genome=genome, output_dir=atts_dir)
     finder.find_atts()
 
     return genome
 
 
 class AttFinder:
-    def __init__(self, genome: Genome, output_dir: str, ref_att):
+    def __init__(self, genome: Genome, output_dir: str):
         self.genome = genome
         self.output_dir = output_dir
-        self.ref_att = ref_att
 
     def find_atts(self):
         output_file = os.path.join(self.output_dir, self.genome.id + '.fmt5')
-        blastn_against_ref_att(
-            genome_file=self.genome.file, output_file=output_file, ref_att=self.ref_att
-        )
+        blastn_against_ref_att(genome_file=self.genome.file, output_file=output_file)
         entries = read_blastxml(blast_xml=output_file)
 
         self._add_att_features(entries)
@@ -72,23 +69,20 @@ class AttFinder:
 
 @task()
 @genome_specific_logging
-def find_atts_denovo(genome: Genome, percent_identity) -> Genome:
+def find_atts_denovo(genome: Genome) -> Genome:
     atts_denovo_dir = os.path.join(os.path.dirname(genome.file), 'atts_denovo')
     os.makedirs(atts_denovo_dir, exist_ok=True)
 
-    finder = AttDenovoFinder(
-        genome=genome, output_dir=atts_denovo_dir, percent_identity=percent_identity
-    )
+    finder = AttDenovoFinder(genome=genome, output_dir=atts_denovo_dir)
     finder.find_atts_denovo()
 
     return genome
 
 
 class AttDenovoFinder:
-    def __init__(self, genome: Genome, output_dir: str, percent_identity):
+    def __init__(self, genome: Genome, output_dir: str):
         self.genome = genome
         self.output_dir = output_dir
-        self.percent_identity = percent_identity
 
     def find_atts_denovo(self):
         repeats: List[MultiLocation] = self._find_repeats()
@@ -103,9 +97,7 @@ class AttDenovoFinder:
     def _find_repeats(self) -> List[MultiLocation]:
         ranges_around_pipolbs = self._get_ranges_around_pipolbs()
         self._save_seqs_around_pipolbs(ranges_around_pipolbs)
-        blast_for_repeats(
-            genome_id=self.genome.id, repeats_dir=self.output_dir, percent_identity=self.percent_identity
-        )
+        blast_for_repeats(genome_id=self.genome.id, repeats_dir=self.output_dir)
         paired_repeats: List[PairedLocation] = self._extract_repeats(ranges_around_pipolbs)
         return self._regroup_paired_repeats(paired_repeats)
 

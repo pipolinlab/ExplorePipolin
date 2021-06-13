@@ -3,8 +3,9 @@ import os
 import subprocess
 from typing import List
 
-import pkg_resources
 from Bio import SeqIO
+
+import explore_pipolin.settings as settings
 
 
 def check_external_dependencies():
@@ -67,16 +68,9 @@ def _is_long_enough(genome_file) -> bool:
     return length >= 100000
 
 
-PIPOLB_HMM_PROFILE = pkg_resources.resource_filename(
-    'explore_pipolin',
-    'data/pipolb_expanded_definitive.hmm',
-)
-
-
-def run_hmmsearch(proteins_file: str, pipolb_hmm_profile, output_file: str):
-    if pipolb_hmm_profile is None:
-        pipolb_hmm_profile = PIPOLB_HMM_PROFILE
-    command = ['hmmsearch', '--tblout', output_file, '-E', '1e-50', pipolb_hmm_profile, proteins_file]
+def run_hmmsearch(proteins_file: str, output_file: str):
+    profile = settings.get_instance().pipolb_hmm_profile
+    command = ['hmmsearch', '--tblout', output_file, '-E', '1e-50', profile, proteins_file]
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, std_err = p.communicate()
     if p.returncode != 0:
@@ -84,12 +78,8 @@ def run_hmmsearch(proteins_file: str, pipolb_hmm_profile, output_file: str):
         raise subprocess.CalledProcessError(p.returncode, ' '.join(command))
 
 
-REF_ATT = pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa')
-
-
-def blastn_against_ref_att(genome_file, output_file, ref_att):
-    if ref_att is None:
-        ref_att = REF_ATT
+def blastn_against_ref_att(genome_file, output_file):
+    ref_att = settings.get_instance().ref_att
     with open(output_file, 'w') as ouf:
         command = ['blastn', '-query', ref_att, '-subject', genome_file, '-evalue', '0.1', '-outfmt', '5']
         p = subprocess.Popen(command, stdout=ouf, stderr=subprocess.PIPE)
@@ -100,12 +90,14 @@ def blastn_against_ref_att(genome_file, output_file, ref_att):
             raise subprocess.CalledProcessError(p.returncode, ' '.join(command))
 
 
-def blast_for_repeats(genome_id: str, repeats_dir: str, percent_identity):
+def blast_for_repeats(genome_id: str, repeats_dir: str):
     dir_content = os.listdir(repeats_dir)
     left_sorted = sorted([f for f in dir_content if f.startswith(genome_id) and f.endswith('.left')])
     right_sorted = sorted([f for f in dir_content if f.startswith(genome_id) and f.endswith('.right')])
     if len(left_sorted) != len(right_sorted):
         raise AssertionError('Number of .left files is not equal to the number of .right files!')
+
+    percent_of_identity = settings.get_instance().percent_identity
 
     for lr, rr in zip(left_sorted, right_sorted):
         l_rep_index = _extract_index_from_filename(lr)
@@ -116,7 +108,7 @@ def blast_for_repeats(genome_id: str, repeats_dir: str, percent_identity):
         with open(os.path.join(repeats_dir, genome_id + f'_{l_rep_index}.fmt5'), 'w') as ouf:
             command = ['blastn', '-query', os.path.join(repeats_dir, lr),
                        '-subject', os.path.join(repeats_dir, rr),
-                       '-outfmt', '5', '-perc_identity', str(percent_identity),
+                       '-outfmt', '5', '-perc_identity', str(percent_of_identity),
                        '-word_size', '6', '-strand', 'plus']
             p = subprocess.Popen(command, stdout=ouf, stderr=subprocess.PIPE)
             _, std_err = p.communicate()
@@ -138,12 +130,9 @@ def run_aragorn(genome_file, output_file):
             raise FileNotFoundError(genome_file)
 
 
-PROTEINS = pkg_resources.resource_filename('explore_pipolin', '/data/HHpred_proteins.faa')
-
-
-def run_prokka(input_file, prokka_results_dir, proteins, cpus):
-    if proteins is None:
-        proteins = PROTEINS
+def run_prokka(input_file, prokka_results_dir):
+    proteins = settings.get_instance().proteins
+    cpus = settings.get_instance().prokka_cpus
     prefix = os.path.splitext(os.path.basename(input_file))[0]
     command = ['prokka', '--outdir', prokka_results_dir, '--prefix', prefix,
                '--rawproduct', '--cdsrnaolap', '--cpus', str(cpus),

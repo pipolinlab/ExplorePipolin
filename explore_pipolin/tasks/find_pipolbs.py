@@ -11,14 +11,14 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def find_pipolbs(genome: Genome, pipolb_hmm_profile) -> Genome:
+def find_pipolbs(genome: Genome) -> Genome:
     pipolbs_dir = os.path.join(os.path.dirname(genome.file), 'pipolbs')
     os.makedirs(pipolbs_dir, exist_ok=True)
 
     genes = os.path.join(pipolbs_dir, genome.id + '.faa')
     hmmsearch_output_file = os.path.join(pipolbs_dir, genome.id + '.tbl')
     run_prodigal(genome_file=genome.file, output_file=genes)
-    run_hmmsearch(genes, pipolb_hmm_profile, hmmsearch_output_file)
+    run_hmmsearch(genes, hmmsearch_output_file)
 
     entries = create_pipolb_entries(hmmsearch_output_file)
     add_pipolb_features(entries, genome)

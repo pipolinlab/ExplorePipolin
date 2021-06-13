@@ -1,4 +1,4 @@
-from prefect import Flow, Parameter, unmapped, case
+from prefect import Flow, Parameter, case
 from prefect.tasks.control_flow import FilterTask
 
 from explore_pipolin.tasks.prepare_for_the_analysis import prepare_for_the_analysis
@@ -18,22 +18,12 @@ _DEFAULT_FILTER = FilterTask()
 def get_flow():
     with Flow('MAIN') as flow:
         genome_file = Parameter('genome_file')
-        out_dir = Parameter('out_dir')
-        pipolb_hmm_profile = Parameter('pipolb_hmm_profile')
-        ref_att = Parameter('ref_att')
-        percent_identity = Parameter('percent_identity')
-        max_inflate = Parameter('max_inflate')
         no_annotation = Parameter('no_annotation')
-        proteins = Parameter('proteins')
         skip_colours = Parameter('skip_colours')
-        cpus = Parameter('cpus')
 
-        genome = prepare_for_the_analysis.map(original_file=genome_file, out_dir=unmapped(out_dir))
+        genome = prepare_for_the_analysis.map(original_file=genome_file)
 
-        genome = find_pipolbs.map(
-            genome=genome,
-            pipolb_hmm_profile=unmapped(pipolb_hmm_profile),
-        )
+        genome = find_pipolbs.map(genome=genome)
 
         t_check_pipolbs = are_pipolbs_present.map(genome=genome)
         genome = _DEFAULT_FILTER(continue_if_true_else_finished.map(
@@ -42,19 +32,13 @@ def get_flow():
 
         genome = find_trnas.map(genome=genome)
 
-        genome = find_atts.map(
-            genome=genome,
-            ref_att=unmapped(ref_att),
-        )
-        genome = find_atts_denovo.map(
-            genome=genome,
-            percent_identity=unmapped(percent_identity),
-        )
+        genome = find_atts.map(genome=genome)
+        genome = find_atts_denovo.map(genome=genome)
         genome = are_atts_present.map(genome=genome)
 
         pipolins = find_pipolins.map(genome=genome)
         reconstructed_pipolins = reconstruct_pipolins.map(
-            genome=genome, pipolins=pipolins, no_border_inflate=unmapped(max_inflate)
+            genome=genome, pipolins=pipolins
         )
 
         pipolin_seqs_dir = save_pipolin_sequences.map(
@@ -62,12 +46,7 @@ def get_flow():
         )
 
         with case(no_annotation, False):
-            prokka_dir = annotate_pipolins.map(
-                genome=genome,
-                pipolins_dir=pipolin_seqs_dir,
-                proteins=unmapped(proteins),
-                cpus=unmapped(cpus)
-            )
+            prokka_dir = annotate_pipolins.map(genome=genome, pipolins_dir=pipolin_seqs_dir)
             results_dir = generate_results.map(
                 genome=genome, prokka_dir=prokka_dir, pipolins=reconstructed_pipolins
             )
