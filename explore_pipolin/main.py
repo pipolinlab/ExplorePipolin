@@ -33,20 +33,20 @@ def check_genome_file_names(genome):
               help='Att sequence in FASTA file to use as 1st priority. '
                    'If not provided, the default file will be used instead.')
 @click.option('--percent-identity', type=int, default=85, show_default=True,
-              help='Minimum percent identity in direct repeats search')
+              help='Minimum percent identity for direct repeats search')
 @click.option('--max-inflate', type=int, default=_NO_BORDER_INFLATE, show_default=True,
               help='If no borders of pipolin are found (no ATTs), '
                    'inflate the analysed region from both sides of piPolB.')
-@click.option('--no-annotation', is_flag=True, show_default=True,
+@click.option('--no-annotation', is_flag=True,
               help='Do not run the annotation step (i.e. Prokka).')
 @click.option('--proteins', type=click.Path(exists=True),
               help='Prokka param: FASTA or GBK file to use as 1st priority. '
                    'If not provided, the default file will be used instead.')
-@click.option('--skip-colours', is_flag=True, show_default=True,
-              help='Do not add an Easyfig-compatible colouring scheme to the final Genbank file.')
+@click.option('--skip-colours', is_flag=True,
+              help='Do not add an Easyfig-compatible colouring scheme to the final Genbank files.')
 @click.option('--cpus', default=8, type=int, show_default=True,
               help='Prokka param: Number of CPUs to use [0=all]')
-@click.option('--keep-tmp', is_flag=True, show_default=True,
+@click.option('--keep-tmp', is_flag=True,
               help='Preserve intermediate files produced during the run (it might be useful for debugging).')
 def main(
         genome,

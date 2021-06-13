@@ -39,7 +39,7 @@ phyla and mitochondria.
  1. Install the requirements (see above).
  1. `wget https://github.com/liubovch/ExplorePipolin/archive/0.0.1.zip`
  1. `unzip 0.0.1.zip && cd ExplorePipolin-0.0.1` 
- 1. `pip install .` (install in user site-package) or
+ 1. `pip install .` (install in user site-packages) or
  `sudo pip install .` (requires superuser privileges)
  
 NOTE: before installing, it is possible to run unit tests:
@@ -80,12 +80,7 @@ Options:
   --out-dir-prefix TEXT       Use this prefix for the output directory,
                               instead of the default "results" prefix.
 
-  --out-dir PATH              Use this output directory instead. If the
-                              directory contains results of a previous run,
-                              such as found piPolBs, ATTs and tRNAs, the
-                              program will reuse them, unless --do-not-reuse
-                              option is specified.
-
+  --out-dir PATH              Use this output directory instead.
   --pipolb-hmm-profile PATH   piPolB's HMM profile to use as 1st priority.If
                               not provided, the default profile will be used
                               instead.
@@ -94,28 +89,27 @@ Options:
                               priority. If not provided, the default file will
                               be used instead.
 
-  --percent-identity INTEGER  Minimum percent identity in direct repeats
-                              search  [default: 85]
+  --percent-identity INTEGER  Minimum percent identity for direct repeats
+                              search [default: 85]
 
   --max-inflate INTEGER       If no borders of pipolin are found (no ATTs),
                               inflate the analysed region from both sides of
                               piPolB.  [default: 30000]
 
   --no-annotation             Do not run the annotation step (i.e. Prokka).
+
   --proteins PATH             Prokka param: FASTA or GBK file to use as 1st
                               priority. If not provided, the default file will
                               be used instead.
 
   --skip-colours              Do not add an Easyfig-compatible colouring
-                              scheme to the final Genbank file.
+                              scheme to the final Genbank files.
 
   --cpus INTEGER              Prokka param: Number of CPUs to use [0=all]
                               [default: 8]
 
-  --do-not-reuse              Do not reuse information about piPolBs, ATTs and
-                              tRNAs found in a previous run for the same
-                              genome. I.e. it will run all the analysis from
-                              scratch for the given genome.
+  --keep-tmp                  Preserve intermediate files produced during the
+                              run (it might be useful for debugging).
 
   -h, --help                  Show this message and exit.
 ```
@@ -125,15 +119,33 @@ Options:
 The output directory will contain a separate folder for each analysed genome. In the genome-specific folder,
 the following files can be found:
  
- | Folder | Content description |
+ | Folder/File | Content description |
  |--------|---------------------|
+ | `<genome>.log` | log file |
+ | `pipolins` | extracted pipolin sequences in FASTA format, GenBank and GFF annotations of pipolin genes with *att*s included |
+
+Files in `pipolins` folder have the following scheme: `<genome>_N_vN.<type>.<ext>`,
+where:
+
+ * `<genome>` — genome name, retrieved from a provided FASTA file without 
+   extension. Should not exceed 16 characters, due to Biopython restrictions!
+ * `N` — number of a found pipolin
+ * `vN` — number of a reconstructed variant (each pipolin can be reconstructed in
+   different ways)
+ * `<type>` — can be `complete` (att---pol---att), `truncated` (att---pol---) or 
+   `minimal` (---pol---)
+ * `<ext>` — file extension (`.fa`, `.gbk` or `.gff`)  
+ 
+Additional files, when `--keep-tmp` option is present:
+
+ | Folder/File | Content description |
+ |-------|----------------------|
+ | `<genome>.fa` | genome file copied |
  | `pipolbs` | HMMER search results for piPolB genes |
  | `atts` | BLAST search results for the known *att* sites |
  | `atts_denovo` | Results of *de novo* search for *att* sites |
  | `trnas` | ARAGORN search results for tRNAs/tmRNAs |
- | `pipolins` | extracted pipolin sequences in FASTA format, GenBank and GFF annotations of pipolin genes with *att*s included |
  | `prokka` | Prokka annotation results (check files description [here](https://github.com/tseemann/prokka/blob/master/README.md#output-files))|
- | `<genome>.log` | log file |
 
 
 # Running with Docker
@@ -142,6 +154,7 @@ See https://docs.docker.com/install/ to install Docker.
 
 **NOTE:** superuser privileges are required to run the analysis and around 3GB of disk space for the image.
 
+**TODO:** need an update!
 ```
 sudo docker pull docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.1
 sudo docker tag docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.1 explore_pipolin
