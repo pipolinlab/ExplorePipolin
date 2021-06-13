@@ -26,7 +26,7 @@ class TestExternalRuns(unittest.TestCase):
             percent_identity=85,
             max_inflate=30_000,
             user_defined_proteins=None,
-            prokka_cpus=0
+            prokka_cpus=0,
         )
         settings.set_instance(self.settings)
 

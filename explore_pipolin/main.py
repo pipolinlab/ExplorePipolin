@@ -1,6 +1,7 @@
 import logging
 import os
-
+import shutil
+from glob import glob
 import click
 
 from explore_pipolin.flow import get_flow
@@ -36,14 +37,17 @@ def check_genome_file_names(genome):
 @click.option('--max-inflate', type=int, default=_NO_BORDER_INFLATE, show_default=True,
               help='If no borders of pipolin are found (no ATTs), '
                    'inflate the analysed region from both sides of piPolB.')
-@click.option('--no-annotation', is_flag=True, help='Do not run the annotation step (i.e. Prokka).')
+@click.option('--no-annotation', is_flag=True, show_default=True,
+              help='Do not run the annotation step (i.e. Prokka).')
 @click.option('--proteins', type=click.Path(exists=True),
               help='Prokka param: FASTA or GBK file to use as 1st priority. '
                    'If not provided, the default file will be used instead.')
-@click.option('--skip-colours', is_flag=True,
+@click.option('--skip-colours', is_flag=True, show_default=True,
               help='Do not add an Easyfig-compatible colouring scheme to the final Genbank file.')
 @click.option('--cpus', default=8, type=int, show_default=True,
               help='Prokka param: Number of CPUs to use [0=all]')
+@click.option('--keep-tmp', is_flag=True, show_default=True,
+              help='Preserve intermediate files produced during the run (it might be useful for debugging).')
 def main(
         genome,
         out_dir_prefix,
@@ -56,6 +60,7 @@ def main(
         proteins,
         skip_colours,
         cpus,
+        keep_tmp,
 ):
     """
     ExplorePipolin is a search tool for prediction and analysis of pipolins, bacterial mobile genetic elements.
@@ -78,12 +83,25 @@ def main(
     ))
     os.makedirs(settings.get_instance().out_dir, exist_ok=True)
 
-    state = get_flow().run(
-        genome_file=genome,
-        no_annotation=no_annotation,
-        skip_colours=skip_colours,
-    )
-    assert state.is_successful()
+    try:
+        state = get_flow().run(
+            genome_file=genome,
+            no_annotation=no_annotation,
+            skip_colours=skip_colours,
+        )
+        assert state.is_successful()
+
+    finally:
+        dirs_to_delete = ['pipolbs', 'atts', 'atts_denovo', 'trnas', 'prokka']
+        if not keep_tmp:
+            for item in dirs_to_delete:
+                for path in glob(os.path.join(settings.get_instance().out_dir, '*', item)):
+                    if os.path.exists(path):
+                        shutil.rmtree(path)
+
+            for fasta in glob(os.path.join(settings.get_instance().out_dir, '*', '*.fasta')):
+                if os.path.exists(fasta):
+                    os.remove(fasta)
 
 
 if __name__ == '__main__':

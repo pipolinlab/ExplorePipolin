@@ -1,3 +1,4 @@
+import shutil
 import tempfile
 import unittest
 from typing import Sequence, List
@@ -88,18 +89,21 @@ def _create_features_for_pipolin_fragment(
 
 class TestPipolinFinder(unittest.TestCase):
     def setUp(self) -> None:
-        tmp_dir = tempfile.TemporaryDirectory()
+        self.tmp_dir = tempfile.TemporaryDirectory()
         self.settings = GlobalSettings.create_instance(
             out_dir_prefix=None,
-            user_defined_out_dir=tmp_dir.name,
+            user_defined_out_dir=self.tmp_dir.name,
             user_defined_profile=None,
             user_defined_att=None,
             percent_identity=85,
             max_inflate=30_000,
             user_defined_proteins=None,
-            prokka_cpus=0
+            prokka_cpus=0,
         )
         settings.set_instance(self.settings)
+
+    def tearDown(self) -> None:
+        self.tmp_dir.cleanup()
 
     def _check_pipolins(self, expected: Sequence[Pipolin], obtained: Sequence[Pipolin], ordered=False):
         self.assertEqual(len(expected), len(obtained))

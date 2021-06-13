@@ -40,7 +40,7 @@ class GlobalSettings:
             percent_identity,
             max_inflate,
             user_defined_proteins,
-            prokka_cpus
+            prokka_cpus,
     ):
 
         profile = user_defined_profile if user_defined_profile is not None else PIPOLB_HMM_PROFILE
