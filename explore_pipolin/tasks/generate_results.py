@@ -33,7 +33,9 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
                 include_atts_into_gb(gb_records=gb_records, pipolin=cur_pipolin)
 
                 single_record = create_single_gb_record(gb_records=gb_records, pipolin=cur_pipolin)
-                output_file_single_record = os.path.join(results_dir, prokka_file + '.single_record')
+                output_file_single_record = os.path.join(
+                    results_dir, os.path.splitext(prokka_file)[0] + '.single_record.gbk'
+                )
                 write_seqio_records(single_record, output_file_single_record, 'genbank')
 
                 output_file = os.path.join(results_dir, prokka_file)

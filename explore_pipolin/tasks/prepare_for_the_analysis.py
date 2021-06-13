@@ -19,7 +19,7 @@ def prepare_for_the_analysis(original_file: str) -> Genome:
     # create genome-specific output directory and put genome fasta file with short headers there
     genome_dir = os.path.join(settings.get_instance().out_dir, genome_id)
     os.makedirs(genome_dir, exist_ok=True)
-    internal_use_file = os.path.join(genome_dir, os.path.basename(original_file))
+    internal_use_file = os.path.join(genome_dir, os.path.splitext(os.path.basename(original_file))[0] + '.fa')
     write_seqio_records(genome_dict, internal_use_file, 'fasta')
 
     return Genome(genome_id, internal_use_file, contigs)

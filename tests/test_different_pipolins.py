@@ -187,7 +187,6 @@ class TestPipolinFinder(unittest.TestCase):
         f3 = PipolinFragment(Range(100, 200), ContigID('CONTIG_2'), genome)
         self.check_found_pipolins(genome, scheme, [f1, f2, f3])
 
-        # TODO: not just pipolb!
         reconstruct_pipolins.run(genome=genome, pipolins=[create_pipolin(scheme, f1, f2, f3)])
 
     def test_genome5_trna(self):

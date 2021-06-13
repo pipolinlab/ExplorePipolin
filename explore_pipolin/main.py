@@ -99,7 +99,7 @@ def main(
                     if os.path.exists(path):
                         shutil.rmtree(path)
 
-            for fasta in glob(os.path.join(settings.get_instance().out_dir, '*', '*.fasta')):
+            for fasta in glob(os.path.join(settings.get_instance().out_dir, '*', '*.fa')):
                 if os.path.exists(fasta):
                     os.remove(fasta)
 
