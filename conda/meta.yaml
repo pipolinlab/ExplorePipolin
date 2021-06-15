@@ -10,7 +10,7 @@ build:
 
 requirements:
   build:
-    - python >=3.7
+    - python >=3.8
     - setuptools
     - click
     - biopython <=1.76
@@ -19,7 +19,7 @@ requirements:
     - dataclasses
 
   run:
-    - python >=3.7
+    - python >=3.8
     - click
     - biopython <=1.76
     - bcbio-gff
