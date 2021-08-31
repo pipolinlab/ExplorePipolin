@@ -1,3 +1,5 @@
+![banner](banner.svg)
+
 Pipolins constitute a new group of self-synthesizing or self-replicating 
 mobile genetic elements (MGEs). They are widespread among diverse bacterial 
 phyla and mitochondria.
