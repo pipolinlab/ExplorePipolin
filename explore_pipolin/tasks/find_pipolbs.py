@@ -18,6 +18,9 @@ def find_pipolbs(genome: Genome) -> Genome:
     genes = os.path.join(pipolbs_dir, genome.id + '.faa')
     hmmsearch_output_file = os.path.join(pipolbs_dir, genome.id + '.tbl')
     run_prodigal(genome_file=genome.file, output_file=genes)
+    if os.stat(genes).st_size == 0:   # no genes were found
+        return genome
+
     run_hmmsearch(genes, hmmsearch_output_file)
 
     entries = create_pipolb_entries(hmmsearch_output_file)
