@@ -60,7 +60,7 @@ NOTE: before installing, it is possible to run unit tests:
 
  * Install into a new environment in one-step:
 
- `conda create -n <new_env_name> -c bioconda -c conda-forge -c liubovch explore-pipolin`
+ `conda create -n <new_env_name> -c bioconda -c conda-forge -c defaults -c liubovch explore-pipolin`
 
 NOTE: solving the environment takes time. Be patient.
 
