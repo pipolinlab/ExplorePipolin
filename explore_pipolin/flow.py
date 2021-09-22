@@ -1,4 +1,4 @@
-from prefect import Flow, Parameter, case
+from prefect import Flow, Parameter, case, unmapped
 from prefect.tasks.control_flow import FilterTask
 
 from explore_pipolin.tasks.prepare_for_the_analysis import prepare_for_the_analysis
@@ -18,6 +18,7 @@ _DEFAULT_FILTER = FilterTask()
 def get_flow():
     with Flow('MAIN') as flow:
         genome_file = Parameter('genome_file')
+        just_find_pipolbs = Parameter('just_find_pipolbs')
         no_annotation = Parameter('no_annotation')
         skip_colours = Parameter('skip_colours')
 
@@ -27,7 +28,7 @@ def get_flow():
 
         t_check_pipolbs = are_pipolbs_present.map(genome=genome)
         genome = _DEFAULT_FILTER(continue_if_true_else_finished.map(
-            result_to_filter=genome, filter_by=t_check_pipolbs)
+            result_to_filter=genome, filter_1=t_check_pipolbs, filter_2=unmapped(just_find_pipolbs))
         )
 
         genome = find_trnas.map(genome=genome)

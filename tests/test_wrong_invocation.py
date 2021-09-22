@@ -16,7 +16,7 @@ class TestWrongInvocation(unittest.TestCase):
                 result: Result = self.runner.invoke(main, [genome_file, genome_file])
                 assert result.exit_code == 1
             self.assertEqual(len(logs.output), 1)
-            self.assertIn('GENOME files should have different names!', logs.output[0])
+            self.assertIn('GENOMES should have different names!', logs.output[0])
 
     def test_out_dirs_conflict(self):
         with temp_genome_file() as genome_file, tempfile.TemporaryDirectory() as tmp:

@@ -2,6 +2,7 @@ import os
 from typing import Sequence, Tuple, Any, Optional
 
 from Bio import SearchIO
+from explore_pipolin.utilities.io import create_seqio_records_dict, write_seqio_records
 from prefect import task, context
 
 from explore_pipolin.common import Genome, Feature, Range, Strand, ContigID, FeatureType
@@ -15,32 +16,42 @@ def find_pipolbs(genome: Genome) -> Genome:
     pipolbs_dir = os.path.join(os.path.dirname(genome.file), 'pipolbs')
     os.makedirs(pipolbs_dir, exist_ok=True)
 
-    genes = os.path.join(pipolbs_dir, genome.id + '.faa')
-    hmmsearch_output_file = os.path.join(pipolbs_dir, genome.id + '.tbl')
-    run_prodigal(genome_file=genome.file, output_file=genes)
-    if os.stat(genes).st_size == 0:   # no genes were found
+    predicted_proteins = os.path.join(pipolbs_dir, genome.id + '.faa')
+    hmm_output_file = os.path.join(pipolbs_dir, genome.id + '.tbl')
+
+    run_prodigal(genome_file=genome.file, output_file=predicted_proteins)
+    if os.stat(predicted_proteins).st_size == 0:   # no genes were found
         return genome
 
-    run_hmmsearch(genes, hmmsearch_output_file)
+    run_hmmsearch(predicted_proteins, hmm_output_file)
+    hmm_hits = read_hmm_hits(hmmsearch_table=hmm_output_file)
 
-    entries = create_pipolb_entries(hmmsearch_output_file)
+    entries = create_pipolb_entries(hmm_hits)
     add_pipolb_features(entries, genome)
+
+    pipolbs_file = os.path.join(os.path.dirname(genome.file), genome.id + '_piPolBs.faa')
+    save_found_pipolbs(hmm_hits, predicted_proteins, pipolbs_file)
 
     return genome
 
 
-def create_pipolb_entries(hmmsearch_table: str) -> Sequence[Tuple[str, int, int, int]]:
-    entries = []
+def read_hmm_hits(hmmsearch_table: str) -> Sequence:
     with open(hmmsearch_table) as inf:
         content = list(SearchIO.parse(inf, 'hmmer3-tab'))
         if len(content) == 0:
-            return entries
+            return []
         elif len(content) != 1:
             raise AssertionError(f'More than a single query in {hmmsearch_table}! Should be only one.')
-        for hit in content[0]:
-            name = '_'.join(hit.id.split(sep='_')[:-1])
-            description = hit.description.split(sep=' ')
-            entries.append((name, int(description[1]), int(description[3]), int(description[5])))
+        else:
+            return content[0]
+
+
+def create_pipolb_entries(hits: Sequence) -> Sequence[Tuple[str, int, int, int]]:
+    entries = []
+    for hit in hits:
+        name = '_'.join(hit.id.split(sep='_')[:-1])
+        description = hit.description.split(sep=' ')
+        entries.append((name, int(description[1]), int(description[3]), int(description[5])))
 
     return entries
 
@@ -52,6 +63,16 @@ def add_pipolb_features(entries, genome):
                                  ftype=FeatureType.PIPOLB,
                                  contig_id=ContigID(entry[0]), genome=genome)
         genome.features.add_features(pipolb_feature)
+
+
+def save_found_pipolbs(hmm_hits, proteins, output_file):
+    if len(hmm_hits) > 0:
+        proteins_dict = create_seqio_records_dict(proteins, 'fasta')
+        pipolbs = dict()
+        for hit in hmm_hits:
+            pipolbs[hit.id] = proteins_dict[hit.id]
+            pipolbs[hit.id].id = '_'.join(hit.id.split(sep='_')[:-1])
+        write_seqio_records(pipolbs, output_file, 'fasta')
 
 
 @task()
@@ -67,8 +88,8 @@ def are_pipolbs_present(genome: Genome):
 
 
 @task()
-def continue_if_true_else_finished(result_to_filter: Any, filter_by: bool) -> Optional[Any]:
-    if filter_by:
+def continue_if_true_else_finished(result_to_filter: Any, filter_1: bool, filter_2: bool) -> Optional[Any]:
+    if filter_1 and not filter_2:
         return result_to_filter
 
     return None

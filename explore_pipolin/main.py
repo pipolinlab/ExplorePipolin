@@ -29,6 +29,8 @@ def check_file_names(genomes):
 @click.option('--pipolb-hmm-profile', type=click.Path(exists=True),
               help="piPolB's HMM profile to use as 1st priority."
                    'If not provided, the default profile will be used instead.')
+@click.option('--just-find-pipolbs', is_flag=True,
+              help='Only find piPolB genes.')
 @click.option('--ref-att', type=click.Path(exists=True),
               help='Att sequence in FASTA file to use as 1st priority. '
                    'If not provided, the default file will be used instead.')
@@ -53,6 +55,7 @@ def main(
         out_dir_prefix,
         out_dir,
         pipolb_hmm_profile,
+        just_find_pipolbs,
         ref_att,
         percent_identity,
         max_inflate,
@@ -87,6 +90,7 @@ def main(
         try:
             state = get_flow().run(
                 genome_file=[genome],
+                just_find_pipolbs=just_find_pipolbs,
                 no_annotation=no_annotation,
                 skip_colours=skip_colours,
             )
