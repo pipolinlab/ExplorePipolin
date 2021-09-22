@@ -114,9 +114,15 @@ class AttDenovoFinder:
                 return False
 
         trnas_of_contig = self.genome.features.trnas_dict()[repeat.contig_id]
-        for trna in trnas_of_contig:
-            if trna.location.is_overlapping_any(repeat.ranges):
-                return True
+        num_trnas_overlapping = 0
+        for r in repeat.ranges:
+            if r.is_overlapping_any(trnas_of_contig):
+                num_trnas_overlapping += 1
+        # if we have att(t)---att(t), then it probably just the tRNA duplication,
+        # therefore we'd like to have a single repeat range overlapping tRNA
+        if num_trnas_overlapping == 1:
+            return True
+
         return False
 
     def _write_atts_denovo(self, atts_denovo: List[MultiLocation]):
