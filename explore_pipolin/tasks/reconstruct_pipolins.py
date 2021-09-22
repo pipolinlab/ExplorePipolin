@@ -49,7 +49,7 @@ def reconstruct_pipolins(
 
     for pipolin in pipolins:
         if not _is_overlapping_result(pipolin, result):
-            # as pipolins are sorted from the longest to the shortest, let's skip the sorter ones
+            # as pipolins are sorted from the longest to the shortest, let's skip the sorted ones
             # which will overlap the longer ones after their inflation (result)
             logger.info('>>> Trying to reconstruct the structure from fragments:')
             for structure in draw_pipolin_structure(pipolin):
@@ -131,30 +131,29 @@ class Reconstructor:
         att_pipolb_att_fragment = self.att_pipolb_att_fragments[0]
         ttrna_fragments = self._get_ttrna_fragments(att_pipolb_att_fragment, *self.att_only_fragments)
 
-        if len(ttrna_fragments) == 1:
-            if ttrna_fragments[0] == att_pipolb_att_fragment:
-                # variant: ---att---pol---att(t)
-                (att_pipolb_att_fragment,) = self._orient_fragments_according_ttrna(ttrna_fragments[0])
-                return PipolinVariants.from_variants(self._create_pipolin(complete=att_pipolb_att_fragment),
-                                                     pipolin_type=PipolinType.COMPLETE)
-            else:
-                # variant 1: ---att---pol---att---...---att(t)---   tRNA is required
-                (ttrna_fragment, att_pipolb_att_fragment) = self._orient_fragments_according_ttrna(
-                    ttrna_fragments[0], att_pipolb_att_fragment
-                )
-                variant1 = self._create_pipolin(
-                    left=att_pipolb_att_fragment, right=ttrna_fragment
-                )
-                return PipolinVariants.from_variants(variant1, pipolin_type=PipolinType.COMPLETE)
+        if len(ttrna_fragments) != 0 and ttrna_fragments[0] == att_pipolb_att_fragment:
+            # variant: ---att---pol---att(t)          # skip additional att(t) fragments if present
+            (att_pipolb_att_fragment,) = self._orient_fragments_according_ttrna(ttrna_fragments[0])
+            return PipolinVariants.from_variants(self._create_pipolin(complete=att_pipolb_att_fragment),
+                                                 pipolin_type=PipolinType.COMPLETE)
+        elif len(ttrna_fragments) == 1:
+            # variant 1: ---att---pol---att---...---att(t)---   tRNA is required
+            (ttrna_fragment, att_pipolb_att_fragment) = self._orient_fragments_according_ttrna(
+                ttrna_fragments[0], att_pipolb_att_fragment
+            )
+            variant1 = self._create_pipolin(
+                left=att_pipolb_att_fragment, right=ttrna_fragment
+            )
+            return PipolinVariants.from_variants(variant1, pipolin_type=PipolinType.COMPLETE)
+        else:
+            # variant 2: ---att---pol---att---          # skip additional att fragments if present
+            # variant 3: variant 2 reverse-complement
+            fr2 = self._orient_according_pipolb(att_pipolb_att_fragment)
+            variant2 = self._create_pipolin(complete=fr2)
+            fr3 = fr2.reverse_complement()
+            variant3 = self._create_pipolin(complete=fr3)
 
-        # variant 2: ---att---pol---att---
-        # variant 3: variant 2 reverse-complement
-        fr2 = self._orient_according_pipolb(att_pipolb_att_fragment)
-        variant2 = self._create_pipolin(complete=fr2)
-        fr3 = fr2.reverse_complement()
-        variant3 = self._create_pipolin(complete=fr3)
-
-        return PipolinVariants.from_variants(variant2, variant3, pipolin_type=PipolinType.COMPLETE)
+            return PipolinVariants.from_variants(variant2, variant3, pipolin_type=PipolinType.COMPLETE)
 
     def _att_pipolb_plus_atts(self) -> PipolinVariants:
         # we can reconstruct the cases:
