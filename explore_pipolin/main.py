@@ -1,26 +1,26 @@
 import logging
 import os
 import shutil
-from glob import glob
 import click
 
 from explore_pipolin.flow import get_flow
 import explore_pipolin.settings as settings
 from explore_pipolin.settings import GlobalSettings, _DEFAULT_OUT_DIR_PREFIX, _NO_BORDER_INFLATE
+from explore_pipolin.tasks.prepare_for_the_analysis import define_genome_id
 
 from explore_pipolin.utilities.external_tools import check_external_dependencies
 from explore_pipolin.common import CONTEXT_SETTINGS
 
 
-def check_genome_file_names(genome):
-    if len(genome) > 1:
-        if len(genome) != len(set(os.path.basename(i) for i in genome)):
-            logging.fatal('GENOME files should have different names!')
+def check_file_names(genomes):
+    if len(genomes) > 1:
+        if len(genomes) != len(set(os.path.basename(i) for i in genomes)):
+            logging.fatal('GENOMES should have different names!')
             exit(1)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('genome', type=click.Path(exists=True), nargs=-1, required=True)
+@click.argument('genomes', type=click.Path(exists=True), nargs=-1, required=True)
 @click.option('--out-dir-prefix', type=str,
               help=f'Use this prefix for the output directory, '
                    f'instead of the default "{_DEFAULT_OUT_DIR_PREFIX}" prefix.')
@@ -49,7 +49,7 @@ def check_genome_file_names(genome):
 @click.option('--keep-tmp', is_flag=True,
               help='Preserve intermediate files produced during the run (it might be useful for debugging).')
 def main(
-        genome,
+        genomes,
         out_dir_prefix,
         out_dir,
         pipolb_hmm_profile,
@@ -74,7 +74,7 @@ def main(
     # # dot -Tpdf test > test.pdf
     # # check the result
 
-    check_genome_file_names(genome)
+    check_file_names(genomes)
 
     check_external_dependencies()
 
@@ -83,23 +83,25 @@ def main(
     ))
     os.makedirs(settings.get_instance().out_dir, exist_ok=True)
 
-    try:
-        state = get_flow().run(
-            genome_file=genome,
-            no_annotation=no_annotation,
-            skip_colours=skip_colours,
-        )
-        assert state.is_successful()
+    for genome in genomes:
+        try:
+            state = get_flow().run(
+                genome_file=[genome],
+                no_annotation=no_annotation,
+                skip_colours=skip_colours,
+            )
+            assert state.is_successful()
 
-    finally:
-        dirs_to_delete = ['pipolbs', 'atts', 'atts_denovo', 'trnas', 'prokka']
-        if not keep_tmp:
-            for item in dirs_to_delete:
-                for path in glob(os.path.join(settings.get_instance().out_dir, '*', item)):
+        finally:
+            dirs_to_delete = ['pipolbs', 'atts', 'atts_denovo', 'trnas', 'prokka']
+            if not keep_tmp:
+                genome_id = define_genome_id(genome)
+                for item in dirs_to_delete:
+                    path = os.path.join(settings.get_instance().out_dir, genome_id, item)
                     if os.path.exists(path):
                         shutil.rmtree(path)
 
-            for fasta in glob(os.path.join(settings.get_instance().out_dir, '*', '*.fa')):
+                fasta = os.path.join(settings.get_instance().out_dir, genome_id, genome_id+'.fa')
                 if os.path.exists(fasta):
                     os.remove(fasta)
 
