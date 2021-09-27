@@ -28,7 +28,9 @@ class TestAttsDenovoSearch(unittest.TestCase):
         self.genome.features.add_features(att1, att2, trna1, trna2, trna3)
 
         finder = AttDenovoFinder(self.genome, 'output_dir')
-        self.assertFalse(finder._is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig1_id)))
+        # overlaps with att1
+        self.assertFalse(finder._is_att_denovo(MultiLocation([Range(35, 65), Range(1995, 2035)], self.contig1_id)))
         self.assertTrue(finder._is_att_denovo(MultiLocation([Range(2800, 2850), Range(5000, 5050)], self.contig1_id)))
-        self.assertTrue(finder._is_att_denovo(MultiLocation([Range(35, 65), Range(2005, 2035)], self.contig2_id)))
+        self.assertTrue(finder._is_att_denovo(MultiLocation([Range(35, 65), Range(1995, 2035)], self.contig2_id)))
+        # does not overlap with a tRNA gene
         self.assertFalse(finder._is_att_denovo(MultiLocation([Range(300, 350), Range(3000, 3050)], self.contig2_id)))

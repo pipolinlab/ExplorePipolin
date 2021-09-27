@@ -79,6 +79,9 @@ class Range:
     def is_overlapping_any(self, others) -> bool:
         return any(self.is_overlapping(r) for r in others)
 
+    def not_within(self, other) -> bool:
+        return not(self.start >= other.start and self.end <= other.end)
+
 
 @dataclass(frozen=True)
 class PairedLocation:
