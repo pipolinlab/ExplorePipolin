@@ -6,9 +6,11 @@ from Bio.SeqRecord import SeqRecord
 from prefect import task
 
 from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genome, PipolinVariants
+from explore_pipolin.tasks.easyfig_coloring import easyfig_add_colours
 from explore_pipolin.utilities.io import SeqIORecords, create_seqio_records_dict, write_seqio_records, \
     read_gff_records, write_gff_records
 from explore_pipolin.utilities.logging import genome_specific_logging
+import explore_pipolin.settings as settings
 
 
 @task()
@@ -19,8 +21,8 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
 
     for prokka_file in os.listdir(prokka_dir):
 
-        if prokka_file.startswith(genome.id):
-            # genome_N_vN
+        if prokka_file.startswith(genome.id) and (prokka_file.endswith('.gbk') or prokka_file.endswith('.gff')):
+            # genome_N_vN.type.ext
             variant_index = int(os.path.splitext(os.path.splitext(prokka_file)[0])[0].split(sep='_')[-1][1:])
             pipolin_index = int(os.path.splitext(os.path.splitext(prokka_file)[0])[0].split(sep='_')[-2])
 
@@ -31,6 +33,8 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
                                                        file_format='genbank')
 
                 include_atts_into_gb(gb_records=gb_records, pipolin=cur_pipolin)
+                if settings.get_instance().skip_colours is False:
+                    easyfig_add_colours(gb_records=gb_records, pipolin=cur_pipolin)
 
                 single_record = create_single_gb_record(gb_records=gb_records, pipolin=cur_pipolin)
                 output_file_single_record = os.path.join(
