@@ -50,6 +50,8 @@ def check_file_names(genomes):
               help='Prokka param: Number of CPUs to use [0=all]')
 @click.option('--keep-tmp', is_flag=True,
               help='Preserve intermediate files produced during the run (it might be useful for debugging).')
+@click.option('--keep-going', is_flag=True,
+              help='Do not stop analysis if an error is raised for one of the genomes.')
 def main(
         genomes,
         out_dir_prefix,
@@ -64,6 +66,7 @@ def main(
         skip_colours,
         cpus,
         keep_tmp,
+        keep_going,
 ):
     """
     ExplorePipolin is a search tool for prediction and analysis of pipolins, bacterial mobile genetic elements.
@@ -94,8 +97,10 @@ def main(
                 just_find_pipolbs=just_find_pipolbs,
                 no_annotation=no_annotation,
             )
-            assert state.is_successful()
-
+            if state.is_failed() and keep_going:
+                continue
+            else:
+                assert state.is_successful()
         finally:
             dirs_to_delete = ['pipolbs', 'atts', 'atts_denovo', 'trnas', 'prokka']
             if not keep_tmp:

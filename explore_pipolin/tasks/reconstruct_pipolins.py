@@ -293,8 +293,9 @@ class Reconstructor:
             return self._pipolb_plus_two_atts()
 
         else:
-            logger = get_logger(name='reconstruct_pipolins')
-            logger.warning(_TOO_MANY_ATTS_MESSAGE)
+            if len(self.att_only_fragments) > 2:
+                logger = get_logger(name='reconstruct_pipolins')
+                logger.warning(_TOO_MANY_ATTS_MESSAGE)
             return self._single_fragment(self.pipolb_only_fragments[0], PipolinType.MINIMAL)
 
     def _pipolb_plus_one_att(self) -> PipolinVariants:

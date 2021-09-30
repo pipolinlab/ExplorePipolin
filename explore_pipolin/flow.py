@@ -1,4 +1,4 @@
-from prefect import Flow, Parameter, case, unmapped
+from prefect import Flow, Parameter, case, unmapped, triggers
 from prefect.tasks.control_flow import FilterTask
 
 from explore_pipolin.tasks.prepare_for_the_analysis import prepare_for_the_analysis
@@ -11,7 +11,7 @@ from explore_pipolin.tasks.reconstruct_pipolins import reconstruct_pipolins
 from explore_pipolin.tasks.annotate_pipolins import save_pipolin_sequences, annotate_pipolins
 from explore_pipolin.tasks.generate_results import generate_results
 
-_DEFAULT_FILTER = FilterTask()
+_DEFAULT_FILTER = FilterTask(trigger=triggers.all_successful)
 
 
 def get_flow():
