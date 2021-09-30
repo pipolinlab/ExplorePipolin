@@ -29,8 +29,7 @@ def find_pipolbs(genome: Genome) -> Genome:
     entries = create_pipolb_entries(hmm_hits)
     add_pipolb_features(entries, genome)
 
-    pipolbs_file = os.path.join(os.path.dirname(genome.file), genome.id + '_piPolBs.faa')
-    save_found_pipolbs(hmm_hits, predicted_proteins, pipolbs_file)
+    save_found_pipolbs(hmm_hits, predicted_proteins, genome)
 
     return genome
 
@@ -65,14 +64,16 @@ def add_pipolb_features(entries, genome):
         genome.features.add_features(pipolb_feature)
 
 
-def save_found_pipolbs(hmm_hits, proteins, output_file):
+def save_found_pipolbs(hmm_hits, proteins, genome: Genome):
+    pipolbs_file = os.path.join(os.path.dirname(genome.file), genome.id + '_piPolBs.faa')
+
     if len(hmm_hits) > 0:
         proteins_dict = create_seqio_records_dict(proteins, 'fasta')
         pipolbs = dict()
         for hit in hmm_hits:
             pipolbs[hit.id] = proteins_dict[hit.id]
-            pipolbs[hit.id].id = '_'.join(hit.id.split(sep='_')[:-1])
-        write_seqio_records(pipolbs, output_file, 'fasta')
+            pipolbs[hit.id].id = genome.id + ' ' + '_'.join(hit.id.split(sep='_')[:-1])
+        write_seqio_records(pipolbs, pipolbs_file, 'fasta')
 
 
 @task()
