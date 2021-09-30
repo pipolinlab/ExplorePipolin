@@ -4,7 +4,7 @@ import unittest
 from typing import Sequence, List
 
 from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, FeatureType, \
-    Pipolin, PipolinFragment, AttFeature, ContigID
+    Pipolin, PipolinFragment, AttFeature, ContigID, AttType
 import explore_pipolin.settings as settings
 from explore_pipolin.settings import GlobalSettings
 from explore_pipolin.tasks.find_pipolins import PipolinFinder, find_pipolins
@@ -49,7 +49,8 @@ def _create_features_for_genome(
             feature_start = (triplet_start // 3 * 100 - 60) if triplet == _TRNA else (triplet_start // 3 * 100)
             if triplet[:2] == _ATT:
                 feature = AttFeature(Range(feature_start, feature_start + 100), Strand.FORWARD, FeatureType.ATT,
-                                     ContigID(f'CONTIG_{i}'), genome, att_id=int(triplet[2]))
+                                     ContigID(f'CONTIG_{i}'), genome,
+                                     att_id=int(triplet[2]), att_type=AttType.CONSERVED)
                 features.append(feature)
             else:
                 if triplet == _PIPOLB:

@@ -7,7 +7,7 @@ from Bio import SeqIO
 from prefect import task, context
 
 from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, Strand, AttFeature, ContigID, \
-    MultiLocation, Feature
+    MultiLocation, Feature, AttType
 from explore_pipolin.utilities.external_tools import blastn_against_ref_att, blast_for_repeats
 from explore_pipolin.utilities.io import read_blastxml, create_seqio_records_dict
 from explore_pipolin.utilities.logging import genome_specific_logging
@@ -54,7 +54,7 @@ class AttFinder:
             att_features.append(AttFeature(location=Range(start=hit.hit_start, end=hit.hit_end),
                                            strand=Strand.from_pm_one_encoding(hit.hit_strand),
                                            ftype=FeatureType.ATT, contig_id=entry.id,
-                                           genome=self.genome, att_id=att_id))
+                                           genome=self.genome, att_id=att_id, att_type=AttType.CONSERVED))
         return att_features
 
     def _add_target_trnas_features(self):
@@ -149,10 +149,12 @@ class AttDenovoFinder:
             for r in att.ranges:
                 if new_att_id in atts_dict:
                     if not r.is_overlapping_any(atts_dict[new_att_id]):
-                        new_att = AttFeature(r, Strand.FORWARD, FeatureType.ATT, att.contig_id, self.genome, new_att_id)
+                        new_att = AttFeature(r, Strand.FORWARD, FeatureType.ATT, att.contig_id, self.genome,
+                                             new_att_id, att_type=AttType.DENOVO)
                         self.genome.features.add_features(new_att)
                 else:
-                    new_att = AttFeature(r, Strand.FORWARD, FeatureType.ATT, att.contig_id, self.genome, new_att_id)
+                    new_att = AttFeature(r, Strand.FORWARD, FeatureType.ATT, att.contig_id, self.genome,
+                                         new_att_id, att_type=AttType.DENOVO)
                     self.genome.features.add_features(new_att)
 
     def _extend_target_trna_features(self):
@@ -198,6 +200,8 @@ class AttDenovoFinder:
             repeats_xml = read_blastxml(os.path.join(self.output_dir, self.genome.id + f'_{i}.fmt5'))
             for entry in repeats_xml:
                 for hit in entry:
+                    if abs(hit.query_start - hit.query_end) > 500:   # too long for att repeat
+                        continue
                     left_repeat = Range(start=hit.query_start, end=hit.query_end).shift(range_pair.left_range.start)
                     right_repeat = Range(start=hit.hit_start, end=hit.hit_end).shift(range_pair.right_range.start)
                     repeat_pair = PairedLocation(left_repeat, right_repeat, range_pair.contig_id)

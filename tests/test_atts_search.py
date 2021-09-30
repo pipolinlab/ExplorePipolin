@@ -1,7 +1,7 @@
 import unittest
 
 from explore_pipolin.common import Contig, Genome, Feature, Range, Strand, FeatureType, AttFeature, \
-    ContigID, MultiLocation
+    ContigID, MultiLocation, AttType
 from explore_pipolin.tasks.find_atts import AttDenovoFinder
 
 
@@ -20,8 +20,10 @@ class TestAttsDenovoSearch(unittest.TestCase):
         self.genome.features.add_features(pipolb1, pipolb2, pipolb3)
 
     def test_is_att_denovo(self):
-        att1 = AttFeature(Range(30, 70), Strand.REVERSE, FeatureType.ATT, self.contig1_id, self.genome, 0)
-        att2 = AttFeature(Range(2000, 2040), Strand.REVERSE, FeatureType.ATT, self.contig1_id, self.genome, att1.att_id)
+        att1 = AttFeature(Range(30, 70), Strand.REVERSE, FeatureType.ATT, self.contig1_id, self.genome,
+                          0, att_type=AttType.CONSERVED)
+        att2 = AttFeature(Range(2000, 2040), Strand.REVERSE, FeatureType.ATT, self.contig1_id, self.genome,
+                          att1.att_id, att_type=AttType.CONSERVED)
         trna1 = Feature(Range(2030, 2060), Strand.FORWARD, FeatureType.TRNA, self.contig1_id, self.genome)
         trna2 = Feature(Range(5030, 5060), Strand.FORWARD, FeatureType.TRNA, self.contig1_id, self.genome)
         trna3 = Feature(Range(2000, 2040), Strand.REVERSE, FeatureType.TRNA, self.contig2_id, self.genome)

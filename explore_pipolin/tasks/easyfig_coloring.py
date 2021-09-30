@@ -1,7 +1,7 @@
 from enum import Enum
 from Bio.SeqIO import SeqRecord
 
-from explore_pipolin.common import Pipolin, FeatureType, Range
+from explore_pipolin.common import Pipolin, FeatureType, Range, AttFeature, AttType
 from explore_pipolin.utilities.io import SeqIORecords
 
 
@@ -14,10 +14,13 @@ def easyfig_add_colours(gb_records: SeqIORecords, pipolin: Pipolin):
 
         for att in [f for f in fragment.features if f.ftype == FeatureType.ATT]:
             att_start, att_end = (att.start - fragment_shift), (att.end - fragment_shift)
-
+            att: AttFeature
             for feature in gb_records[fragment.contig_id].features:
                 if feature.location.start == att_start and feature.location.end == att_end:
-                    feature.qualifiers['colour'] = _products_to_colours['FeatureType.ATT'].value
+                    if att.att_type == AttType.CONSERVED:
+                        feature.qualifiers['colour'] = _products_to_colours['FeatureType.ATT.CONSERVED'].value
+                    else:
+                        feature.qualifiers['colour'] = _products_to_colours['FeatureType.ATT.DENOVO'].value
 
         for ttrna in [f for f in fragment.features if f.ftype == FeatureType.TARGET_TRNA]:
             ttrna_start, ttrna_end = (ttrna.start - fragment_shift), (ttrna.end - fragment_shift)
@@ -38,7 +41,8 @@ def easyfig_add_colours(gb_records: SeqIORecords, pipolin: Pipolin):
 
 class EasyfigColour(Enum):
     RED = '255 0 0'   # FeatureType.PIPOLB
-    BLUE = '0 0 255'  # FeatureType.ATT
+    BLUE = '0 0 255'  # FeatureType.ATT.CONSERVED
+    LIGHT_BLUE = '173 216 230'   # FeatureType.ATT.DENOVO
     GREEN = '0 255 0'  # FeatureType.TARGET_TRNA
 
     # gaps
@@ -59,7 +63,8 @@ class EasyfigColour(Enum):
 
 
 _products_to_colours = {'FeatureType.PIPOLB': EasyfigColour.RED,
-                        'FeatureType.ATT': EasyfigColour.BLUE,
+                        'FeatureType.ATT.CONSERVED': EasyfigColour.BLUE,
+                        'FeatureType.ATT.DENOVO': EasyfigColour.LIGHT_BLUE,
                         'FeatureType.TARGET_TRNA': EasyfigColour.GREEN,
                         # gaps
                         'pipolin_structure': EasyfigColour.BLACK, 'paired-ends': EasyfigColour.PINK,

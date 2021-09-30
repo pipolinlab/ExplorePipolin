@@ -5,7 +5,7 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 from prefect import task
 
-from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genome, PipolinVariants
+from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genome, PipolinVariants, AttFeature
 from explore_pipolin.tasks.easyfig_coloring import easyfig_add_colours
 from explore_pipolin.utilities.io import SeqIORecords, create_seqio_records_dict, write_seqio_records, \
     read_gff_records, write_gff_records
@@ -101,13 +101,16 @@ def _generate_att_seq_features(record_format: str, pipolin: Pipolin):
         fragment_shift = fragment.start
 
         for att in [f for f in fragment.features if f.ftype == FeatureType.ATT]:
+            att: AttFeature
             att_start, att_end = (att.start - fragment_shift), (att.end - fragment_shift)
             if record_format == 'gb':
                 att_feature = _create_gb_att_seq_feature(start=att_start, end=att_end,
-                                                         strand=att.strand, contig_id=att.contig_id)
+                                                         strand=att.strand, contig_id=att.contig_id,
+                                                         note=att.att_type.to_string())
             elif record_format == 'gff':
                 att_feature = _create_gff_att_seq_feature(start=att_start, end=att_end,
-                                                          strand=att.strand, contig_id=att.contig_id)
+                                                          strand=att.strand, contig_id=att.contig_id,
+                                                          note=att.att_type.to_string())
             else:
                 raise AssertionError
 
@@ -116,20 +119,20 @@ def _generate_att_seq_features(record_format: str, pipolin: Pipolin):
     return att_seq_features
 
 
-def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str) -> SeqFeature:
+def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str, note: str) -> SeqFeature:
     gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{contig_id}_00000'],
-                     'rpt_family': ['Att'], 'rpt_type': ['direct']}
+                     'rpt_family': ['Att'], 'rpt_type': ['direct'], 'note': [note]}
     att_seq_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=strand.to_pm_one_encoding()),
                                  qualifiers=gb_qualifiers)
     return att_seq_feature
 
 
-def _create_gff_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str) -> SeqFeature:
+def _create_gff_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str, note: str) -> SeqFeature:
     gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
                       'ID': [f'{contig_id}_00000'], 'inference': ['HMM:custom'],
                       'locus_tag': [f'{contig_id}_00000'],
-                      'rpt_family': ['Att'], 'rpt_type': ['direct']}
+                      'rpt_family': ['Att'], 'rpt_type': ['direct'], 'note': [note]}
     att_seq_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=strand.to_pm_one_encoding()),
                                  qualifiers=gff_qualifiers)

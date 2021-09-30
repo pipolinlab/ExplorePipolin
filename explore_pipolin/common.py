@@ -147,9 +147,21 @@ class Feature:
         return att
 
 
+class AttType(Enum):
+    DENOVO = auto()
+    CONSERVED = auto()
+
+    def to_string(self):
+        if self == self.DENOVO:
+            return 'de novo'
+        else:
+            return 'pipolin conserved'
+
+
 @dataclass(frozen=True)
 class AttFeature(Feature):
     att_id: int
+    att_type: AttType
 
 
 class FeatureSet(Set[Feature]):
