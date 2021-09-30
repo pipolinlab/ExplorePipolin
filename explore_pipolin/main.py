@@ -82,7 +82,8 @@ def main(
     check_external_dependencies()
 
     settings.set_instance(GlobalSettings.create_instance(
-        out_dir_prefix, out_dir, pipolb_hmm_profile, ref_att, percent_identity, max_inflate, proteins, cpus
+        out_dir_prefix, out_dir, pipolb_hmm_profile, ref_att, percent_identity, max_inflate,
+        proteins, cpus, skip_colours
     ))
     os.makedirs(settings.get_instance().out_dir, exist_ok=True)
 
@@ -92,7 +93,6 @@ def main(
                 genome_file=[genome],
                 just_find_pipolbs=just_find_pipolbs,
                 no_annotation=no_annotation,
-                skip_colours=skip_colours,
             )
             assert state.is_successful()
 

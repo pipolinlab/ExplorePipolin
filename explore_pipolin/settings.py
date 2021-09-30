@@ -30,6 +30,7 @@ class GlobalSettings:
     no_border_inflate: int
     proteins: str
     prokka_cpus: int
+    skip_colours: bool
 
     @staticmethod
     def create_instance(
@@ -41,6 +42,7 @@ class GlobalSettings:
             max_inflate,
             user_defined_proteins,
             prokka_cpus,
+            skip_colours,
     ):
 
         profile = user_defined_profile if user_defined_profile is not None else PIPOLB_HMM_PROFILE
@@ -55,6 +57,7 @@ class GlobalSettings:
             no_border_inflate=max_inflate,
             proteins=proteins,
             prokka_cpus=prokka_cpus,
+            skip_colours=skip_colours
         )
 
 

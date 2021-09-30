@@ -10,7 +10,6 @@ from explore_pipolin.tasks.find_pipolins import find_pipolins
 from explore_pipolin.tasks.reconstruct_pipolins import reconstruct_pipolins
 from explore_pipolin.tasks.annotate_pipolins import save_pipolin_sequences, annotate_pipolins
 from explore_pipolin.tasks.generate_results import generate_results
-from explore_pipolin.tasks.easyfig_coloring import easyfig_add_colours
 
 _DEFAULT_FILTER = FilterTask()
 
@@ -20,7 +19,6 @@ def get_flow():
         genome_file = Parameter('genome_file')
         just_find_pipolbs = Parameter('just_find_pipolbs')
         no_annotation = Parameter('no_annotation')
-        skip_colours = Parameter('skip_colours')
 
         genome = prepare_for_the_analysis.map(original_file=genome_file)
 
@@ -51,9 +49,6 @@ def get_flow():
             results_dir = generate_results.map(
                 genome=genome, prokka_dir=prokka_dir, pipolins=reconstructed_pipolins
             )
-
-            with case(skip_colours, False):
-                easyfig_add_colours.map(genome=genome, in_dir=results_dir)
 
     flow.set_reference_tasks([results_dir])
     return flow
