@@ -60,8 +60,11 @@ def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin) -> SeqIO
                                  pipolin.fragments[0].orientation)
     if len(pipolin.fragments) > 1:
         for fragment in pipolin.fragments[1:]:
+            # insert assembly gap from the reconstruction step
             record += SeqRecord(seq='N' * 100)
-            del gb_records[fragment.contig_id].features[0]   # delete source feature
+            record.features.insert(len(record.features), create_reconstruction_gap_feature(record))
+            # delete fragment's source feature
+            del gb_records[fragment.contig_id].features[0]
             record += revcompl_if_reverse(gb_records[fragment.contig_id], fragment.orientation)
 
     old_source = record.features[0]
@@ -74,6 +77,14 @@ def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin) -> SeqIO
 
     genome_id = pipolin.fragments[0].genome.id
     return {genome_id: record}
+
+
+def create_reconstruction_gap_feature(record: SeqRecord) -> SeqFeature:
+    record_length = len(record)
+    return SeqFeature(FeatureLocation(start=record_length - 100, end=record_length), type='assembly_gap',
+                      qualifiers={'estimated_length': ['unknown'],
+                                  'gap_type': ['between scaffolds'],
+                                  'linkage_evidence': ['pipolin_structure']})
 
 
 def revcompl_if_reverse(gb_record: SeqRecord, orientation: Strand) -> SeqRecord:

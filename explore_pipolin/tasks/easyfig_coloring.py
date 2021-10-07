@@ -95,9 +95,7 @@ def _colour_feature(qualifiers):
     elif 'linkage_evidence' in qualifiers:
         if qualifiers['linkage_evidence'] == ['paired-ends']:
             qualifiers['colour'] = [_products_to_colours['paired-ends'].value]
-        elif qualifiers['estimated_length'] == ['100']:
-            qualifiers['linkage_evidence'] = ['pipolin_structure']
-            qualifiers['estimated_length'] = ['unknown']
+        elif qualifiers['linkage_evidence'] == ['pipolin_structure']:
             qualifiers['colour'] = [_products_to_colours['pipolin_structure'].value]
         else:
             qualifiers['colour'] = [_products_to_colours['other'].value]
