@@ -6,7 +6,7 @@ from Bio.SeqRecord import SeqRecord
 from prefect import task
 
 from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genome, PipolinVariants, AttFeature
-from explore_pipolin.tasks.easyfig_coloring import easyfig_add_colours
+from explore_pipolin.tasks.easyfig_coloring import easyfig_add_colours, _products_to_colours
 from explore_pipolin.utilities.io import SeqIORecords, create_seqio_records_dict, write_seqio_records, \
     read_gff_records, write_gff_records
 from explore_pipolin.utilities.logging import genome_specific_logging
@@ -84,7 +84,8 @@ def create_reconstruction_gap_feature(record: SeqRecord) -> SeqFeature:
     return SeqFeature(FeatureLocation(start=record_length - 100, end=record_length), type='assembly_gap',
                       qualifiers={'estimated_length': ['unknown'],
                                   'gap_type': ['between scaffolds'],
-                                  'linkage_evidence': ['pipolin_structure']})
+                                  'linkage_evidence': ['pipolin_structure'],
+                                  'colour': [_products_to_colours['pipolin_structure'].value]})
 
 
 def revcompl_if_reverse(gb_record: SeqRecord, orientation: Strand) -> SeqRecord:
