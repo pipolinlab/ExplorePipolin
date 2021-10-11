@@ -360,29 +360,26 @@ class Reconstructor:
     def _orient_fragments_according_ttrna(
             self, ttrna_fragment: PipolinFragment, *other_fragment: PipolinFragment
     ) -> List[PipolinFragment]:
-        prime3_ttrnas = ttrna_fragment.get_prime3_ttrnas()
-        if len(prime3_ttrnas) == 0:
-            raise AssertionError
+        prime3_ttrna = ttrna_fragment.get_prime3_ttrnas()[0]
 
         # check one is enough as of the same direction
-        if prime3_ttrnas[0].strand == Strand.FORWARD:
+        if prime3_ttrna.strand == Strand.FORWARD:
             ttrna_fragment = ttrna_fragment.reverse_complement()
 
         new_other_fragments = []
-        for ttrna in prime3_ttrnas:
-            att = ttrna.get_att_overlapping_ttrna()
-            other_fragment_strands = [self._get_fragment_atts_strand(f, att.att_id) for f in other_fragment]
+        att = prime3_ttrna.get_att_overlapping_ttrna()
+        other_fragment_strands = [self._get_fragment_atts_strand(f, att.att_id) for f in other_fragment]
 
-            for f, s in zip(other_fragment, other_fragment_strands):
-                if s:
-                    if ttrna_fragment.orientation == f.orientation and att.strand != s:
-                        new_other_fragments.append(f.reverse_complement())
-                    elif ttrna_fragment.orientation != f.orientation and att.strand == s:
-                        new_other_fragments.append(f.reverse_complement())
-                    else:
-                        new_other_fragments.append(f)
+        for f, s in zip(other_fragment, other_fragment_strands):
+            if s:
+                if ttrna_fragment.orientation == f.orientation and att.strand != s:
+                    new_other_fragments.append(f.reverse_complement())
+                elif ttrna_fragment.orientation != f.orientation and att.strand == s:
+                    new_other_fragments.append(f.reverse_complement())
                 else:
                     new_other_fragments.append(f)
+            else:
+                new_other_fragments.append(f)
 
         return [ttrna_fragment] + new_other_fragments
 

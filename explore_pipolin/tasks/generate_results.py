@@ -76,6 +76,7 @@ def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin) -> SeqIO
     record.features.insert(0, new_source)
 
     genome_id = pipolin.fragments[0].genome.id
+    record.id, record.name, record.description = genome_id, genome_id, genome_id
     return {genome_id: record}
 
 
