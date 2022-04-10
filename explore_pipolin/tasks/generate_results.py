@@ -5,7 +5,8 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 from prefect import task
 
-from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genome, PipolinVariants, AttFeature
+from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genome, PipolinVariants, AttFeature, \
+    get_rec_id_by_contig_id
 from explore_pipolin.tasks.easyfig_coloring import easyfig_add_colours, _products_to_colours
 from explore_pipolin.utilities.io import SeqIORecords, create_seqio_records_dict, write_seqio_records, \
     read_gff_records, write_gff_records
@@ -56,16 +57,21 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
 
 
 def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin) -> SeqIORecords:
-    record = revcompl_if_reverse(gb_records[pipolin.fragments[0].contig_id],
-                                 pipolin.fragments[0].orientation)
+    record = revcompl_if_reverse(
+        gb_records[get_rec_id_by_contig_id(gb_records, pipolin.fragments[0].contig_id)],
+        pipolin.fragments[0].orientation
+    )
     if len(pipolin.fragments) > 1:
         for fragment in pipolin.fragments[1:]:
             # insert assembly gap from the reconstruction step
             record += SeqRecord(seq='N' * 100)
             record.features.insert(len(record.features), create_reconstruction_gap_feature(record))
             # delete fragment's source feature
-            del gb_records[fragment.contig_id].features[0]
-            record += revcompl_if_reverse(gb_records[fragment.contig_id], fragment.orientation)
+            del gb_records[get_rec_id_by_contig_id(gb_records, fragment.contig_id)].features[0]
+            record += revcompl_if_reverse(
+                gb_records[get_rec_id_by_contig_id(gb_records, fragment.contig_id)],
+                fragment.orientation
+            )
 
     old_source = record.features[0]
     new_source = SeqFeature(FeatureLocation(0, len(record), 1), type=old_source.type,
@@ -98,13 +104,19 @@ def revcompl_if_reverse(gb_record: SeqRecord, orientation: Strand) -> SeqRecord:
 def include_atts_into_gb(gb_records: SeqIORecords, pipolin: Pipolin):
     att_seq_features = _generate_att_seq_features(record_format='gb', pipolin=pipolin)
     for att in att_seq_features:
-        _add_att_seq_feature(att_seq_feature=att[0], seq_record=gb_records[att[1]])
+        _add_att_seq_feature(
+            att_seq_feature=att[0],
+            seq_record=gb_records[get_rec_id_by_contig_id(gb_records, att[1])]
+        )
 
 
 def include_atts_into_gff(gff_records: SeqIORecords, pipolin: Pipolin):
     att_seq_features = _generate_att_seq_features(record_format='gff', pipolin=pipolin)
     for att in att_seq_features:
-        _add_att_seq_feature(att_seq_feature=att[0], seq_record=gff_records[att[1]])
+        _add_att_seq_feature(
+            att_seq_feature=att[0],
+            seq_record=gff_records[get_rec_id_by_contig_id(gff_records, att[1])]
+                             )
 
 
 def _generate_att_seq_features(record_format: str, pipolin: Pipolin):

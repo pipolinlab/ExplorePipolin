@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import MutableSequence, Optional, Sequence, Mapping, MutableMapping, List, Set, NewType, Tuple
 
+from explore_pipolin.utilities.io import SeqIORecords
+
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
@@ -345,3 +347,9 @@ class PipolinVariants:
     @staticmethod
     def from_variants(*variants: Pipolin, pipolin_type: PipolinType):
         return PipolinVariants(variants, pipolin_type)
+
+
+def get_rec_id_by_contig_id(records: SeqIORecords, contig_id: ContigID) -> str:
+    for rec_id in records.keys():
+        if contig_id in rec_id:
+            return rec_id

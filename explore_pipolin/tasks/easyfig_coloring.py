@@ -1,7 +1,7 @@
 from enum import Enum
 from Bio.SeqIO import SeqRecord
 
-from explore_pipolin.common import Pipolin, FeatureType, Range, AttFeature, AttType
+from explore_pipolin.common import Pipolin, FeatureType, Range, AttFeature, AttType, get_rec_id_by_contig_id
 from explore_pipolin.utilities.io import SeqIORecords
 
 
@@ -15,7 +15,7 @@ def easyfig_add_colours(gb_records: SeqIORecords, pipolin: Pipolin):
         for att in [f for f in fragment.features if f.ftype == FeatureType.ATT]:
             att_start, att_end = (att.start - fragment_shift), (att.end - fragment_shift)
             att: AttFeature
-            for feature in gb_records[fragment.contig_id].features:
+            for feature in gb_records[get_rec_id_by_contig_id(gb_records, fragment.contig_id)].features:
                 if feature.location.start == att_start and feature.location.end == att_end:
                     if att.att_type == AttType.CONSERVED:
                         feature.qualifiers['colour'] = _products_to_colours['FeatureType.ATT.CONSERVED'].value
@@ -25,7 +25,7 @@ def easyfig_add_colours(gb_records: SeqIORecords, pipolin: Pipolin):
         for ttrna in [f for f in fragment.features if f.ftype == FeatureType.TARGET_TRNA]:
             ttrna_start, ttrna_end = (ttrna.start - fragment_shift), (ttrna.end - fragment_shift)
 
-            for feature in gb_records[fragment.contig_id].features:
+            for feature in gb_records[get_rec_id_by_contig_id(gb_records, fragment.contig_id)].features:
                 feature_range = Range(start=feature.location.start, end=feature.location.end)
                 if feature.type == 'tRNA' and feature_range.is_overlapping(Range(start=ttrna_start, end=ttrna_end)):
                     feature.qualifiers['colour'] = _products_to_colours['FeatureType.TARGET_TRNA'].value
@@ -33,7 +33,7 @@ def easyfig_add_colours(gb_records: SeqIORecords, pipolin: Pipolin):
         for pipolb in [f for f in fragment.features if f.ftype == FeatureType.PIPOLB]:
             pipolb_start, pipolb_end = (pipolb.start - fragment_shift), (pipolb.end - fragment_shift)
 
-            for feature in gb_records[fragment.contig_id].features:
+            for feature in gb_records[get_rec_id_by_contig_id(gb_records, fragment.contig_id)].features:
                 feature_range = Range(start=feature.location.start, end=feature.location.end)
                 if feature.type == 'CDS' and feature_range.is_overlapping(Range(start=pipolb_start, end=pipolb_end)):
                     feature.qualifiers['colour'] = _products_to_colours['FeatureType.PIPOLB'].value
