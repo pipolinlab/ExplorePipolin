@@ -133,7 +133,7 @@ def _generate_att_seq_features(record_format: str, pipolin: Pipolin):
 
 
 def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str, note: str) -> SeqFeature:
-    gb_qualifiers = {'inference': ['HMM:custom'], 'locus_tag': [f'{contig_id}_00000'],
+    gb_qualifiers = {'inference': ['BLAST search'], 'locus_tag': [f'{contig_id}_00000'],
                      'rpt_family': ['Att'], 'rpt_type': ['direct'], 'note': [note]}
     att_seq_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=strand.to_pm_one_encoding()),
@@ -142,8 +142,8 @@ def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, contig_id: 
 
 
 def _create_gff_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str, note: str) -> SeqFeature:
-    gff_qualifiers = {'phase': ['.'], 'source': ['HMM:custom'],
-                      'ID': [f'{contig_id}_00000'], 'inference': ['HMM:custom'],
+    gff_qualifiers = {'phase': ['.'], 'source': ['BLAST search'],
+                      'ID': [f'{contig_id}_00000'], 'inference': ['BLAST search'],
                       'locus_tag': [f'{contig_id}_00000'],
                       'rpt_family': ['Att'], 'rpt_type': ['direct'], 'note': [note]}
     att_seq_feature = SeqFeature(type='repeat_region',
