@@ -92,6 +92,7 @@ def create_reconstruction_gap_feature(record: SeqRecord) -> SeqFeature:
                       qualifiers={'estimated_length': ['unknown'],
                                   'gap_type': ['between scaffolds'],
                                   'linkage_evidence': ['pipolin_structure'],
+                                  'inference': ['ExplorePipolin'],
                                   'colour': [_products_to_colours['pipolin_structure'].value]})
 
 
