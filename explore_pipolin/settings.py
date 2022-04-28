@@ -61,6 +61,9 @@ class GlobalSettings:
         )
 
 
+_GLOBAL_SETTINGS_INSTANCE: Optional[GlobalSettings] = None
+
+
 def set_instance(settings: GlobalSettings):
     global _GLOBAL_SETTINGS_INSTANCE
     _GLOBAL_SETTINGS_INSTANCE = settings
@@ -71,8 +74,6 @@ def get_instance() -> GlobalSettings:
         raise AssertionError('Settings were not set!')
     return _GLOBAL_SETTINGS_INSTANCE
 
-
-_GLOBAL_SETTINGS_INSTANCE: Optional[GlobalSettings] = None
 
 _DEFAULT_OUT_DIR_PREFIX = 'results'
 _SUFFIX = datetime.datetime.now().strftime('_%H%M%S')
