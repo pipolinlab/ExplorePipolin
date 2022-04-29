@@ -1,7 +1,7 @@
 import unittest
 
 from explore_pipolin.common import ContigID, Genome, Contig, Feature, AttFeature, Range, Strand, FeatureType, \
-    PipolinFragment, Pipolin
+    PipolinFragment, Pipolin, AttType
 from explore_pipolin.tasks.find_pipolins import PipolinFinder
 
 
@@ -11,9 +11,11 @@ class TestPipolinFinder(unittest.TestCase):
         self.contig2_id = ContigID('contig2')
         self.genome = Genome('genome', 'genome.fa', contigs=[Contig(self.contig1_id, 10000),
                                                              Contig(self.contig2_id, 5000)])
-        self.att1 = AttFeature(Range(50, 100), Strand.FORWARD, FeatureType.ATT, self.contig1_id, self.genome, att_id=1)
+        self.att1 = AttFeature(Range(50, 100), Strand.FORWARD, FeatureType.ATT, self.contig1_id, self.genome, att_id=1,
+                               att_type=AttType.CONSERVED)
         self.pipolb = Feature(Range(3000, 5000), Strand.FORWARD, FeatureType.PIPOLB, self.contig1_id, self.genome)
-        self.att2 = AttFeature(Range(9000, 9050), Strand.FORWARD, FeatureType.ATT, self.contig1_id, self.genome, att_id=1)
+        self.att2 = AttFeature(Range(9000, 9050), Strand.FORWARD, FeatureType.ATT, self.contig1_id, self.genome,
+                               att_id=1, att_type=AttType.CONSERVED)
 
         self.genome.features.add_features(self.att1, self.att2, self.pipolb)
 

@@ -6,7 +6,7 @@ from Bio.SeqRecord import SeqRecord
 from prefect import task
 
 from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genome, PipolinVariants, AttFeature, \
-    get_rec_id_by_contig_id
+    get_rec_id_by_contig_id, Range
 from explore_pipolin.tasks.easyfig_coloring import easyfig_add_colours, _products_to_colours
 from explore_pipolin.utilities.io import SeqIORecords, create_seqio_records_dict, write_seqio_records, \
     read_gff_records, write_gff_records
@@ -34,6 +34,7 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
                                                        file_format='genbank')
 
                 include_atts_into_gb(gb_records=gb_records, pipolin=cur_pipolin)
+                mark_integration_sites(records=gb_records, pipolin=cur_pipolin)
                 if settings.get_instance().skip_colours is False:
                     easyfig_add_colours(gb_records=gb_records, pipolin=cur_pipolin)
 
@@ -49,6 +50,7 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
             if prokka_file.endswith('.gff'):
                 gff_records = read_gff_records(file=os.path.join(prokka_dir, prokka_file))
                 include_atts_into_gff(gff_records=gff_records, pipolin=cur_pipolin)
+                mark_integration_sites(records=gff_records, pipolin=cur_pipolin)
 
                 output_file = os.path.join(results_dir, prokka_file)
                 write_gff_records(gff_records=gff_records, output_file=output_file)
@@ -168,3 +170,17 @@ def _create_gff_att_seq_feature(start: int, end: int, strand: Strand, contig_id:
 def _add_att_seq_feature(att_seq_feature: SeqFeature, seq_record: SeqRecord):
     seq_record.features.append(att_seq_feature)
     seq_record.features.sort(key=lambda x: x.location.start)
+
+
+def mark_integration_sites(records: SeqIORecords, pipolin: Pipolin) -> None:
+    for fragment in pipolin.fragments:
+        fragment_shift = fragment.start
+
+        for ttrna in [f for f in fragment.features if f.ftype == FeatureType.TARGET_TRNA]:
+            ttrna_start, ttrna_end = (ttrna.start - fragment_shift), (ttrna.end - fragment_shift)
+            ttrna_range = Range(start=ttrna_start, end=ttrna_end)
+
+            for feature in records[get_rec_id_by_contig_id(records, fragment.contig_id)].features:
+                feature_range = Range(start=feature.location.start, end=feature.location.end)
+                if feature.type == 'tRNA' and feature_range.is_overlapping(ttrna_range):
+                    feature.qualifiers['note'] = ['integration site']
