@@ -159,10 +159,23 @@ class Reconstructor:
         # we can reconstruct the cases:
         # 1) ---att---pol---...---att---                  tRNA is not required
         # 2) ---att---...---pol---att---...---att(t)---   tRNA is required
+        # 3) ---pol---att/att(t)--- return correctly truncated
         if len(self.att_only_fragments) == 1:
             return self._att_pipolb_plus_one_att()
         elif len(self.att_only_fragments) == 2:
             return self._att_pipolb_plus_two_atts()
+        elif len(self.att_only_fragments) == 0:
+            ttrna_fragments = self._get_ttrna_fragments(self.att_pipolb_fragments[0])
+            if ttrna_fragments:
+                pipolb_att_ttrna_fragment = self._orient_fragments_according_ttrna(self.att_pipolb_fragments[0])
+                return PipolinVariants.from_variants(self._create_pipolin(right=pipolb_att_ttrna_fragment[0]),
+                                                     pipolin_type=PipolinType.TRUNCATED)
+            else:
+                fragment1 = self._orient_according_pipolb(self.att_pipolb_fragments[0])
+                fragment2 = fragment1.reverse_complement()
+                variant1 = self._create_pipolin(single=fragment1)
+                variant2 = self._create_pipolin(single=fragment2)
+                return PipolinVariants.from_variants(variant1, variant2, pipolin_type=PipolinType.TRUNCATED)
         else:
             logger = get_logger(name='reconstruct_pipolins')
             logger.warning(_TOO_MANY_ATTS_MESSAGE)
