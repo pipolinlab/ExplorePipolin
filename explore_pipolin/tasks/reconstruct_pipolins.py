@@ -419,8 +419,12 @@ class Reconstructor:
     def _inflate_single(self, fragment: PipolinFragment) -> PipolinFragment:
         atts_and_pipolbs = _get_fragment_atts_and_pipolbs(fragment)
 
-        left = self._border_inflate if atts_and_pipolbs[0].ftype == FeatureType.ATT else self._no_border_inflate
-        right = self._border_inflate if atts_and_pipolbs[-1].ftype == FeatureType.ATT else self._no_border_inflate
+        is_0_forward = atts_and_pipolbs[0].ftype == FeatureType.ATT and fragment.orientation == Strand.FORWARD
+        is_0_reverse = atts_and_pipolbs[0].ftype == FeatureType.ATT and fragment.orientation == Strand.REVERSE
+        is_m1_forward = atts_and_pipolbs[-1].ftype == FeatureType.ATT and fragment.orientation == Strand.FORWARD
+        is_m1_reverse = atts_and_pipolbs[-1].ftype == FeatureType.ATT and fragment.orientation == Strand.REVERSE
+        left = self._border_inflate if (is_0_forward or is_m1_reverse) else self._no_border_inflate
+        right = self._border_inflate if (is_0_reverse or is_m1_forward) else self._no_border_inflate
         return self._inflate_fragment(fragment, left, right)
 
     def _create_pipolin(self, left=None, middle=None, right=None, complete=None, single=None) -> Pipolin:

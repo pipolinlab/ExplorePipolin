@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from typing import MutableSequence, Tuple, Sequence
 
 from Bio.SeqFeature import SeqFeature, FeatureLocation
@@ -61,10 +62,8 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
 
 
 def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin, accver: str) -> SeqIORecords:
-    record = revcompl_if_reverse(
-        gb_records[get_rec_id_by_contig_id(gb_records, pipolin.fragments[0].contig_id)],
-        pipolin.fragments[0].orientation
-    )
+    record = deepcopy(gb_records[get_rec_id_by_contig_id(gb_records, pipolin.fragments[0].contig_id)])
+    record = revcompl_if_reverse(record, pipolin.fragments[0].orientation)
     if len(pipolin.fragments) > 1:
         for fragment in pipolin.fragments[1:]:
             # insert assembly gap from the reconstruction step
