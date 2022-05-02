@@ -35,6 +35,6 @@ test:
     - explore_pipolin -h
 
 about:
-  home: https://github.com/liubovch/ExplorePipolin
+  home: https://github.com/pipolinlab/ExplorePipolin
   license:
   license_file: LICENSE

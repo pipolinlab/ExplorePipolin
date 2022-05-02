@@ -23,11 +23,11 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
     for prokka_file in os.listdir(prokka_dir):
 
         if prokka_file.startswith(genome.id) and (prokka_file.endswith('.gbk') or prokka_file.endswith('.gff')):
-            # genome_N_vN.type.ext
-            variant_index = int(os.path.splitext(os.path.splitext(prokka_file)[0])[0].split(sep='_')[-1][1:])
-            pipolin_index = int(os.path.splitext(os.path.splitext(prokka_file)[0])[0].split(sep='_')[-2])
+            # genome_NvN.type.ext
+            nvn = os.path.splitext(os.path.splitext(prokka_file)[0])[0].split(sep='_')[-1]
+            index, variant = nvn.split(sep='v')
 
-            cur_pipolin = pipolins[pipolin_index].variants[variant_index]
+            cur_pipolin = pipolins[int(index)].variants[int(variant)]
 
             if prokka_file.endswith('.gbk'):
                 gb_records = create_seqio_records_dict(file=os.path.join(prokka_dir, prokka_file),
@@ -35,10 +35,12 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
 
                 include_atts_into_gb(gb_records=gb_records, pipolin=cur_pipolin)
                 mark_integration_sites(records=gb_records, pipolin=cur_pipolin)
+                accver = os.path.splitext(prokka_file)[0]
+                add_acc_version(records=gb_records, accver=accver)
                 if settings.get_instance().skip_colours is False:
                     easyfig_add_colours(gb_records=gb_records, pipolin=cur_pipolin)
 
-                single_record = create_single_gb_record(gb_records=gb_records, pipolin=cur_pipolin)
+                single_record = create_single_gb_record(gb_records=gb_records, pipolin=cur_pipolin, accver=accver)
                 output_file_single_record = os.path.join(
                     results_dir, os.path.splitext(prokka_file)[0] + '.single_record.gbk'
                 )
@@ -58,7 +60,7 @@ def generate_results(genome: Genome, prokka_dir, pipolins: Sequence[PipolinVaria
     return results_dir
 
 
-def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin) -> SeqIORecords:
+def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin, accver: str) -> SeqIORecords:
     record = revcompl_if_reverse(
         gb_records[get_rec_id_by_contig_id(gb_records, pipolin.fragments[0].contig_id)],
         pipolin.fragments[0].orientation
@@ -83,9 +85,9 @@ def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin) -> SeqIO
     del record.features[0]
     record.features.insert(0, new_source)
 
-    genome_id = pipolin.fragments[0].genome.id
-    record.id, record.name, record.description = genome_id, genome_id, genome_id
-    return {genome_id: record}
+    record.name = 'PIPOLIN_RECORD'
+    record.id = accver
+    return {pipolin.fragments[0].genome.id: record}
 
 
 def create_reconstruction_gap_feature(record: SeqRecord) -> SeqFeature:
@@ -184,3 +186,9 @@ def mark_integration_sites(records: SeqIORecords, pipolin: Pipolin) -> None:
                 feature_range = Range(start=feature.location.start, end=feature.location.end)
                 if feature.type == 'tRNA' and feature_range.is_overlapping(ttrna_range):
                     feature.qualifiers['note'] = ['integration site']
+
+
+def add_acc_version(records: SeqIORecords, accver: str) -> None:
+    for record in records.values():
+        record.id = accver
+        record.description = ''

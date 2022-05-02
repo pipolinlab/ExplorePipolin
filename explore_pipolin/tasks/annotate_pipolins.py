@@ -20,9 +20,9 @@ def save_pipolin_sequences(genome: Genome, pipolins: Sequence[PipolinVariants]):
 
     for i, pipolin in enumerate(pipolins):
         for j, variant in enumerate(pipolin.variants):
-            pipolin_id_v = genome.id + f'_{i}_v{j}'
+            pipolin_id_v = genome.id + f'_{i}v{j}'
             with open(os.path.join(pipolins_dir, f'{pipolin_id_v}.{pipolin.type.to_str()}.fa'), 'w') as ouf:
-                records = [create_fragment_record(f, genome_dict, pipolin_id_v) for f in variant.fragments]
+                records = [create_fragment_record(f, genome_dict) for f in variant.fragments]
                 SeqIO.write(records, ouf, 'fasta')
 
     return pipolins_dir
@@ -31,10 +31,8 @@ def save_pipolin_sequences(genome: Genome, pipolins: Sequence[PipolinVariants]):
 def create_fragment_record(
         fragment: PipolinFragment,
         genome_dict: SeqIORecords,
-        pipolin_id_v: str
 ) -> SeqIO.SeqRecord:
     record = genome_dict[fragment.contig_id][fragment.start:fragment.end]
-    record.id = f'{pipolin_id_v}_{record.id}'
     record.description = f'{fragment.start}:{fragment.end}'
     return record
 
