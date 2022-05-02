@@ -209,11 +209,19 @@ class Reconstructor:
         # variant 1: ---att---pol---...---att---
         # variant 2: ---att---...---pol---att---
         att_pipolb_fragment = self._orient_according_pipolb(att_pipolb_fragment)
-        if att_pipolb_fragment.features[0].ftype == FeatureType.PIPOLB:
+        feature_0 = att_pipolb_fragment.features[0]
+        feature_m1 = att_pipolb_fragment.features[-1]
+
+        is_0_forward = (feature_0.ftype == FeatureType.PIPOLB) and (att_pipolb_fragment.orientation == Strand.FORWARD)
+        is_0_reverse = (feature_0.ftype == FeatureType.PIPOLB) and (att_pipolb_fragment.orientation == Strand.REVERSE)
+        is_m1_forward = (feature_m1.ftype == FeatureType.PIPOLB) and (att_pipolb_fragment.orientation == Strand.FORWARD)
+        is_m1_reverse = (feature_m1.ftype == FeatureType.PIPOLB) and (att_pipolb_fragment.orientation == Strand.REVERSE)
+
+        if is_0_forward or is_m1_reverse:
             left_fragment = att_fragment
             right_fragment = att_pipolb_fragment
             (left_fragment,) = self._orient_fragment_according_main(right_fragment, left_fragment)
-        elif att_pipolb_fragment.features[-1].ftype == FeatureType.PIPOLB:
+        elif is_0_reverse or is_m1_forward:
             left_fragment = att_pipolb_fragment
             right_fragment = att_fragment
             (right_fragment,) = self._orient_fragment_according_main(left_fragment, right_fragment)
