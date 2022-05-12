@@ -148,7 +148,7 @@ class Reconstructor:
         ttrna_fragments = self._get_ttrna_fragments(att_pipolb_att_fragment, *self.att_only_fragments)
 
         if len(ttrna_fragments) != 0 and ttrna_fragments[0] == att_pipolb_att_fragment:
-            # variant: ---att---pol---att(t)          # skip additional att(t) fragments if present
+            # variant: ---att---pol---att(t)          # skipping other att(t) fragments if present
 
             if self.is_too_long(att_pipolb_att_fragment):
                 fragment = self.shorten_the_fragment(att_pipolb_att_fragment)
@@ -168,14 +168,20 @@ class Reconstructor:
             )
             return PipolinVariants.from_variants(variant1, pipolin_type=PipolinType.COMPLETE)
         else:
-            # variant 2: ---att---pol---att---          # skip additional att fragments if present
-            # variant 3: variant 2 reverse-complement
-            fr2 = self._orient_according_pipolb(att_pipolb_att_fragment)
-            variant2 = self._create_pipolin(complete=fr2)
-            fr3 = fr2.reverse_complement()
-            variant3 = self._create_pipolin(complete=fr3)
 
-            return PipolinVariants.from_variants(variant2, variant3, pipolin_type=PipolinType.COMPLETE)
+            if self.is_too_long(att_pipolb_att_fragment):
+                fragment = self.shorten_the_fragment(att_pipolb_att_fragment)
+                pipolin = Pipolin.from_fragments(fragment)
+                return Reconstructor(genome=fragment.genome, pipolin=pipolin).reconstruct_pipolin()
+
+            # variant 1: ---att---pol---att---          # skip additional att fragments if present
+            # variant 2: variant 1 reverse-complement
+            fr1 = self._orient_according_pipolb(att_pipolb_att_fragment)
+            variant1 = self._create_pipolin(complete=fr1)
+            fr2 = fr1.reverse_complement()
+            variant2 = self._create_pipolin(complete=fr2)
+
+            return PipolinVariants.from_variants(variant1, variant2, pipolin_type=PipolinType.COMPLETE)
 
     def _att_pipolb_plus_atts(self) -> PipolinVariants:
         # we can reconstruct the cases:
@@ -187,6 +193,12 @@ class Reconstructor:
         elif len(self.att_only_fragments) == 2:
             return self._att_pipolb_plus_two_atts()
         elif len(self.att_only_fragments) == 0:
+
+            if self.is_too_long(self.att_pipolb_fragments[0]):
+                fragment = self.shorten_the_fragment(self.att_pipolb_fragments[0])
+                pipolin = Pipolin.from_fragments(fragment)
+                return Reconstructor(genome=fragment.genome, pipolin=pipolin).reconstruct_pipolin()
+
             ttrna_fragments = self._get_ttrna_fragments(self.att_pipolb_fragments[0])
             if ttrna_fragments:
                 pipolb_att_ttrna_fragment = self._orient_fragments_according_ttrna(self.att_pipolb_fragments[0])
@@ -410,7 +422,7 @@ class Reconstructor:
 
     @staticmethod
     def _get_ttrna_fragments(*fragments: PipolinFragment) -> Sequence[PipolinFragment]:
-        return [f for f in fragments if len(f.get_prime3_ttrnas()) != 0]
+        return [f for f in fragments if len(f.get_ttrnas_outside_fragment()) != 0]
 
     def is_too_long(self, *fragment: PipolinFragment) -> bool:
         total_len = sum([abs(f.location.end - f.location.start) for f in fragment])
@@ -419,7 +431,7 @@ class Reconstructor:
     def _orient_fragments_according_ttrna(
             self, ttrna_fragment: PipolinFragment, *other_fragment: PipolinFragment
     ) -> List[PipolinFragment]:
-        prime3_ttrna = ttrna_fragment.get_prime3_ttrnas()[0]
+        prime3_ttrna = ttrna_fragment.get_ttrnas_outside_fragment()[0]
 
         # check one is enough as of the same direction
         if prime3_ttrna.strand == Strand.FORWARD:
@@ -525,20 +537,30 @@ class Reconstructor:
         return self.create_new_features_fragment(fragment, new_features)
 
     def shorten_the_fragment(self, fragment: PipolinFragment) -> PipolinFragment:
-        diff_left = fragment.features[1].location.start - fragment.features[0].location.start
-        diff_right = fragment.features[-1].location.end - fragment.features[-2].location.end
+        if fragment.features[0].location.is_overlapping(fragment.features[1].location):
+            start = 1
+        else:
+            start = 0
+
+        if fragment.features[-1].location.is_overlapping(fragment.features[-2].location):
+            end = -2
+        else:
+            end = -1
+
+        diff_left = fragment.features[start+1].location.start - fragment.features[start].location.start
+        diff_right = fragment.features[end].location.end - fragment.features[end-1].location.end
 
         # NEVER cut piPolB!
-        if fragment.features[0].ftype == FeatureType.PIPOLB and fragment.features[-1].ftype == FeatureType.PIPOLB:
+        if fragment.features[start].ftype == FeatureType.PIPOLB and fragment.features[end].ftype == FeatureType.PIPOLB:
             raise AssertionError
 
-        if diff_left > diff_right and fragment.features[0].ftype != FeatureType.PIPOLB:
-            new_features = fragment.features[1:]
+        if diff_left > diff_right and fragment.features[start].ftype != FeatureType.PIPOLB:
+            new_features = fragment.features[start+1:]
         else:
-            if fragment.features[-1].ftype != FeatureType.PIPOLB:
-                new_features = fragment.features[:-1]
+            if fragment.features[end].ftype != FeatureType.PIPOLB:
+                new_features = fragment.features[:end]
             else:
-                new_features = fragment.features[1:]
+                new_features = fragment.features[start:]
 
         return self.create_new_features_fragment(fragment, new_features)
 

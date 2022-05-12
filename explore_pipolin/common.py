@@ -276,31 +276,33 @@ class PipolinFragment:
         contig_features = features.get_dict_by_contig_sorted()[self.contig_id]
         return [f for f in contig_features if f.start >= self.start and f.end <= self.end]
 
-    def get_prime3_ttrnas(self) -> Sequence[Feature]:
+    def get_ttrnas_outside_fragment(self) -> Sequence[Feature]:
+        """
+        If fragment contains piPolB, I would like the target tRNA to be "outside" the fragment,
+        i.e. ---pol---att(t)--- and NOT ---pol---(t)att---
+        """
         ttrnas = self.get_fragment_features_of_type_sorted(FeatureType.TARGET_TRNA)
-        prime3_ttrnas = self._get_prime3_ttrnas(ttrnas)
+        pipolbs = self.get_fragment_features_of_type_sorted(FeatureType.PIPOLB)
 
-        if len(prime3_ttrnas) != 0 or self._is_same_direction(prime3_ttrnas):
-            return prime3_ttrnas
+        ttrnas_outside = []
+        for ttrna in ttrnas:
+            att = ttrna.get_att_overlapping_ttrna()
+
+            if pipolbs[-1].location.end < att.location.start:
+                if att.location.start < ttrna.location.start:
+                    ttrnas_outside.append(ttrna)
+            elif pipolbs[0].location.start > att.location.end:
+                if att.location.end > ttrna.location.end:
+                    ttrnas_outside.append(ttrna)
+
+        if len(ttrnas_outside) != 0 or self._is_same_direction(ttrnas_outside):
+            return ttrnas_outside
 
         return []
 
     @staticmethod
-    def _get_prime3_ttrnas(ttrnas: Sequence[Feature]) -> Sequence[Feature]:
-        prime3_ttrnas = []
-        for ttrna in ttrnas:
-            att = ttrna.get_att_overlapping_ttrna()
-
-            if ttrna.strand == Strand.FORWARD and ttrnas[0].start < att.start:  # 3'-overlap
-                prime3_ttrnas.append(ttrna)
-            elif ttrnas[0].strand == Strand.REVERSE and ttrnas[0].end > att.end:  # 3'-overlap
-                prime3_ttrnas.append(ttrna)
-
-        return prime3_ttrnas
-
-    @staticmethod
-    def _is_same_direction(prime3_ttrnas: Sequence[Feature]) -> bool:
-        strands = set(ttrna.strand for ttrna in prime3_ttrnas)
+    def _is_same_direction(ttrnas_outside: Sequence[Feature]) -> bool:
+        strands = set(ttrna.strand for ttrna in ttrnas_outside)
         return True if len(strands) == 1 else False
 
 

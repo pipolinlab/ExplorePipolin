@@ -64,10 +64,20 @@ class AttFinder:
         for att in self.genome.features.get_features(FeatureType.ATT):
             trna = self.genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
             if trna is not None:
-                target_trna = Feature(location=trna.location, strand=trna.strand,
-                                      ftype=FeatureType.TARGET_TRNA,
-                                      contig_id=trna.contig_id, genome=trna.genome)
-                self.genome.features.add_features(target_trna)
+                if self._is_3prime_ttrna(trna, att):
+                    target_trna = Feature(location=trna.location, strand=trna.strand,
+                                          ftype=FeatureType.TARGET_TRNA,
+                                          contig_id=trna.contig_id, genome=trna.genome)
+                    self.genome.features.add_features(target_trna)
+
+    @staticmethod
+    def _is_3prime_ttrna(trna: Feature, att: AttFeature) -> bool:
+        if trna.strand == att.strand:
+            return False
+        else:
+            is_3prime_f = (trna.strand == Strand.FORWARD) and (trna.start < att.start)
+            is_3prime_r = (trna.strand == Strand.REVERSE) and (trna.end > att.end)
+            return is_3prime_f or is_3prime_r
 
 
 @task()
@@ -164,12 +174,18 @@ class AttDenovoFinder:
         target_trnas_dict = self.genome.features.target_trnas_dict()
         for att in self.genome.features.get_features(FeatureType.ATT):
             trna = self.genome.features.get_features(FeatureType.TRNA).get_overlapping(att)
-            if trna is not None:
+            if trna is not None and self._is_3prime_ttrna(trna, att):
                 if trna not in target_trnas_dict[trna.contig_id]:
                     target_trna = Feature(location=trna.location, strand=trna.strand,
                                           ftype=FeatureType.TARGET_TRNA,
                                           contig_id=trna.contig_id, genome=trna.genome)
                     self.genome.features.add_features(target_trna)
+
+    @staticmethod
+    def _is_3prime_ttrna(trna: Feature, att: AttFeature) -> bool:
+        is_3prime_f = (trna.strand == Strand.FORWARD) and (trna.start < att.start)
+        is_3prime_r = (trna.strand == Strand.REVERSE) and (trna.end > att.end)
+        return is_3prime_f or is_3prime_r
 
     def _get_ranges_around_pipolbs(self) -> List[PairedLocation]:
         pipolbs_dict_by_contig = self.genome.features.pipolbs_dict()
