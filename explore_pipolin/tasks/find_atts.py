@@ -57,7 +57,7 @@ class AttFinder:
                                            genome=self.genome, att_id=att_id, att_type=AttType.CONSERVED))
 
         max_length_att = max(abs(f.location.start - f.location.end) for f in att_features)
-        # NOTE: the found known atts should be of a similar length. Does it make sense?
+        # TODO: the found known atts should be of a similar length. Does it make sense?
         return [f for f in att_features if (max_length_att - abs(f.location.start - f.location.end)) <= 10]
 
     def _add_target_trnas_features(self):

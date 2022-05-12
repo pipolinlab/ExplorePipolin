@@ -4,7 +4,7 @@ from prefect import task, context
 from prefect.utilities.logging import get_logger
 
 from explore_pipolin.common import Genome, Pipolin, FeatureType, PipolinFragment, Strand, Range, AttFeature, \
-    PipolinVariants, PipolinType
+    PipolinVariants, PipolinType, Feature
 import explore_pipolin.settings as settings
 from explore_pipolin.utilities.logging import genome_specific_logging
 
@@ -104,6 +104,10 @@ class Reconstructor:
     def _no_border_inflate(self):
         return settings.get_instance().no_border_inflate
 
+    @property
+    def _max_pipolin_len(self):
+        return settings.get_instance().max_pipolin_len
+
     def reconstruct_pipolin(self) -> PipolinVariants:
         if self.att_pipolb_att_fragments:
             return self._att_pipolb_att_plus_atts()
@@ -117,10 +121,22 @@ class Reconstructor:
     def _single_fragment(self, single_fragment: PipolinFragment, pipolin_type: PipolinType) -> PipolinVariants:
         ttrna_fragments = self._get_ttrna_fragments(single_fragment)
         if ttrna_fragments:
+
+            if self.is_too_long(ttrna_fragments[0]):
+                fragment = self.shorten_the_fragment(ttrna_fragments[0])
+                pipolin = Pipolin.from_fragments(fragment)
+                return Reconstructor(genome=fragment.genome, pipolin=pipolin).reconstruct_pipolin()
+
             (fragment,) = self._orient_fragments_according_ttrna(ttrna_fragments[0])
             return PipolinVariants.from_variants(self._create_pipolin(single=fragment, is_ttrna=True),
                                                  pipolin_type=pipolin_type)
         else:
+
+            if self.is_too_long(single_fragment):
+                fragment = self.shorten_the_fragment(single_fragment)
+                pipolin = Pipolin.from_fragments(fragment)
+                return Reconstructor(genome=fragment.genome, pipolin=pipolin).reconstruct_pipolin()
+
             fragment1 = self._orient_according_pipolb(single_fragment)
             fragment2 = fragment1.reverse_complement()
             variant1 = self._create_pipolin(single=fragment1)
@@ -133,6 +149,12 @@ class Reconstructor:
 
         if len(ttrna_fragments) != 0 and ttrna_fragments[0] == att_pipolb_att_fragment:
             # variant: ---att---pol---att(t)          # skip additional att(t) fragments if present
+
+            if self.is_too_long(att_pipolb_att_fragment):
+                fragment = self.shorten_the_fragment(att_pipolb_att_fragment)
+                pipolin = Pipolin.from_fragments(fragment)
+                return Reconstructor(genome=self.genome, pipolin=pipolin).reconstruct_pipolin()
+
             (att_pipolb_att_fragment,) = self._orient_fragments_according_ttrna(ttrna_fragments[0])
             pipolin = self._create_pipolin(complete=att_pipolb_att_fragment, is_ttrna=True)
             return PipolinVariants.from_variants(pipolin, pipolin_type=PipolinType.COMPLETE)
@@ -282,6 +304,7 @@ class Reconstructor:
                     pipolin_type=PipolinType.COMPLETE
                 )
         elif len(ttrna_fragments) >= 2:
+            # an ambiguous case, leave the main fragment only
             return self._single_fragment(self.att_pipolb_fragments[0], PipolinType.TRUNCATED)
         else:
             (att1_fragment, att2_fragment) = self._orient_fragment_according_main(
@@ -368,6 +391,7 @@ class Reconstructor:
                                             is_ttrna=True)
             return PipolinVariants.from_variants(variant1, variant2, pipolin_type=PipolinType.COMPLETE)
         elif len(ttrna_fragments) == 2:
+            # an ambiguous case, drop att fragments
             return self._single_fragment(self.pipolb_only_fragments[0], PipolinType.MINIMAL)
         else:
             main_att_fragment = self.att_only_fragments[0]
@@ -387,6 +411,10 @@ class Reconstructor:
     @staticmethod
     def _get_ttrna_fragments(*fragments: PipolinFragment) -> Sequence[PipolinFragment]:
         return [f for f in fragments if len(f.get_prime3_ttrnas()) != 0]
+
+    def is_too_long(self, *fragment: PipolinFragment) -> bool:
+        total_len = sum([abs(f.location.end - f.location.start) for f in fragment])
+        return total_len > self._max_pipolin_len
 
     def _orient_fragments_according_ttrna(
             self, ttrna_fragment: PipolinFragment, *other_fragment: PipolinFragment
@@ -462,28 +490,57 @@ class Reconstructor:
         return Pipolin.from_fragments(*fragments)
 
     @staticmethod
-    def ensure_ttrna_edge(fragment: PipolinFragment) -> PipolinFragment:
+    def create_new_features_fragment(
+            old_fragment: PipolinFragment, new_features: Sequence[Feature],
+    ) -> PipolinFragment:
+        new_genome = Genome(genome_id=old_fragment.genome.id,
+                            genome_file=old_fragment.genome.file,
+                            contigs=old_fragment.genome.contigs)
+        new_genome.features.add_features(*new_features)
+
+        contig_length = old_fragment.genome.get_contig_by_id(old_fragment.contig_id).length
+        new_loc = Range(
+            max(0, new_features[0].location.start),
+            min(new_features[-1].location.end, contig_length)
+        )
+        new_fragment = PipolinFragment(location=new_loc,
+                                       contig_id=old_fragment.contig_id,
+                                       genome=new_genome,
+                                       orientation=old_fragment.orientation)
+        new_fragment_features = new_fragment.get_fragment_features_sorted()
+        new_fragment = PipolinFragment(new_fragment.location,
+                                       new_fragment.contig_id,
+                                       new_fragment.genome,
+                                       tuple(new_fragment_features),
+                                       new_fragment.orientation)
+        return new_fragment
+
+    def ensure_ttrna_edge(self, fragment: PipolinFragment) -> PipolinFragment:
         ttrnas = [f for f in fragment.features if f.ftype == FeatureType.TARGET_TRNA]
         if fragment.orientation == Strand.FORWARD:
             new_features = [f for f in fragment.features if f.location.end <= ttrnas[-1].location.end]
         else:
             new_features = [f for f in fragment.features if f.location.start >= ttrnas[0].location.start]
-        new_genome = Genome(genome_id=fragment.genome.id,
-                            genome_file=fragment.genome.file,
-                            contigs=fragment.genome.contigs)
-        new_genome.features.add_features(*new_features)
 
-        contig_length = fragment.genome.get_contig_by_id(fragment.contig_id).length
-        atts_and_pipolbs = [f for f in new_features if f.ftype != FeatureType.TARGET_TRNA]
-        new_loc = Range(
-            max(0, atts_and_pipolbs[0].location.start),
-            min(atts_and_pipolbs[-1].location.end, contig_length)
-        )
-        new_fragment = PipolinFragment(location=new_loc,
-                                       contig_id=fragment.contig_id,
-                                       genome=new_genome,
-                                       orientation=fragment.orientation)
-        return new_fragment
+        return self.create_new_features_fragment(fragment, new_features)
+
+    def shorten_the_fragment(self, fragment: PipolinFragment) -> PipolinFragment:
+        diff_left = fragment.features[1].location.start - fragment.features[0].location.start
+        diff_right = fragment.features[-1].location.end - fragment.features[-2].location.end
+
+        # NEVER cut piPolB!
+        if fragment.features[0].ftype == FeatureType.PIPOLB and fragment.features[-1].ftype == FeatureType.PIPOLB:
+            raise AssertionError
+
+        if diff_left > diff_right and fragment.features[0].ftype != FeatureType.PIPOLB:
+            new_features = fragment.features[1:]
+        else:
+            if fragment.features[-1].ftype != FeatureType.PIPOLB:
+                new_features = fragment.features[:-1]
+            else:
+                new_features = fragment.features[1:]
+
+        return self.create_new_features_fragment(fragment, new_features)
 
     @staticmethod
     def _orient_according_pipolb(pipolb_containing_fragment: PipolinFragment) -> PipolinFragment:

@@ -18,6 +18,7 @@ PROTEINS = pkg_resources.resource_filename('explore_pipolin', '/data/HHpred_prot
 
 _BORDER_INFLATE = 0
 _NO_BORDER_INFLATE = 30_000
+_MAX_PIPOLIN_LEN = 200_000
 
 
 @dataclass()
@@ -28,6 +29,7 @@ class GlobalSettings:
     percent_identity: int
     border_inflate = _BORDER_INFLATE
     no_border_inflate: int
+    max_pipolin_len = _MAX_PIPOLIN_LEN
     proteins: str
     prokka_cpus: int
     skip_colours: bool
