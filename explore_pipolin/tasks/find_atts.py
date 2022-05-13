@@ -64,8 +64,8 @@ class AttFinder:
 
         return att_features
         # NOTE: Should the found known atts be of a similar length? Be careful when the att is at the contig edge!
-        #max_length_att = max(abs(f.location.start - f.location.end) for f in att_features)
-        #return [f for f in att_features if (max_length_att - abs(f.location.start - f.location.end)) <= 10]
+        # max_length_att = max(abs(f.location.start - f.location.end) for f in att_features)
+        # return [f for f in att_features if (max_length_att - abs(f.location.start - f.location.end)) <= 10]
 
     def _add_target_trnas_features(self):
         for att in self.genome.features.get_features(FeatureType.ATT):

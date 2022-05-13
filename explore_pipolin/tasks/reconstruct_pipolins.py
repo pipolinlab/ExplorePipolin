@@ -118,31 +118,6 @@ class Reconstructor:
         else:
             raise AssertionError
 
-    def _single_fragment(self, single_fragment: PipolinFragment, pipolin_type: PipolinType) -> PipolinVariants:
-        ttrna_fragments = self._get_ttrna_fragments(single_fragment)
-        if ttrna_fragments:
-
-            if self.is_too_long(ttrna_fragments[0]):
-                fragment = self.shorten_the_fragment(ttrna_fragments[0])
-                pipolin = Pipolin.from_fragments(fragment)
-                return Reconstructor(genome=fragment.genome, pipolin=pipolin).reconstruct_pipolin()
-
-            (fragment,) = self._orient_fragments_according_ttrna(ttrna_fragments[0])
-            return PipolinVariants.from_variants(self._create_pipolin(single=fragment, is_ttrna=True),
-                                                 pipolin_type=pipolin_type)
-        else:
-
-            if self.is_too_long(single_fragment):
-                fragment = self.shorten_the_fragment(single_fragment)
-                pipolin = Pipolin.from_fragments(fragment)
-                return Reconstructor(genome=fragment.genome, pipolin=pipolin).reconstruct_pipolin()
-
-            fragment1 = self._orient_according_pipolb(single_fragment)
-            fragment2 = fragment1.reverse_complement()
-            variant1 = self._create_pipolin(single=fragment1)
-            variant2 = self._create_pipolin(single=fragment2)
-            return PipolinVariants.from_variants(variant1, variant2, pipolin_type=pipolin_type)
-
     def _att_pipolb_att_plus_atts(self) -> PipolinVariants:
         att_pipolb_att_fragment = self.att_pipolb_att_fragments[0]
         ttrna_fragments = self._get_ttrna_fragments(att_pipolb_att_fragment, *self.att_only_fragments)
@@ -214,7 +189,9 @@ class Reconstructor:
         else:
             logger = get_logger(name='reconstruct_pipolins')
             logger.warning(_TOO_MANY_ATTS_MESSAGE)
-            return self._single_fragment(self.att_pipolb_fragments[0], PipolinType.TRUNCATED)
+            fragment = self.att_pipolb_fragments[0]
+            pipolin = Pipolin.from_fragments(fragment)
+            return Reconstructor(genome=fragment.genome, pipolin=pipolin).reconstruct_pipolin()
 
     def _att_pipolb_plus_one_att(self) -> PipolinVariants:
         att_pipolb_fragment = self.att_pipolb_fragments[0]
@@ -241,7 +218,8 @@ class Reconstructor:
 
         elif len(ttrna_fragments) == 2:
             # ambiguous case, drop att fragment
-            return self._single_fragment(att_pipolb_fragment, PipolinType.TRUNCATED)
+            pipolin = Pipolin.from_fragments(att_pipolb_fragment)
+            return Reconstructor(genome=att_pipolb_fragment.genome, pipolin=pipolin).reconstruct_pipolin()
 
         # variant 1: ---att---pol---...---att---
         # variant 2: ---att---...---pol---att---
@@ -317,7 +295,9 @@ class Reconstructor:
                 )
         elif len(ttrna_fragments) >= 2:
             # an ambiguous case, leave the main fragment only
-            return self._single_fragment(self.att_pipolb_fragments[0], PipolinType.TRUNCATED)
+            fragment = self.att_pipolb_fragments[0]
+            pipolin = Pipolin.from_fragments(fragment)
+            return Reconstructor(genome=fragment.genome, pipolin=pipolin).reconstruct_pipolin()
         else:
             (att1_fragment, att2_fragment) = self._orient_fragment_according_main(
                 att_pipolb_fragment, *self.att_only_fragments
@@ -360,7 +340,11 @@ class Reconstructor:
             if len(self.att_only_fragments) > 2:
                 logger = get_logger(name='reconstruct_pipolins')
                 logger.warning(_TOO_MANY_ATTS_MESSAGE)
-            return self._single_fragment(self.pipolb_only_fragments[0], PipolinType.MINIMAL)
+            fragment1 = self._orient_according_pipolb(self.pipolb_only_fragments[0])
+            fragment2 = fragment1.reverse_complement()
+            variant1 = self._create_pipolin(single=fragment1)
+            variant2 = self._create_pipolin(single=fragment2)
+            return PipolinVariants.from_variants(variant1, variant2, pipolin_type=PipolinType.MINIMAL)
 
     def _pipolb_plus_one_att(self) -> PipolinVariants:
         # ---pol---...---att(t)---                    tRNA is required
@@ -404,7 +388,9 @@ class Reconstructor:
             return PipolinVariants.from_variants(variant1, variant2, pipolin_type=PipolinType.COMPLETE)
         elif len(ttrna_fragments) == 2:
             # an ambiguous case, drop att fragments
-            return self._single_fragment(self.pipolb_only_fragments[0], PipolinType.MINIMAL)
+            fragment = self.pipolb_only_fragments[0]
+            pipolin = Pipolin.from_fragments(fragment)
+            return Reconstructor(genome=fragment.genome, pipolin=pipolin).reconstruct_pipolin()
         else:
             main_att_fragment = self.att_only_fragments[0]
             (dep_att_fragment,) = self._orient_fragment_according_main(main_att_fragment, self.att_only_fragments[1])
@@ -486,13 +472,16 @@ class Reconstructor:
         fragments = []
 
         if left:
-            fragments.append(self._inflate_fragment(left, self._border_inflate, self._no_border_inflate))
+            contig_len = left.genome.get_contig_by_id(left.contig_id).length
+            fragments.append(self._inflate_fragment(left, self._border_inflate, contig_len))
         if middle:
-            fragments.append(self._inflate_fragment(middle, self._no_border_inflate, self._no_border_inflate))
+            contig_len = middle.genome.get_contig_by_id(middle.contig_id).length
+            fragments.append(self._inflate_fragment(middle, contig_len, contig_len))
         if right:
             if is_ttrna:
                 right = self.ensure_ttrna_edge(right)
-            fragments.append(self._inflate_fragment(right, self._no_border_inflate, self._border_inflate))
+            contig_len = right.genome.get_contig_by_id(right.contig_id).length
+            fragments.append(self._inflate_fragment(right, contig_len, self._border_inflate))
         if complete:
             if is_ttrna:
                 complete = self.ensure_ttrna_edge(complete)
