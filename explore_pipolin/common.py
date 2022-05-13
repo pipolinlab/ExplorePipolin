@@ -137,7 +137,6 @@ class Feature:
         return other.is_right_of(self)
 
     @property
-    # TODO: do I really need it?
     def contig(self) -> Contig:
         return self.genome.get_contig_by_id(self.contig_id)
 
@@ -288,12 +287,15 @@ class PipolinFragment:
         for ttrna in ttrnas:
             att = ttrna.get_att_overlapping_ttrna()
 
-            if pipolbs[-1].location.end < att.location.start:
-                if att.location.start < ttrna.location.start:
-                    ttrnas_outside.append(ttrna)
-            elif pipolbs[0].location.start > att.location.end:
-                if att.location.end > ttrna.location.end:
-                    ttrnas_outside.append(ttrna)
+            if pipolbs:
+                if pipolbs[-1].location.end < att.location.start:
+                    if att.location.start < ttrna.location.start:
+                        ttrnas_outside.append(ttrna)
+                elif pipolbs[0].location.start > att.location.end:
+                    if att.location.end > ttrna.location.end:
+                        ttrnas_outside.append(ttrna)
+            else:
+                ttrnas_outside.append(ttrna)
 
         if len(ttrnas_outside) != 0 or self._is_same_direction(ttrnas_outside):
             return ttrnas_outside

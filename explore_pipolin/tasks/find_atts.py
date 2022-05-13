@@ -50,15 +50,22 @@ class AttFinder:
 
     def _create_att_features(self, entry, att_id) -> Sequence[AttFeature]:
         att_features = []
+        evalues = []
         for hit in entry:
+            evalues.append(hit.evalue)
             att_features.append(AttFeature(location=Range(start=hit.hit_start, end=hit.hit_end),
                                            strand=Strand.from_pm_one_encoding(hit.hit_strand),
                                            ftype=FeatureType.ATT, contig_id=entry.id,
                                            genome=self.genome, att_id=att_id, att_type=AttType.CONSERVED))
 
-        max_length_att = max(abs(f.location.start - f.location.end) for f in att_features)
-        # TODO: the found known atts should be of a similar length. Does it make sense?
-        return [f for f in att_features if (max_length_att - abs(f.location.start - f.location.end)) <= 10]
+        while len(set(f.strand for f in att_features)) != 1:
+            # delete hit with the lowest e-value
+            del att_features[evalues.index(min(evalues))]
+
+        return att_features
+        # NOTE: Should the found known atts be of a similar length? Be careful when the att is at the contig edge!
+        #max_length_att = max(abs(f.location.start - f.location.end) for f in att_features)
+        #return [f for f in att_features if (max_length_att - abs(f.location.start - f.location.end)) <= 10]
 
     def _add_target_trnas_features(self):
         for att in self.genome.features.get_features(FeatureType.ATT):

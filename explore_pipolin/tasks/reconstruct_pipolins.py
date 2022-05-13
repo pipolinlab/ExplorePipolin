@@ -202,7 +202,7 @@ class Reconstructor:
             ttrna_fragments = self._get_ttrna_fragments(self.att_pipolb_fragments[0])
             if ttrna_fragments:
                 pipolb_att_ttrna_fragment = self._orient_fragments_according_ttrna(self.att_pipolb_fragments[0])
-                return PipolinVariants.from_variants(self._create_pipolin(right=pipolb_att_ttrna_fragment[0],
+                return PipolinVariants.from_variants(self._create_pipolin(single=pipolb_att_ttrna_fragment[0],
                                                                           is_ttrna=True),
                                                      pipolin_type=PipolinType.TRUNCATED)
             else:
@@ -598,6 +598,7 @@ class Reconstructor:
     @staticmethod
     def _get_fragment_atts_strand(fragment: PipolinFragment, att_id) -> Optional[Strand]:
         strands = set(f.strand for f in fragment.features if isinstance(f, AttFeature) and f.att_id == att_id)
+        # This is already checked when att features are created and should never rise
         if len(strands) != 1:
             raise AssertionError
         return strands.pop()
