@@ -24,7 +24,6 @@ phyla and mitochondria.
 * [Quick usage](#quick-usage)
     * [Test run](#test-run)
     * [Output files](#output-files)
-* [Running with Docker](#running-with-docker)
 
 # Requirements
 
@@ -148,19 +147,3 @@ Additional files, when `--keep-tmp` option is present:
  | `atts_denovo` | Results of *de novo* search for *att* sites |
  | `trnas` | ARAGORN search results for tRNAs/tmRNAs |
  | `prokka` | Prokka annotation results (check files description [here](https://github.com/tseemann/prokka/blob/master/README.md#output-files))|
-
-
-# Running with Docker
-
-See https://docs.docker.com/install/ to install Docker.
-
-**NOTE:** superuser privileges are required to run the analysis and around 3GB of disk space for the image.
-
-**TODO:** need an update!
-```
-sudo docker pull docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.1
-sudo docker tag docker.pkg.github.com/liubovch/explorepipolin/explore_pipolin:0.0.1 explore_pipolin
-sudo docker run --rm explore_pipolin -h
-sudo docker run --rm -v $(pwd):/output -w /output explore_pipolin 
- --out-dir output ./input_genomes/*.fa   #(example run) # TODO: check
-```
