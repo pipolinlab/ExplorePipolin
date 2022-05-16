@@ -131,11 +131,12 @@ def run_aragorn(genome_file, output_file):
 
 
 def run_prokka(input_file, prokka_results_dir):
+    hmm_profile = settings.get_instance().pipolb_hmm_profile
     proteins = settings.get_instance().proteins
     cpus = settings.get_instance().prokka_cpus
     prefix = os.path.splitext(os.path.basename(input_file))[0]
     command = ['prokka', '--outdir', prokka_results_dir, '--prefix', prefix,
-               '--rawproduct', '--cdsrnaolap', '--cpus', str(cpus),
+               '--rawproduct', '--cdsrnaolap', '--cpus', str(cpus), '--hmms', hmm_profile,
                '--rfam', '--proteins', proteins, '--force', input_file]
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, std_err = p.communicate()

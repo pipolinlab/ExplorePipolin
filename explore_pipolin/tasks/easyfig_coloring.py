@@ -30,14 +30,6 @@ def easyfig_add_colours(gb_records: SeqIORecords, pipolin: Pipolin):
                 if feature.type == 'tRNA' and feature_range.is_overlapping(Range(start=ttrna_start, end=ttrna_end)):
                     feature.qualifiers['colour'] = _products_to_colours['FeatureType.TARGET_TRNA'].value
 
-        for pipolb in [f for f in fragment.features if f.ftype == FeatureType.PIPOLB]:
-            pipolb_start, pipolb_end = (pipolb.start - fragment_shift), (pipolb.end - fragment_shift)
-
-            for feature in gb_records[get_rec_id_by_contig_id(gb_records, fragment.contig_id)].features:
-                feature_range = Range(start=feature.location.start, end=feature.location.end)
-                if feature.type == 'CDS' and feature_range.is_overlapping(Range(start=pipolb_start, end=pipolb_end)):
-                    feature.qualifiers['colour'] = _products_to_colours['FeatureType.PIPOLB'].value
-
 
 class EasyfigColour(Enum):
     RED = '255 0 0'   # FeatureType.PIPOLB
@@ -62,7 +54,7 @@ class EasyfigColour(Enum):
     FLORAL_WHITE = '255 250 240'   # other
 
 
-_products_to_colours = {'FeatureType.PIPOLB': EasyfigColour.RED,
+_products_to_colours = {'Primer-independent DNA polymerase PolB': EasyfigColour.RED,
                         'FeatureType.ATT.CONSERVED': EasyfigColour.BLUE,
                         'FeatureType.ATT.DENOVO': EasyfigColour.LIGHT_BLUE,
                         'FeatureType.TARGET_TRNA': EasyfigColour.GREEN,

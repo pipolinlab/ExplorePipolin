@@ -1,5 +1,6 @@
 HMMER3/f [3.3.1 | Jul 2020]
 NAME  pipolb_expanded_definitive
+DESC  Primer-independent DNA polymerase PolB
 LENG  1480
 ALPH  amino
 RF    no
