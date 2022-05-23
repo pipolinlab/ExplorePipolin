@@ -9,7 +9,7 @@ import pkg_resources
 
 PIPOLB_HMM_PROFILE = pkg_resources.resource_filename(
         'explore_pipolin',
-        'data/pipolb_expanded_definitive.hmm',
+        'data/pipolb_infomap_modified.hmm',
     )
 
 REF_ATT = pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa')
