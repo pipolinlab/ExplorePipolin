@@ -1,0 +1,28 @@
+# -----------------------------------------------
+# - "TARGET_TRNA" is the tRNA used as an pipolin integration site;
+# - "pipolin_structure" is an assembly gap that is introduced by EP
+#     at the reconstruction step to join contigs that contain pipolin features;
+# - "paired-ends" is an assembly gap introduced at the step of genome assembly;
+#
+# 1st column - either predefined feature (do not change the name!) or
+#              exact product name in GBK file
+# 2nd column - colour name (not used, just for user)
+# 3rd column - RGB colour code
+# -----------------------------------------------
+default	FLORAL_WHITE	255 250 240
+# predefined features
+FeatureType.ATT.CONSERVED	BLUE	0 0 255
+FeatureType.ATT.DENOVO	LIGHT_BLUE	173 216 230
+FeatureType.TARGET_TRNA	GREEN	0 255 0
+pipolin_structure	BLACK	0 0 0
+paired-ends	PINK	255 200 200
+# products
+Primer-independent DNA polymerase PolB	RED	255 0 0
+Tyrosine recombinase XerC	BRICK_RED	139 58 58
+Type I site-specific deoxyribonuclease (hsdR)	YELLOW	255 255 0
+Type I restriction modification enzyme	YELLOW	255 255 0
+Type I restriction modification system methyltransferase (hsdM)	YELLOW	255 255 0
+metallohydrolase	MAGENTA	255 0 255
+excisionase	PURPLE	178 58 238
+Uracil-DNA glycosylase	CYAN	0 255 255
+Prophage integrase IntS	BROWN	200 150 100

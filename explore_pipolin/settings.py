@@ -16,6 +16,8 @@ REF_ATT = pkg_resources.resource_filename('explore_pipolin', 'data/attL.fa')
 
 PROTEINS = pkg_resources.resource_filename('explore_pipolin', '/data/HHpred_proteins.faa')
 
+COLOURS = pkg_resources.resource_filename('explore_pipolin', '/data/colours.tsv')
+
 _BORDER_INFLATE = 0
 _NO_BORDER_INFLATE = 30_000
 _MAX_PIPOLIN_LEN = 200_000
@@ -32,6 +34,7 @@ class GlobalSettings:
     max_pipolin_len = _MAX_PIPOLIN_LEN
     proteins: str
     prokka_cpus: int
+    colours: str
     skip_colours: bool
 
     @staticmethod
@@ -44,12 +47,14 @@ class GlobalSettings:
             max_inflate,
             user_defined_proteins,
             prokka_cpus,
+            user_defined_colours,
             skip_colours,
     ):
 
         profile = user_defined_profile if user_defined_profile is not None else PIPOLB_HMM_PROFILE
         att = user_defined_att if user_defined_att is not None else REF_ATT
         proteins = user_defined_proteins if user_defined_proteins is not None else PROTEINS
+        colours = user_defined_colours if user_defined_colours is not None else COLOURS
 
         return GlobalSettings(
             out_dir=_get_out_dir(out_dir_prefix, user_defined_out_dir),
@@ -59,6 +64,7 @@ class GlobalSettings:
             no_border_inflate=max_inflate,
             proteins=proteins,
             prokka_cpus=prokka_cpus,
+            colours=colours,
             skip_colours=skip_colours
         )
 

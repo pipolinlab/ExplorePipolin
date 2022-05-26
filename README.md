@@ -24,6 +24,7 @@ phyla and mitochondria.
 * [Quick usage](#quick-usage)
     * [Command line options](#command-line-options)
     * [Output files](#output-files)
+    * [Easyfig-compatible colouring](#easyfig-compatible-colouring)
 
 # Requirements
 
@@ -104,6 +105,11 @@ Options:
                               priority. If not provided, the default file will
                               be used instead.
 
+  --colours PATH               A TSV file describing features to colour. Please,
+                              refer to
+                              https://github.com/pipolinlab/ExplorePipolin for
+                              more information about the file structure.
+
   --skip-colours              Do not add an Easyfig-compatible colouring
                               scheme to the final Genbank files.
 
@@ -146,7 +152,7 @@ concatenated into a single record (after the reconstruction step). Contigs are j
 with an `assembly_gap` feature that can be distinguished by the presence of 
 `/inference="ExplorePipolin"` field. Also, by default, these assembly gaps have 
 black `/colour`, while all other assembly gaps are pink 
-(TODO: see "Comparative visualization by Easyfig").
+(see [Easyfig-compatible colouring](#easyfig-compatible-colouring)).
 
 Additional files, when `--keep-tmp` option is present:
 
@@ -158,3 +164,13 @@ Additional files, when `--keep-tmp` option is present:
  | `atts_denovo` | Results of *de novo* search for *att* sites |
  | `trnas` | ARAGORN search results for tRNAs/tmRNAs |
  | `prokka` | Prokka annotation results (check files description [here](https://github.com/tseemann/prokka/blob/master/README.md#output-files))|
+
+### Easyfig-compatible colouring
+
+By default, a `/colour` field will be added and an RGB colour code will be assigned 
+to each feature in the output Genbank files. The colours will be assigned according to 
+[this scheme](explore_pipolin/data/colours.tsv). **To modify colours**, download 
+and change this TSV file (you can add new products or delete existing ones, or change 
+the colours) and provide it using `--colours` option.
+
+Use `--skip-colours` if required.

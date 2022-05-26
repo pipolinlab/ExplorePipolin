@@ -1,11 +1,32 @@
-from enum import Enum
 from Bio.SeqIO import SeqRecord
 
 from explore_pipolin.common import Pipolin, FeatureType, Range, AttFeature, AttType, get_rec_id_by_contig_id
 from explore_pipolin.utilities.io import SeqIORecords
+import explore_pipolin.settings as settings
+
+
+_PRODUCTS_TO_COLOUR = {'default': '255 250 240'}
+
+
+def read_colors(colors_tsv: str) -> None:
+    with open(colors_tsv) as inf:
+        for line in inf:
+            if line[0] == '#':
+                continue
+            values = line.strip().split(sep='\t')
+            if len(values) == 0:   # skip empty lines
+                continue
+            elif len(values) != 3:
+                raise AssertionError(f'{len(values)} columns in the line {line.strip()}.\n'
+                                     f'3 columns are expected.')
+            else:
+                _PRODUCTS_TO_COLOUR[values[0]] = values[2]
 
 
 def easyfig_add_colours(gb_records: SeqIORecords, pipolin: Pipolin):
+    colours = settings.get_instance().colours
+    read_colors(colours)
+
     for record in gb_records.values():
         add_colours(record)
 
@@ -18,9 +39,11 @@ def easyfig_add_colours(gb_records: SeqIORecords, pipolin: Pipolin):
             for feature in gb_records[get_rec_id_by_contig_id(gb_records, fragment.contig_id)].features:
                 if feature.location.start == att_start and feature.location.end == att_end:
                     if att.att_type == AttType.CONSERVED:
-                        feature.qualifiers['colour'] = _products_to_colours['FeatureType.ATT.CONSERVED'].value
+                        if 'FeatureType.ATT.CONSERVED' in _PRODUCTS_TO_COLOUR:
+                            feature.qualifiers['colour'] = _PRODUCTS_TO_COLOUR['FeatureType.ATT.CONSERVED']
                     else:
-                        feature.qualifiers['colour'] = _products_to_colours['FeatureType.ATT.DENOVO'].value
+                        if 'FeatureType.ATT.DENOVO' in _PRODUCTS_TO_COLOUR:
+                            feature.qualifiers['colour'] = _PRODUCTS_TO_COLOUR['FeatureType.ATT.DENOVO']
 
         for ttrna in [f for f in fragment.features if f.ftype == FeatureType.TARGET_TRNA]:
             ttrna_start, ttrna_end = (ttrna.start - fragment_shift), (ttrna.end - fragment_shift)
@@ -28,48 +51,8 @@ def easyfig_add_colours(gb_records: SeqIORecords, pipolin: Pipolin):
             for feature in gb_records[get_rec_id_by_contig_id(gb_records, fragment.contig_id)].features:
                 feature_range = Range(start=feature.location.start, end=feature.location.end)
                 if feature.type == 'tRNA' and feature_range.is_overlapping(Range(start=ttrna_start, end=ttrna_end)):
-                    feature.qualifiers['colour'] = _products_to_colours['FeatureType.TARGET_TRNA'].value
-
-
-class EasyfigColour(Enum):
-    RED = '255 0 0'   # FeatureType.PIPOLB
-    BLUE = '0 0 255'  # FeatureType.ATT.CONSERVED
-    LIGHT_BLUE = '173 216 230'   # FeatureType.ATT.DENOVO
-    GREEN = '0 255 0'  # FeatureType.TARGET_TRNA
-
-    # gaps
-    BLACK = '0 0 0'   # pipolin_structure (gap from reconstruction)
-    PINK = '255 200 200'   # paired-ends (scaffolding gap)
-
-    # other useful features
-    BRICK_RED = '139 58 58'   # Tyrosine recombinase XerC
-    BROWN = '200 150 100'   # Prophage integrase IntS
-    YELLOW = '255 255 0'   # Type I site-specific deoxyribonuclease (hsdR)
-                           # Type I restriction modification enzyme
-                           # Type I restriction modification system methyltransferase (hsdM)
-    MAGENTA = '255 0 255'   # metallohydrolase
-    PURPLE = '178 58 238'   # excisionase
-    CYAN = '0 255 255'   # Uracil-DNA glycosylase
-
-    FLORAL_WHITE = '255 250 240'   # other
-
-
-_products_to_colours = {'Primer-independent DNA polymerase PolB': EasyfigColour.RED,
-                        'FeatureType.ATT.CONSERVED': EasyfigColour.BLUE,
-                        'FeatureType.ATT.DENOVO': EasyfigColour.LIGHT_BLUE,
-                        'FeatureType.TARGET_TRNA': EasyfigColour.GREEN,
-                        # gaps
-                        'pipolin_structure': EasyfigColour.BLACK, 'paired-ends': EasyfigColour.PINK,
-                        # other useful features
-                        'Tyrosine recombinase XerC': EasyfigColour.BRICK_RED,
-                        'Type I site-specific deoxyribonuclease (hsdR)': EasyfigColour.YELLOW,
-                        'Type I restriction modification enzyme': EasyfigColour.YELLOW,
-                        'Type I restriction modification system methyltransferase (hsdM)': EasyfigColour.YELLOW,
-                        'metallohydrolase': EasyfigColour.MAGENTA,
-                        'excisionase': EasyfigColour.PURPLE,
-                        'Uracil-DNA glycosylase': EasyfigColour.CYAN,
-                        'Prophage integrase IntS': EasyfigColour.BROWN,
-                        'other': EasyfigColour.FLORAL_WHITE}
+                    if 'FeatureType.TARGET_TRNA' in _PRODUCTS_TO_COLOUR:
+                        feature.qualifiers['colour'] = _PRODUCTS_TO_COLOUR['FeatureType.TARGET_TRNA']
 
 
 def add_colours(record: SeqRecord):
@@ -80,16 +63,21 @@ def add_colours(record: SeqRecord):
 def _colour_feature(qualifiers):
     if 'product' in qualifiers:
         for product in qualifiers['product']:
-            if product in _products_to_colours:
-                qualifiers['colour'] = [_products_to_colours[product].value]
+            if product in _PRODUCTS_TO_COLOUR:
+                qualifiers['colour'] = [_PRODUCTS_TO_COLOUR[product]]
             else:
-                qualifiers['colour'] = [_products_to_colours['other'].value]
+                qualifiers['colour'] = [_PRODUCTS_TO_COLOUR['default']]
     elif 'linkage_evidence' in qualifiers:
-        if qualifiers['linkage_evidence'] == ['paired-ends']:
-            qualifiers['colour'] = [_products_to_colours['paired-ends'].value]
-        elif qualifiers['linkage_evidence'] == ['pipolin_structure']:
-            qualifiers['colour'] = [_products_to_colours['pipolin_structure'].value]
+        is_paired_ends = qualifiers['linkage_evidence'] == ['paired-ends']
+        is_pipolin_structure = qualifiers['linkage_evidence'] == ['pipolin_structure']
+
+        if is_paired_ends and ('paired-ends' in _PRODUCTS_TO_COLOUR):
+            qualifiers['colour'] = [_PRODUCTS_TO_COLOUR['paired-ends']]
+
+        elif is_pipolin_structure and ('pipolin_structure' in _PRODUCTS_TO_COLOUR):
+            qualifiers['colour'] = [_PRODUCTS_TO_COLOUR['pipolin_structure']]
+
         else:
-            qualifiers['colour'] = [_products_to_colours['other'].value]
+            qualifiers['colour'] = [_PRODUCTS_TO_COLOUR['default']]
     else:
-        qualifiers['colour'] = [_products_to_colours['other'].value]
+        qualifiers['colour'] = [_PRODUCTS_TO_COLOUR['default']]

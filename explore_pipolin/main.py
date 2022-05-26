@@ -44,6 +44,10 @@ def check_file_names(genomes):
 @click.option('--proteins', type=click.Path(exists=True),
               help='Prokka param: FASTA or GBK file to use as 1st priority. '
                    'If not provided, the default file will be used instead.')
+@click.option('--colours', type=click.Path(exists=True),
+              help='A TSV file describing features to colour. Please, refer to '
+                   'https://github.com/pipolinlab/ExplorePipolin '
+                   'for more information about the file structure.')
 @click.option('--skip-colours', is_flag=True,
               help='Do not add an Easyfig-compatible colouring scheme to the final Genbank files.')
 @click.option('--cpus', default=8, type=int, show_default=True,
@@ -63,6 +67,7 @@ def main(
         max_inflate,
         skip_annotation,
         proteins,
+        colours,
         skip_colours,
         cpus,
         keep_tmp,
@@ -86,7 +91,7 @@ def main(
 
     settings.set_instance(GlobalSettings.create_instance(
         out_dir_prefix, out_dir, pipolb_hmm_profile, ref_att, percent_identity, max_inflate,
-        proteins, cpus, skip_colours
+        proteins, cpus, colours, skip_colours
     ))
     os.makedirs(settings.get_instance().out_dir, exist_ok=True)
 
