@@ -22,7 +22,7 @@ phyla and mitochondria.
     * [Install from source](#install-from-source)
     * [Install using Conda](#install-using-conda)
 * [Quick usage](#quick-usage)
-    * [Test run](#test-run)
+    * [Command line options](#command-line-options)
     * [Output files](#output-files)
 
 # Requirements
@@ -38,7 +38,7 @@ phyla and mitochondria.
 ### Install from source
 
  1. Install the requirements (see above).
- 1. `wget https://github.com/liubovch/ExplorePipolin/archive/0.0.1.zip`
+ 1. `wget https://github.com/pipolinlab/ExplorePipolin/archive/0.0.1.zip`
  1. `unzip 0.0.1.zip && cd ExplorePipolin-0.0.1` 
  1. `pip install .` (install in user site-packages) or
  `sudo pip install .` (requires superuser privileges)
@@ -59,20 +59,20 @@ NOTE: before installing, it is possible to run unit tests:
 
  * Install into a new environment in one-step:
 
- `conda create -n <new_env_name> -c bioconda -c conda-forge -c defaults -c liubovch explore-pipolin`
+ `conda create -n <new_env_name> -c bioconda -c conda-forge -c defaults -c pipolinlab explore-pipolin`
 
 NOTE: solving the environment takes time. Be patient.
 
 # Quick usage
 
-### Test run
 As input, **ExplorePipolin** takes FASTA file(s) with genome sequence(s). 
 A genome sequence can be either a single complete chromosome (preferred) 
 or contigs (in a single multiFASTA file).
 
+### Command line options
+
 ```bash
---> explore_pipolin -h
-Usage: explore_pipolin [OPTIONS] GENOME...
+Usage: explore_pipolin [OPTIONS] GENOMES...
 
   ExplorePipolin is a search tool for prediction and analysis of pipolins,
   bacterial mobile genetic elements.
@@ -86,19 +86,20 @@ Options:
                               not provided, the default profile will be used
                               instead.
 
-  --ref-att PATH              Att sequence in FASTA file to use as 1st
-                              priority. If not provided, the default file will
+  --only-find-pipolbs         Only find piPolB genes.
+
+  --ref-att PATH              ATT sequence in FASTA file to use as 1st
+                              priority. If not provided, the default ATT will
                               be used instead.
 
   --percent-identity INTEGER  Minimum percent identity for direct repeats
-                              search [default: 85]
+                              search  [default: 85]
 
   --max-inflate INTEGER       If no borders of pipolin are found (no ATTs),
                               inflate the analysed region from both sides of
-                              piPolB.  [default: 30000]
+                              piPolB by this length.  [default: 30000]
 
-  --no-annotation             Do not run the annotation step (i.e. Prokka).
-
+  --skip-annotation           Do not run the annotation step (i.e. Prokka).
   --proteins PATH             Prokka param: FASTA or GBK file to use as 1st
                               priority. If not provided, the default file will
                               be used instead.
@@ -111,6 +112,9 @@ Options:
 
   --keep-tmp                  Preserve intermediate files produced during the
                               run (it might be useful for debugging).
+
+  --keep-going                Do not stop analysis if an error is raised for
+                              one of the genomes.
 
   -h, --help                  Show this message and exit.
 ```
@@ -125,18 +129,25 @@ the following files can be found:
  | `<genome>.log` | log file |
  | `pipolins` | extracted pipolin sequences in FASTA format, GenBank and GFF annotations of pipolin genes with *att*s included |
 
-Files in `pipolins` folder have the following scheme: `<genome>_N_vN.<type>.<ext>`,
+Files in `pipolins` folder have the following scheme: `<genome>_NvN.<type>.<ext>`,
 where:
 
  * `<genome>` — genome name, retrieved from a provided FASTA file without 
    extension. Should not exceed 16 characters, due to Biopython restrictions!
- * `N` — number of a found pipolin
- * `vN` — number of a reconstructed variant (each pipolin can be reconstructed in
+ * `N` — index of a found pipolin
+ * `vN` — index of a reconstructed variant (each pipolin can be reconstructed in
    different ways)
  * `<type>` — can be `complete` (att---pol---att), `truncated` (att---pol---) or 
    `minimal` (---pol---)
- * `<ext>` — file extension (`.fa`, `.gbk` or `.gff`)  
- 
+ * `<ext>` — file extension (`.fa`, `.gff`, `.gbk`)
+
+NOTE: File ending with `single_record.gbk` is produced when separate contigs are 
+concatenated into a single record (after the reconstruction step). Contigs are joined 
+with an `assembly_gap` feature that can be distinguished by the presence of 
+`/inference="ExplorePipolin"` field. Also, by default, these assembly gaps have 
+black `/colour`, while all other assembly gaps are pink 
+(TODO: see "Comparative visualization by Easyfig").
+
 Additional files, when `--keep-tmp` option is present:
 
  | Folder/File | Content description |

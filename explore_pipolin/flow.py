@@ -17,8 +17,8 @@ _DEFAULT_FILTER = FilterTask(trigger=triggers.all_successful)
 def get_flow():
     with Flow('MAIN') as flow:
         genome_file = Parameter('genome_file')
-        just_find_pipolbs = Parameter('just_find_pipolbs')
-        no_annotation = Parameter('no_annotation')
+        only_find_pipolbs = Parameter('only_find_pipolbs')
+        skip_annotation = Parameter('skip_annotation')
 
         genome = prepare_for_the_analysis.map(original_file=genome_file)
 
@@ -26,7 +26,7 @@ def get_flow():
 
         t_check_pipolbs = are_pipolbs_present.map(genome=genome)
         genome = _DEFAULT_FILTER(continue_if_true_else_finished.map(
-            result_to_filter=genome, filter_1=t_check_pipolbs, filter_2=unmapped(just_find_pipolbs))
+            result_to_filter=genome, filter_1=t_check_pipolbs, filter_2=unmapped(only_find_pipolbs))
         )
 
         genome = find_trnas.map(genome=genome)
@@ -44,7 +44,7 @@ def get_flow():
             genome=genome, pipolins=reconstructed_pipolins
         )
 
-        with case(no_annotation, False):
+        with case(skip_annotation, False):
             prokka_dir = annotate_pipolins.map(genome=genome, pipolins_dir=pipolin_seqs_dir)
             results_dir = generate_results.map(
                 genome=genome, prokka_dir=prokka_dir, pipolins=reconstructed_pipolins

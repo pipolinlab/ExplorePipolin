@@ -29,17 +29,17 @@ def check_file_names(genomes):
 @click.option('--pipolb-hmm-profile', type=click.Path(exists=True),
               help="piPolB's HMM profile to use as 1st priority."
                    'If not provided, the default profile will be used instead.')
-@click.option('--just-find-pipolbs', is_flag=True,
+@click.option('--only-find-pipolbs', is_flag=True,
               help='Only find piPolB genes.')
 @click.option('--ref-att', type=click.Path(exists=True),
-              help='Att sequence in FASTA file to use as 1st priority. '
-                   'If not provided, the default file will be used instead.')
+              help='ATT sequence in FASTA file to use as 1st priority. '
+                   'If not provided, the default ATT will be used instead.')
 @click.option('--percent-identity', type=int, default=85, show_default=True,
               help='Minimum percent identity for direct repeats search')
 @click.option('--max-inflate', type=int, default=_NO_BORDER_INFLATE, show_default=True,
               help='If no borders of pipolin are found (no ATTs), '
-                   'inflate the analysed region from both sides of piPolB.')
-@click.option('--no-annotation', is_flag=True,
+                   'inflate the analysed region from both sides of piPolB by this length.')
+@click.option('--skip-annotation', is_flag=True,
               help='Do not run the annotation step (i.e. Prokka).')
 @click.option('--proteins', type=click.Path(exists=True),
               help='Prokka param: FASTA or GBK file to use as 1st priority. '
@@ -57,11 +57,11 @@ def main(
         out_dir_prefix,
         out_dir,
         pipolb_hmm_profile,
-        just_find_pipolbs,
+        only_find_pipolbs,
         ref_att,
         percent_identity,
         max_inflate,
-        no_annotation,
+        skip_annotation,
         proteins,
         skip_colours,
         cpus,
@@ -94,8 +94,8 @@ def main(
         try:
             state = get_flow().run(
                 genome_file=[genome],
-                just_find_pipolbs=just_find_pipolbs,
-                no_annotation=no_annotation,
+                only_find_pipolbs=only_find_pipolbs,
+                skip_annotation=skip_annotation,
             )
             if state.is_failed() and keep_going:
                 continue
@@ -116,4 +116,4 @@ def main(
 
 
 if __name__ == '__main__':
-    main()
+    main(prog_name='explore_pipolin')
