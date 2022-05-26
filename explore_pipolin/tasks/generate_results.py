@@ -129,16 +129,17 @@ def _generate_att_seq_features(record_format: str, pipolin: Pipolin):
     for fragment in pipolin.fragments:
         fragment_shift = fragment.start
 
-        for att in [f for f in fragment.features if f.ftype == FeatureType.ATT]:
+        for i, att in enumerate([f for f in fragment.features if f.ftype == FeatureType.ATT]):
             att: AttFeature
             att_start, att_end = (att.start - fragment_shift), (att.end - fragment_shift)
+            locus_tag = f'{att.contig_id}_{"0" * (5 - len(str(i)))}{i}'   # always 5 digits, starting from zeros
             if record_format == 'gb':
-                att_feature = _create_gb_att_seq_feature(start=att_start, end=att_end,
-                                                         strand=att.strand, contig_id=att.contig_id,
+                att_feature = _create_gb_att_seq_feature(start=att_start, end=att_end, strand=att.strand,
+                                                         att_locus_tag=locus_tag,
                                                          note=att.att_type.to_string())
             elif record_format == 'gff':
-                att_feature = _create_gff_att_seq_feature(start=att_start, end=att_end,
-                                                          strand=att.strand, contig_id=att.contig_id,
+                att_feature = _create_gff_att_seq_feature(start=att_start, end=att_end, strand=att.strand,
+                                                          att_locus_tag=locus_tag,
                                                           note=att.att_type.to_string())
             else:
                 raise AssertionError
@@ -148,8 +149,8 @@ def _generate_att_seq_features(record_format: str, pipolin: Pipolin):
     return att_seq_features
 
 
-def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str, note: str) -> SeqFeature:
-    gb_qualifiers = {'inference': ['BLAST search'], 'locus_tag': [f'{contig_id}_00000'],
+def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, att_locus_tag: str, note: str) -> SeqFeature:
+    gb_qualifiers = {'inference': ['BLAST search'], 'locus_tag': [att_locus_tag],
                      'rpt_family': ['Att'], 'rpt_type': ['direct'], 'note': [note]}
     att_seq_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=strand.to_pm_one_encoding()),
@@ -157,10 +158,10 @@ def _create_gb_att_seq_feature(start: int, end: int, strand: Strand, contig_id: 
     return att_seq_feature
 
 
-def _create_gff_att_seq_feature(start: int, end: int, strand: Strand, contig_id: str, note: str) -> SeqFeature:
+def _create_gff_att_seq_feature(start: int, end: int, strand: Strand, att_locus_tag: str, note: str) -> SeqFeature:
     gff_qualifiers = {'phase': ['.'], 'source': ['BLAST search'],
-                      'ID': [f'{contig_id}_00000'], 'inference': ['BLAST search'],
-                      'locus_tag': [f'{contig_id}_00000'],
+                      'ID': [att_locus_tag], 'inference': ['BLAST search'],
+                      'locus_tag': [att_locus_tag],
                       'rpt_family': ['Att'], 'rpt_type': ['direct'], 'note': [note]}
     att_seq_feature = SeqFeature(type='repeat_region',
                                  location=FeatureLocation(start=start, end=end, strand=strand.to_pm_one_encoding()),
