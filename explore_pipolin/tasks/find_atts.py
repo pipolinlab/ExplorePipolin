@@ -5,6 +5,7 @@ from typing import List, Mapping, Sequence
 
 from Bio import SeqIO
 from prefect import task, context
+from prefect.utilities.logging import get_logger
 
 from explore_pipolin.common import Genome, FeatureType, Range, PairedLocation, Strand, AttFeature, ContigID, \
     MultiLocation, Feature, AttType
@@ -105,16 +106,19 @@ class AttDenovoFinder:
         self.output_dir = output_dir
 
     def find_atts_denovo(self):
-        repeats: List[MultiLocation] = self._find_repeats()
-        self._write_repeats(repeats)
-
-        atts_denovo: List[MultiLocation] = [rep for rep in repeats if self._is_att_denovo(rep)]
-        # Even if we skip denovo ATTs (see later), let them be saved in the output.
-        self._write_atts_denovo(atts_denovo)
-
         # If known ATTs already present (at least 2), they are of higher priority.
-        #   In this case, just ignore denovo ATTs:
-        if len(self.genome.features.get_features(FeatureType.ATT)) < 2:
+        #   In this case, just skip this step:
+        if len(self.genome.features.get_features(FeatureType.ATT)) >= 2:
+            logger = get_logger(name='find_atts_denovo')
+            logger.warning('Direct repeat sequences similar to the known reference ATT detected. '
+                           'No more direct repeats surrounding the piPolB gene will be searched.')
+        else:
+            repeats: List[MultiLocation] = self._find_repeats()
+            self._write_repeats(repeats)
+
+            atts_denovo: List[MultiLocation] = [rep for rep in repeats if self._is_att_denovo(rep)]
+            self._write_atts_denovo(atts_denovo)
+
             self._extend_att_features(atts_denovo)
             self._extend_target_trna_features()
 
