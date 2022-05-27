@@ -109,10 +109,14 @@ class AttDenovoFinder:
         self._write_repeats(repeats)
 
         atts_denovo: List[MultiLocation] = [rep for rep in repeats if self._is_att_denovo(rep)]
+        # Even if we skip denovo ATTs (see later), let them be saved in the output.
         self._write_atts_denovo(atts_denovo)
 
-        self._extend_att_features(atts_denovo)
-        self._extend_target_trna_features()
+        # If known ATTs already present (at least 2), they are of higher priority.
+        #   In this case, just ignore denovo ATTs:
+        if len(self.genome.features.get_features(FeatureType.ATT)) < 2:
+            self._extend_att_features(atts_denovo)
+            self._extend_target_trna_features()
 
     def _find_repeats(self) -> List[MultiLocation]:
         ranges_around_pipolbs = self._get_ranges_around_pipolbs()
