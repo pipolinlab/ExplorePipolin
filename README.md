@@ -147,7 +147,7 @@ where:
    `minimal` (---pol---)
  * `<ext>` — file extension (`.fa`, `.gff`, `.gbk`)
 
-NOTE: File ending with `single_record.gbk` is produced when separate contigs are 
+**NOTE**: A file with `single_record.gbk` ending is produced when separate contigs are 
 concatenated into a single record (after the reconstruction step). Contigs are joined 
 with an `assembly_gap` feature that can be distinguished by the presence of 
 `/inference="ExplorePipolin"` field. Also, by default, these assembly gaps have 
@@ -167,10 +167,9 @@ Additional files, when `--keep-tmp` option is present:
 
 ### Easyfig-compatible colouring
 
-By default, a `/colour` field will be added and an RGB colour code will be assigned 
-to each feature in the output Genbank files. The colours will be assigned according to 
-[this scheme](explore_pipolin/data/colours.tsv). **To modify colours**, download 
-and change this TSV file (you can add new products or delete existing ones, or change 
-the colours) and provide it using `--colours` option.
+By default, a `/colour` field with an RGB colour code will be added to each feature 
+in the output Genbank files. The colours will be assigned according to 
+[this scheme](explore_pipolin/data/colours.tsv). **To modify the colouring**, download 
+and change this TSV file and provide it using `--colours` option.
 
-Use `--skip-colours` if required.
+NOTE: Use `--skip-colours` if required.

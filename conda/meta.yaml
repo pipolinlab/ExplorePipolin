@@ -36,5 +36,5 @@ test:
 
 about:
   home: https://github.com/pipolinlab/ExplorePipolin
-  license:
+  license: GPLv3
   license_file: LICENSE

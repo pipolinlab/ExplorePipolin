@@ -16,5 +16,5 @@ setuptools.setup(
     },
     test_suite='tests',
     url='https://github.com/liubovch/ExplorePipolin',
-    license=''
+    license='GPLv3'
 )
