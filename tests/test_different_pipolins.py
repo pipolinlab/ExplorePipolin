@@ -100,6 +100,7 @@ class TestPipolinFinder(unittest.TestCase):
             max_inflate=30_000,
             user_defined_proteins=None,
             prokka_cpus=0,
+            user_defined_colours=None,
             skip_colours=False,
         )
         settings.set_instance(self.settings)
