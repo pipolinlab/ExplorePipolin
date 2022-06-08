@@ -2,6 +2,7 @@ import os
 from typing import MutableSequence
 
 from prefect import task
+from prefect.engine import signals
 
 import explore_pipolin.settings as settings
 from explore_pipolin.common import Genome, Contig, ContigID
@@ -54,6 +55,6 @@ def define_genome_id(genome_path: str) -> str:
 
 def _check_genome_id_length(genome_id: str) -> None:
     if len(genome_id) > _MAX_LENGTH_ALLOWED:
-        raise AssertionError('Genome file basename is going to be used as an identifier. '
-                             f'Due to Biopython restrictions, it cannot be longer than {_MAX_LENGTH_ALLOWED} '
-                             f'characters. Please, rename the file, so that its basename does not exceed the limit!')
+        raise signals.FAIL('Genome file basename is going to be used as an identifier. '
+                           f'Due to Biopython restrictions, it cannot be longer than {_MAX_LENGTH_ALLOWED} '
+                           f'characters. Please, rename the file, so that its basename does not exceed the limit!')
