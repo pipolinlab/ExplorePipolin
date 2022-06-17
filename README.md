@@ -86,9 +86,9 @@ Options:
                               instead of the default "results" prefix.
 
   --out-dir PATH              Use this output directory instead.
-  --pipolb-hmm-profile PATH   piPolB's HMM profile to use as 1st priority.If
-                              not provided, the default profile will be used
-                              instead.
+  --pipolb-hmm-profile PATH   The HMM profile for the piPolB sequence to use as 
+                              1st priority. If not provided, the default
+                              profile will be used instead.
 
   --only-find-pipolbs         Only find piPolB genes.
 
