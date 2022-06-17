@@ -191,3 +191,9 @@ single_record1.gbk single_record2.gbk ...
 All options can be checked by running `python <path>/Easyfig.py --help`.
 
 NOTE: Use `--skip-colours` if you do not need the colours.
+
+### GGGenomes pipolin plotting
+
+Plotting pipolins in R is possible using the [GGGenomes R package](https://github.com/thackl/gggenomes). 
+However, plotting requires a previous processing of the GBK files with a custom script located 
+in the "GGGenomes_plotting" folder. More details can be found in the README.txt file from that folder.  
