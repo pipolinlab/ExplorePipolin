@@ -75,7 +75,7 @@ or contigs (in a single multiFASTA file).
 
 ### Command line options
 
-```bash
+```bash'
 Usage: explore_pipolin [OPTIONS] GENOMES...
 
   ExplorePipolin is a search tool for prediction and analysis of pipolins,
