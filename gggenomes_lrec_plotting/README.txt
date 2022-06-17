@@ -19,10 +19,11 @@ The input_processing.py performs the following tasks:
 	4.	Execute Synteny-GC_TIRs_script.bash, which performs the following tasks:
 		a.	Calculate synteny with minimap2
 		b.	Find TIRs (Terminal Inverted Repeats) with minimap2
+			NOTE: We included TIR calculation only to include all the funcionalities explained in the GGGenomes help page (https://thackl.github.io/gggenomes/), but TIRs are not actually relevant in pipolin structure.
 		c.	Calculate CG content with seq-gc
 After input_processing.py execution, the gggenomes input files generated are:
 	•	renamed_files folder: contains the modified gbk and fasta files that will be used in gggenomes
 	•	tirs.paf: paf files containing the terminal inverted repeats information and coordinates.
 	•	gc.tsv: tsv file containing the gc content information.
 	•	synteny.paf: paf file containing the synteny between sequences. 
-Now, the gggenomes_pipolin_plotting.R script can be executed to obtain the figure. More information regarding the commands used are given inside the script. 
+Now, the gggenomes_pipolin_plotting.R script can be executed to obtain the figure. The given version of the R script plots LREC pipolins with the order given in the order.txt file and includes: genes as arrows (colored by function), pipolin names, gc content of each pipolin, atts (blue vertical bars), scaffolding gaps (red vertical bars), and synteny between pipolins. More information regarding the commands used are given inside that script. 
