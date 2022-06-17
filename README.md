@@ -172,4 +172,16 @@ in the output Genbank files. The colours will be assigned according to
 [this scheme](explore_pipolin/data/colours.tsv). **To modify the colouring**, download 
 and change this TSV file and provide it using `--colours` option.
 
-NOTE: Use `--skip-colours` if required.
+An example command to run Easyfig:
+
+```bash
+# IMPORTANT: run with python2!
+python <path>/Easyfig.py -o my_figure.svg -svg -f1 T \
+-f CDS arrow -f repeat_region rect -f tRNA rect -f assembly_gap pointer \
+-tblastx -min_length 500 -ann_height 100 \
+single_record1.gbk single_record2.gbk ...
+```
+
+All options can be checked by running `python <path>/Easyfig.py --help`.
+
+NOTE: Use `--skip-colours` if you do not need the colours.
