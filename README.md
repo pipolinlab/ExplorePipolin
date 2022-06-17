@@ -67,8 +67,11 @@ NOTE: solving the environment takes time. Be patient.
 # Quick usage
 
 As input, **ExplorePipolin** takes FASTA file(s) with genome sequence(s). 
+Due to restrictions of some of the libraries used, filename must not exceed 16 characters long.
 A genome sequence can be either a single complete chromosome (preferred) 
 or contigs (in a single multiFASTA file).
+
+
 
 ### Command line options
 
