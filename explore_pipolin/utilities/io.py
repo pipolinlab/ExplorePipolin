@@ -46,3 +46,21 @@ def write_gff_records(gff_records: SeqIORecords, output_file: str):
 
 def read_blastxml(blast_xml):
     return SearchIO.read(blast_xml, 'blast-xml')
+
+
+PRODUCTS_TO_COLOUR = {'default': '255 250 240'}
+
+
+def read_colours(colors_tsv: str) -> None:
+    with open(colors_tsv) as inf:
+        for line in inf:
+            if line[0] == '#':
+                continue
+            values = line.strip().split(sep='\t')
+            if len(values) == 0:   # skip empty lines
+                continue
+            elif len(values) != 3:
+                raise AssertionError(f'{len(values)} columns in the line {line.strip()}.\n'
+                                     f'3 columns are expected.')
+            else:
+                PRODUCTS_TO_COLOUR[values[0]] = values[2]

@@ -10,7 +10,7 @@ from explore_pipolin.common import Strand, Pipolin, FeatureType, ContigID, Genom
     get_rec_id_by_contig_id, Range
 from explore_pipolin.tasks.easyfig_coloring import easyfig_add_colours
 from explore_pipolin.utilities.io import SeqIORecords, create_seqio_records_dict, write_seqio_records, \
-    read_gff_records, write_gff_records
+    read_gff_records, write_gff_records, read_colours, PRODUCTS_TO_COLOUR
 from explore_pipolin.utilities.logging import genome_specific_logging
 import explore_pipolin.settings as settings
 
@@ -91,11 +91,17 @@ def create_single_gb_record(gb_records: SeqIORecords, pipolin: Pipolin, accver: 
 
 def create_reconstruction_gap_feature(record: SeqRecord) -> SeqFeature:
     record_length = len(record)
-    return SeqFeature(FeatureLocation(start=record_length - 100, end=record_length), type='assembly_gap',
-                      qualifiers={'estimated_length': ['unknown'],
-                                  'gap_type': ['between scaffolds'],
-                                  'linkage_evidence': ['pipolin_structure'],
-                                  'inference': ['ExplorePipolin']})
+    qualifiers = {'estimated_length': ['unknown'],
+                  'gap_type': ['between scaffolds'],
+                  'linkage_evidence': ['pipolin_structure'],
+                  'inference': ['ExplorePipolin']}
+    if settings.get_instance().skip_colours is False:
+        colours = settings.get_instance().colours
+        read_colours(colours)
+        if 'pipolin_structure' in PRODUCTS_TO_COLOUR:
+            qualifiers['colour'] = PRODUCTS_TO_COLOUR['pipolin_structure']
+    return SeqFeature(FeatureLocation(start=record_length - 100, end=record_length),
+                      type='assembly_gap', qualifiers=qualifiers)
 
 
 def revcompl_if_reverse(gb_record: SeqRecord, orientation: Strand) -> SeqRecord:
