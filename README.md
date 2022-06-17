@@ -146,6 +146,9 @@ where:
  * `N` — index of a found pipolin
  * `vN` — index of a reconstructed variant (each pipolin can be reconstructed in
    different ways)
+
+NOTE: When alternative orientations of the piPolB-containing fragment are possible, both reconstructions are generated. The structure denoted as `v0` will include piPolB gene pointing toward the attR (usually overlaps with tRNA). The alternative pipolin with the piPolB gene leftwards referred as `v1`.
+
  * `<type>` — can be `complete` (att---pol---att), `truncated` (att---pol---) or 
    `minimal` (---pol---)
  * `<ext>` — file extension (`.fa`, `.gff`, `.gbk`)
