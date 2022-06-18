@@ -4,6 +4,7 @@ from typing import Sequence, Set, Tuple, MutableSequence, Optional
 
 from prefect import task
 
+from explore_pipolin import settings
 from explore_pipolin.common import Genome, FeatureType, Pipolin, AttFeature, PipolinFragment, Range, Feature
 from explore_pipolin.utilities.logging import genome_specific_logging
 
@@ -30,6 +31,10 @@ class PipolinFinder:
     @property
     def atts_by_att_id(self):
         return self.genome.features.get_features(FeatureType.ATT).get_atts_dict_by_att_id()
+
+    @property
+    def _max_pipolin_len(self):
+        return settings.get_instance().max_pipolin_len
 
     def find_best_scored_pipolins(self) -> Sequence[Pipolin]:
         pipolin_fragment_candidates = self._find_pipolin_fragment_candidates()
@@ -110,14 +115,24 @@ class PipolinFinder:
 
     def _get_closest_att_left(self, pipolb: Feature) -> Optional[AttFeature]:
         contig_atts = self.genome.features.atts_dict()[pipolb.contig_id]
-        atts_to_the_left = [att for att in contig_atts if att.is_left_of(pipolb)]
+        atts_to_the_left = []
+        for att in contig_atts:
+            close_enough = (pipolb.start - att.end) < self._max_pipolin_len
+            if att.is_left_of(pipolb) and close_enough:
+                atts_to_the_left.append(att)
+
         for att in atts_to_the_left:
             if att.att_id == atts_to_the_left[-1].att_id:
                 return att
 
     def _get_closest_att_right(self, pipolb: Feature) -> Optional[AttFeature]:
         contig_atts = self.genome.features.atts_dict()[pipolb.contig_id]
-        atts_to_the_right = [att for att in contig_atts if att.is_right_of(pipolb)]
+        atts_to_the_right = []
+        for att in contig_atts:
+            close_enough = (att.end - pipolb.start) < self._max_pipolin_len
+            if att.is_right_of(pipolb) and close_enough:
+                atts_to_the_right.append(att)
+
         for att in atts_to_the_right[::-1]:
             if att.att_id == atts_to_the_right[0].att_id:
                 return att
@@ -128,7 +143,9 @@ class PipolinFinder:
         for att in contig_atts:
             if att.start > pipolb.end:
                 for other_att in contig_atts:
-                    if other_att.end < pipolb.start and other_att.att_id == att.att_id:
+                    if other_att.end < pipolb.start and \
+                            other_att.att_id == att.att_id and \
+                            (att.end - other_att.start) < self._max_pipolin_len:
                         atts_around_pipolb.update([att, other_att])
         return atts_around_pipolb
 

@@ -8,6 +8,7 @@ class TestCreateGenome(unittest.TestCase):
         self.assertEqual(define_genome_id('my_genome.fa'), 'my_genome')
         self.assertEqual(define_genome_id('../dir1/dir2/genome.1234.fa'), 'genome.1234')
 
+    @unittest.skip
     def test_too_long_genome_id(self):
         with self.assertRaises(AssertionError):
             define_genome_id('thisisverylongfilename.fa')
