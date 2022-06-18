@@ -6,7 +6,7 @@ from explore_pipolin.tasks.find_pipolbs import find_pipolbs, are_pipolbs_present
     continue_if_true_else_finished
 from explore_pipolin.tasks.find_trnas import find_trnas
 from explore_pipolin.tasks.find_atts import find_atts, find_atts_denovo, are_atts_present
-from explore_pipolin.tasks.find_pipolins import find_pipolins
+from explore_pipolin.tasks.score_pipolins import score_pipolins
 from explore_pipolin.tasks.reconstruct_pipolins import reconstruct_pipolins
 from explore_pipolin.tasks.annotate_pipolins import save_pipolin_sequences, annotate_pipolins
 from explore_pipolin.tasks.generate_results import generate_results
@@ -35,7 +35,7 @@ def get_flow():
         genome = find_atts_denovo.map(genome=genome)
         genome = are_atts_present.map(genome=genome)
 
-        pipolins = find_pipolins.map(genome=genome)
+        pipolins = score_pipolins.map(genome=genome)
         reconstructed_pipolins = reconstruct_pipolins.map(
             genome=genome, pipolins=pipolins
         )

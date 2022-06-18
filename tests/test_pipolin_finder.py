@@ -2,7 +2,7 @@ import unittest
 
 from explore_pipolin.common import ContigID, Genome, Contig, Feature, AttFeature, Range, Strand, FeatureType, \
     PipolinFragment, Pipolin, AttType
-from explore_pipolin.tasks.find_pipolins import PipolinFinder
+from explore_pipolin.tasks.score_pipolins import PipolinFinder
 
 
 class TestPipolinFinder(unittest.TestCase):

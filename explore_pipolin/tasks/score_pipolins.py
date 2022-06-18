@@ -10,8 +10,8 @@ from explore_pipolin.utilities.logging import genome_specific_logging
 
 @task()
 @genome_specific_logging
-def find_pipolins(genome: Genome) -> Sequence[Pipolin]:
-    return PipolinFinder(genome).find_pipolins()
+def score_pipolins(genome: Genome) -> Sequence[Pipolin]:
+    return PipolinFinder(genome).find_best_scored_pipolins()
 
 
 PipolinScore = Tuple[int, int]
@@ -31,7 +31,7 @@ class PipolinFinder:
     def atts_by_att_id(self):
         return self.genome.features.get_features(FeatureType.ATT).get_atts_dict_by_att_id()
 
-    def find_pipolins(self) -> Sequence[Pipolin]:
+    def find_best_scored_pipolins(self) -> Sequence[Pipolin]:
         pipolin_fragment_candidates = self._find_pipolin_fragment_candidates()
         pipolin_candidates = self._find_pipolin_candidates(pipolin_fragment_candidates)
         scores = [self._calc_pipolin_score(i) for i in pipolin_candidates]

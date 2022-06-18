@@ -7,7 +7,7 @@ from explore_pipolin.common import Genome, Contig, Feature, Range, Strand, Featu
     Pipolin, PipolinFragment, AttFeature, ContigID, AttType
 import explore_pipolin.settings as settings
 from explore_pipolin.settings import GlobalSettings
-from explore_pipolin.tasks.find_pipolins import PipolinFinder, find_pipolins
+from explore_pipolin.tasks.score_pipolins import PipolinFinder, score_pipolins
 
 from explore_pipolin.tasks.reconstruct_pipolins import reconstruct_pipolins
 
@@ -125,7 +125,7 @@ class TestPipolinFinder(unittest.TestCase):
 
     def check_found_pipolins(self, genome, scheme, *pipolin: Sequence[PipolinFragment]):
         exp_found = [create_pipolin(scheme, *i) for i in pipolin]
-        obt_found = PipolinFinder(genome).find_pipolins()
+        obt_found = PipolinFinder(genome).find_best_scored_pipolins()
         self._check_pipolins(exp_found, obt_found)
 
         return obt_found
@@ -379,7 +379,7 @@ class TestPipolinFinder(unittest.TestCase):
         # p1f1 = PipolinFragment(Range(100, 200), ContigID('CONTIG_0'), genome)
         # p2f1 = PipolinFragment(Range(300, 800), ContigID('CONTIG_0'), genome)
         # self.check_found_pipolins(genome, scheme, [p1f1], [p2f1])
-        found = find_pipolins.run(genome=genome)
+        found = score_pipolins.run(genome=genome)
         reconstruct_pipolins.run(genome=genome, pipolins=found)
 
     def test_test(self):
