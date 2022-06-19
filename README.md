@@ -25,6 +25,7 @@ phyla and mitochondria.
     * [Command line options](#command-line-options)
     * [Output files](#output-files)
     * [Easyfig-compatible colouring](#easyfig-compatible-colouring)
+    * [GGGenomes pipolin plotting](#gggenomes-pipolin-plotting)
 
 # Requirements
 
@@ -60,7 +61,7 @@ NOTE: before installing, it is possible to run unit tests:
 
  * Install into a new environment in one-step:
 
- `conda create -n <new_env_name> -c bioconda -c conda-forge -c defaults -c pipolinlab explore-pipolin`
+ `conda create -n <new_env_name> -c pipolinlab -c conda-forge -c bioconda -c defaults explore-pipolin`
 
 NOTE: solving the environment takes time. Be patient.
 
@@ -201,4 +202,5 @@ Predicted protein-coding genes are represented by arrows, indicating the directi
 
 Plotting pipolins in R is possible using the [GGGenomes R package](https://github.com/thackl/gggenomes). 
 However, plotting requires a previous processing of the GBK files with a custom script located 
-in the "gggenomes_lrec_plotting" folder, along with example files. More details can be found in the README.txt file from that folder.  
+in the ["gggenomes_lrec_plotting"](./gggenomes_lrec_plotting) folder, along with example files. 
+More details can be found in the README.txt file from that folder.  
