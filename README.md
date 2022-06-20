@@ -178,7 +178,7 @@ and change this TSV file and provide it using `--colours` option.
 An example command to run Easyfig:
 
 ```bash
-# IMPORTANT: run with python2!
+# IMPORTANT: only run with python2.x!
 python <path>/Easyfig.py -o my_figure.svg -svg -f1 T \
 -f CDS arrow -f repeat_region rect -f tRNA rect -f assembly_gap pointer \
 -tblastx -min_length 500 -ann_height 100 \
@@ -187,7 +187,7 @@ single_record1.gbk single_record2.gbk ...
 
 All options can be checked by running `python <path>/Easyfig.py --help`.
 
-NOTE: Use `--skip-colours` if you do not need the colours.
+NOTE: Use `--skip-colours` when running ExplorePipolin if you do not need the colours.
 
 #### Example
 ![figure_ex.png](figure_ex.png)
@@ -199,4 +199,4 @@ Predicted protein-coding genes are represented by arrows, indicating the directi
 Plotting pipolins in R is possible using the [GGGenomes R package](https://github.com/thackl/gggenomes). 
 However, plotting requires a previous processing of the GBK files with a custom script located 
 in the ["gggenomes_lrec_plotting"](./gggenomes_lrec_plotting) folder, along with example files. 
-More details can be found in the README.txt file from that folder.  
+Detailed instructions for plotting pipolins with gggenomes can be found in the README.txt file from that folder.  
