@@ -1,19 +1,15 @@
 ![banner](banner.svg)
 
-Pipolins constitute a new group of self-synthesizing or self-replicating 
-mobile genetic elements (MGEs). They are widespread among diverse bacterial 
-phyla and mitochondria.
 
-> [**Redrejo-Rodríguez, M., *et al.*** Primer-independent DNA synthesis 
->by a family B DNA polymerase from self-replicating Mobile genetic elements. 
->*Cell reports*, 2017](https://doi.org/10.1016/j.celrep.2017.10.039)
->
->[**Flament-Simon, S.C., de Toro, M., Chuprikova, L., *et al.*** High diversity 
->and variability of pipolins among a wide range of pathogenic *Escherichia 
->coli* strains. *Scientific Reports*, 2020](https://www.nature.com/articles/s41598-020-69356-6#Sec18)
 
- **ExplorePipolin** is a search tool that identifies and analyses
- pipolins within bacterial genomes.
+**Pipolins** constitute a new group of mobile genetic elements (MGEs) that encode a primer-independent DNA polymerase ([piPolB](https://doi.org/10.1016%2Fj.celrep.2017.10.039)). They are widespread among the major bacterial phyla and mitochondria.
+
+**ExplorePipolin** is a search tool that identifies and analyses pipolins within bacterial genomes.
+ 
+ *Citing*
+
+> [**Chuprikova, L. *et al.*** ExplorePipolin: reconstruction and annotation of bacterial mobile elements from draft genomes. *bioRxiv*](https://www.biorxiv.org/content/10.1101/2022.06.18.496689v1)
+
 
 # Table of contents
 
@@ -109,7 +105,7 @@ Options:
                               priority. If not provided, the default file will
                               be used instead.
 
-  --colours PATH               A TSV file describing features to colour. Please,
+  --colours PATH              A TSV file describing features to colour. Please,
                               refer to
                               https://github.com/pipolinlab/ExplorePipolin for
                               more information about the file structure.
