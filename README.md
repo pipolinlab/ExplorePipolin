@@ -8,7 +8,7 @@
  
  *Citing*
 
-> [**Chuprikova, L. *et al.*** ExplorePipolin: reconstruction and annotation of bacterial mobile elements from draft genomes. *bioRxiv*](https://www.biorxiv.org/content/10.1101/2022.06.18.496689v1)
+> [**Chuprikova, L., Mateo-Cáceres, V., de Toro, M. & Redrejo-Rodríguez, M.** ExplorePipolin: reconstruction and annotation of piPolB-encoding bacterial mobile elements from draft genomes. *Bioinformatics Advances* 2022.](https://academic.oup.com/bioinformaticsadvances/advance-article/doi/10.1093/bioadv/vbac056/6659502)
 
 
 # Table of contents
