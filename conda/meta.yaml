@@ -15,7 +15,7 @@ requirements:
     - click
     - biopython <=1.76
     - bcbio-gff
-    - prefect >=0.11.5
+    - prefect ==1.2.1
     - dataclasses
 
   run:
@@ -23,7 +23,7 @@ requirements:
     - click
     - biopython <=1.76
     - bcbio-gff
-    - prefect >=0.11.5
+    - prefect ==1.2.1
     - perl-bioperl ==1.7.2
     - blast
     - aragorn
