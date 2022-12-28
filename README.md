@@ -207,6 +207,8 @@ More details and instructions for plotting pipolins with *gggenomes* can be foun
 
 # Funding
 
-This work has been supported by the Madrid Government (Comunidad de Madrid-Spain) under the Multiannual Agreement with Universidad Autónoma de Madrid in the line of stimulation or Research by young Researchers, in the context of the V PRICIT (Regional Programme of Research and Technological Innovation). (SI3/PJI/2021-00271).”
+Early work on ExplorePipolins was supported by Grant PGC2018-093723-A-I00 from MCIN/AEI/10.13039/501100011033/ and FEDER ‘A way to make Europe’.
+
+During 2022-2023 this project is supported by the Madrid Government (Comunidad de Madrid-Spain) under the Multiannual Agreement with Universidad Autónoma de Madrid in the line of stimulation or Research by young Researchers, in the context of the V PRICIT (Regional Programme of Research and Technological Innovation). (SI3/PJI/2021-00271).”
 
  
