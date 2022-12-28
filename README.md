@@ -22,6 +22,7 @@
     * [Output files](#output-files)
     * [Easyfig-compatible colouring](#easyfig-compatible-colouring)
     * [GGGenomes pipolin plotting](#gggenomes-pipolin-plotting)
+* [Funding](#funding)
 
 # Requirements
 
@@ -199,4 +200,13 @@ Predicted protein-coding genes are represented by arrows, indicating the directi
 Plotting pipolins in R is possible using the [GGGenomes R package](https://github.com/thackl/gggenomes). 
 However, plotting requires a previous processing of the GBK files with a custom script located 
 in the ["gggenomes_lrec_plotting"](./gggenomes_lrec_plotting) folder, along with example files. 
-Detailed instructions for plotting pipolins with gggenomes can be found in the README.txt file from that folder.  
+
+More details and instructions for plotting pipolins with *gggenomes* can be found in the README.txt file from that folder.  
+
+
+
+# Funding
+
+This work has been supported by the Madrid Government (Comunidad de Madrid-Spain) under the Multiannual Agreement with Universidad Autónoma de Madrid in the line of stimulation or Research by young Researchers, in the context of the V PRICIT (Regional Programme of Research and Technological Innovation). (SI3/PJI/2021-00271).”
+
+ 
